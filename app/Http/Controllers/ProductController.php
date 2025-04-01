@@ -181,6 +181,11 @@ class ProductController extends Controller
             'is_active' => 'boolean',
             'brand_id' => 'nullable|exists:collections,id', // Assuming brands table exists
             'category_id' => 'nullable|exists:collections,id', // Assuming categories table exists
+            'expiry_date' => [
+                'nullable',
+                'date',
+//                'after_or_equal:today', // Ensures the expiry date is today or a future date
+            ],
         ]);
 
         $imageUrl = null;
@@ -230,7 +235,7 @@ class ProductController extends Controller
         $productBatch = ProductBatch::create([
             'product_id' => $product->id,
             'batch_number' => $request->batch_number ?: 'DEFAULT',
-            'expiry_date' => Carbon::parse($request->expiry_date)->format('Y-m-d'),
+            'expiry_date' => $request->expiry_date ? Carbon::parse($request->expiry_date)->format('Y-m-d') : null,
             'cost' => $request->cost,
             'price' => $request->price,
             'contact_id' => $request->contact_id,
@@ -487,13 +492,14 @@ class ProductController extends Controller
             ],
             'cost' => 'required|numeric|min:0',
             'price' => 'required|numeric|min:0',
+            'expiry_date' => 'nullable|date',
         ]);
 
         $batch->update([
             'batch_number' => $validatedData['batch_number'], // Map 'new_batch' to 'batch_number'
             'cost' => $validatedData['cost'],
             'price' => $validatedData['price'],
-            'expiry_date' => Carbon::parse($request->expiry_date)->format('Y-m-d'),
+            'expiry_date' => $request->expiry_date ? Carbon::parse($request->expiry_date)->format('Y-m-d') : null,
             'is_active' => $request->is_active ?? 0,
             'is_featured' => $request->is_featured ?? 0,
             'contact_id' => $request->contact_id,

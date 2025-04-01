@@ -387,7 +387,7 @@ export default function Product({ product, collection, product_code, contacts, p
                                         onChange={handleChange}
                                     />
                                 </Grid>
-                                
+
                                 <Grid size={{ xs: 6, sm: 2 }} className="mb-3">
                                     <TextField
                                         label="Batch number"
@@ -423,6 +423,7 @@ export default function Product({ product, collection, product_code, contacts, p
                                         <DatePicker
                                             name="expiry_date"
                                             label="Expiry Date"
+                                            format="MM/DD/YY"
                                             className="w-full"
                                         />
                                     </LocalizationProvider>
@@ -572,13 +573,13 @@ export default function Product({ product, collection, product_code, contacts, p
                         <Grid container spacing={2}>
                             <Grid size={{ xs: 12, md: 4 }}>
                                 <div className="mb-3">
-                                    
+
                                 </div>
                             </Grid>
                             <Grid size={{ xs: 12, md: 8 }}>
                                 {/* Product Description */}
                                 <div className="mb-3">
-                                    
+
                                 </div>
                             </Grid>
 
