@@ -423,7 +423,6 @@ export default function Product({ product, collection, product_code, contacts, p
                                         <DatePicker
                                             name="expiry_date"
                                             label="Expiry Date"
-                                            format="MM/DD/YY"
                                             className="w-full"
                                         />
                                     </LocalizationProvider>

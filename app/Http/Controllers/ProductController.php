@@ -183,7 +183,7 @@ class ProductController extends Controller
             'category_id' => 'nullable|exists:collections,id', // Assuming categories table exists
             'expiry_date' => [
                 'nullable',
-                'date',
+                'date_format:m/d/y',
 //                'after_or_equal:today', // Ensures the expiry date is today or a future date
             ],
         ]);
