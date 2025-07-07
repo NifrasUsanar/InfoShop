@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\Store;
 use App\Models\ReloadAndBillMeta;
 use App\Models\Setting;
+use App\Models\TaxAndFee;
 use App\Notifications\SaleCreated;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Auth;
@@ -98,6 +99,7 @@ class POSController extends Controller
     {
         $contacts = Contact::select('id', 'name', 'balance')->customers()->get();
         $currentStore = Store::find(session('store_id', Auth::user()->store_id));
+        $taxAndFees = TaxAndFee::all();
 
         if (!$currentStore) {
             return redirect()->route('store'); // Adjust the route name as necessary
@@ -115,7 +117,8 @@ class POSController extends Controller
             'return_sale' => false,
             'sale_id' => null,
             'categories' => $categories,
-            'cart_first_focus' => $cart_first_focus
+            'cart_first_focus' => $cart_first_focus,
+            'taxAndFees' => $taxAndFees
         ]);
     }
 

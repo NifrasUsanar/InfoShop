@@ -41,6 +41,7 @@ import ExpandMore from "@mui/icons-material/ExpandMore";
 import BadgeIcon from "@mui/icons-material/Badge";
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import PermMediaIcon from '@mui/icons-material/PermMedia';
+import PriceCheckIcon from '@mui/icons-material/PriceCheck';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoneyCheck, faFileInvoice } from "@fortawesome/free-solid-svg-icons";
 import infoshopLogo from "@/infoshop.png";
@@ -239,7 +240,15 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/collections")}
                     />
                 )}
-
+                {(user.user_role === "admin" || permissions.includes("taxes-and-fees")) && (
+                    <NavItem
+                        href="/taxes-and-fees"
+                        icon={PriceCheckIcon}
+                        label="Taxes and Fees"
+                        open={open}
+                        selected={isSelected("/taxes-and-fees")}
+                    />
+                )}
                 {permissions.includes("expenses") && (
                     <NavItem
                         href="/expenses"

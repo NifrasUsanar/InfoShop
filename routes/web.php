@@ -29,6 +29,7 @@ use App\Http\Controllers\EmployeeBalanceController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\ChequeController;
 use App\Http\Controllers\QuotationController;
+use App\Http\Controllers\TaxAndFeeController;
 
 Route::get('/', function () {
     return redirect('login');
@@ -178,6 +179,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/quotations', [QuotationController::class, 'index'])->name('quotations.index');
     Route::post('/quotations/{quotation}', [QuotationController::class, 'destroy'])->name('quotations.destroy');
     Route::get('/quotations/{quotation}', [QuotationController::class, 'show'])->name('quotations.show');
+
+    Route::resource('taxes-and-fees', TaxAndFeeController::class);
 
     Route::get('/clear-cache', function () {
         Artisan::call('cache:clear');
