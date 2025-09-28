@@ -69,14 +69,13 @@ class ReportController extends Controller
             $cashLogs = $cashLogs->where('cash_logs.created_by', $user);
         }
 
-        if(isset($store_id) && $store_id !== 'All') {
+        if (isset($store_id) && $store_id !== 'All') {
             $cashLogs = $cashLogs->where('cash_logs.store_id', $store_id);
         }
 
         if (Auth::user()->user_role === 'admin' || Auth::user()->user_role === 'super-admin') {
-            
         } else {
-            if(!isset($store_id)) {
+            if (!isset($store_id)) {
                 $cashLogs = $cashLogs->where('cash_logs.store_id', Auth::user()->store_id);
             }
         }
@@ -486,7 +485,8 @@ class ReportController extends Controller
         ]);
     }
 
-    public function getSummaryReport(){
+    public function getSummaryReport()
+    {
         $stores = Store::forCurrentUser()->select('id', 'name')->get();
 
         $start_date = request()->input('start_date', Carbon::now()->startOfMonth()->toDateString());
@@ -494,10 +494,27 @@ class ReportController extends Controller
         $store_id = request()->input('store', 'All');
 
         $report = [];
-        $report['total_sales'] = Sale::StoreId($store_id)->DateFilter($start_date, $end_date)->sum('total_amount');
-        $report['total_received'] = Sale::StoreId($store_id)->DateFilter($start_date, $end_date)->sum(DB::raw('LEAST(total_amount, amount_received)'));
+        $sales = Sale::StoreId($store_id)
+            ->DateFilter($start_date, $end_date)
+            ->selectRaw('
+                SUM(total_amount) as total_sales,
+                SUM(LEAST(total_amount, amount_received)) as total_received,
+                SUM(profit_amount) as total_profit,
+                SUM(discount) as sale_discount
+            ')
+            ->first();
+
+        $report['total_sales'] = $sales->total_sales;
+        $report['total_received'] = $sales->total_received;
+        $report['total_profit'] = $sales->total_profit;
+
+        $sale_items = SaleItem::StoreId($store_id)
+            ->DateFilter($start_date, $end_date)
+            ->selectRaw('SUM((quantity * discount) + flat_discount) as total_discount')
+            ->first();
+
+        $report['total_discount'] = $sale_items->total_discount + $sales->sale_discount;
         $report['total_expenses'] = Expense::StoreId($store_id)->DateFilter($start_date, $end_date)->sum('amount');
-        $report['total_profit'] = Sale::StoreId($store_id)->DateFilter($start_date, $end_date)->sum('profit_amount');
         $report['cash_sale'] = Transaction::StoreId($store_id)->DateFilter($start_date, $end_date)->where('payment_method', 'cash')->where('amount', '>=', 0)->sum('amount');
         $report['cash_refund'] = Transaction::StoreId($store_id)->DateFilter($start_date, $end_date)->where('payment_method', 'cash')->where('amount', '<', 0)->sum('amount');
         $report['cash_purchase'] = PurchaseTransaction::StoreId($store_id)->DateFilter($start_date, $end_date)->where('payment_method', 'cash')->sum('amount');

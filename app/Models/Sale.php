@@ -30,6 +30,7 @@ class Sale extends Model
         'created_by',
         'deleted_by',
         'cart_snapshot',
+        'sale_time',
     ];
 
     protected static function boot()

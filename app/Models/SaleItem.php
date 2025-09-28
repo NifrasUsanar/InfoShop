@@ -39,4 +39,20 @@ class SaleItem extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function scopeDateFilter($query, $start_date, $end_date)
+    {
+        if (!empty($start_date) && !empty($end_date)) {
+            return $query->whereBetween('sale_date', [$start_date, $end_date]);
+        }
+        return $query;
+    }
+
+    public function scopeStoreId($query, $storeId)
+    {
+        if ($storeId !== 'All' && $storeId !== 0) {
+            return $query->where('store_id', $storeId);
+        }
+        return $query;
+    }
 }

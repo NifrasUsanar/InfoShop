@@ -648,7 +648,7 @@ class SaleController extends Controller
             }
 
             // Line 2 → aligned columns
-            $lineQty   = str_pad('   ' . $item->quantity . ($item->free_quantity ? '+[Free: ' . $this->formatQuantity($item->free_quantity) . ']' : ''), $colQty, " ", STR_PAD_BOTH);
+            $lineQty   = str_pad('   ' . $item->quantity . ($item->free_quantity !=0 ? '+[Free: ' . $this->formatQuantity($item->free_quantity) . ']' : ''), $colQty, " ", STR_PAD_BOTH);
             $lineUnit  = str_pad($unit, $colUnit, " ", STR_PAD_LEFT);
             $lineTotal = ($disc == 0) ? str_pad($total, $colTotal, " ", STR_PAD_LEFT) : str_pad('(' . ($disc)*-1 . ') ' . $total, $colTotal, " ", STR_PAD_LEFT);
 
@@ -660,11 +660,11 @@ class SaleController extends Controller
         }
 
         $text .= $lineSep;
-        $text .= str_pad("Total:", $summaryPad, " ", STR_PAD_RIGHT) . str_pad(number_format($sale->total_amount + $sale->discount, 2), 20, " ", STR_PAD_LEFT) . "\r\n";
-        $text .= str_pad("Discount:", $summaryPad, " ", STR_PAD_RIGHT) . str_pad(number_format($sale->discount, 2), 20, " ", STR_PAD_LEFT) . "\r\n";
-        $text .= str_pad("Net Total:", $summaryPad, " ", STR_PAD_RIGHT) . str_pad(number_format($sale->total_amount, 2), 20, " ", STR_PAD_LEFT) . "\r\n";
-        $text .= str_pad("Paid:", $summaryPad, " ", STR_PAD_RIGHT) . str_pad(number_format($sale->amount_received, 2), 20, " ", STR_PAD_LEFT) . "\r\n";
-        $text .= str_pad("Change:", $summaryPad, " ", STR_PAD_RIGHT) . str_pad(number_format($sale->amount_received - $sale->total_amount, 2), 20, " ", STR_PAD_LEFT) . "\r\n\n";
+        $text .= str_pad("Total:", $summaryPad, " ", STR_PAD_RIGHT) . str_pad(number_format($sale->total_amount + $sale->discount, 2), 24, " ", STR_PAD_LEFT) . "\r\n";
+        $text .= str_pad("Discount:", $summaryPad, " ", STR_PAD_RIGHT) . str_pad(number_format($sale->discount, 2), 24, " ", STR_PAD_LEFT) . "\r\n";
+        $text .= str_pad("Net Total:", $summaryPad, " ", STR_PAD_RIGHT) . str_pad(number_format($sale->total_amount, 2), 24, " ", STR_PAD_LEFT) . "\r\n";
+        $text .= str_pad("Paid:", $summaryPad, " ", STR_PAD_RIGHT) . str_pad(number_format($sale->amount_received, 2), 24, " ", STR_PAD_LEFT) . "\r\n";
+        $text .= str_pad("Change:", $summaryPad, " ", STR_PAD_RIGHT) . str_pad(number_format($sale->amount_received - $sale->total_amount, 2), 24, " ", STR_PAD_LEFT) . "\r\n\n";
         $text .= $settingArray['sale_receipt_note'] . "\r\n\n";
 
         return $text;

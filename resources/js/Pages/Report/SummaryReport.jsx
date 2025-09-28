@@ -127,17 +127,31 @@ export default function SalesReport({ stores, report }) {
 
             <Grid container width={'100%'} justifyContent={'center'} sx={{ mt: 2 }} spacing={2} alignItems={'stretch'}>
                 <Grid size={{ xs: 12, sm: 4, md: 3 }}>
-                    <TableContainer component={Paper}>
+                    <TableContainer component={Paper} sx={{ height: '100%' }}>
                         <Table sx={{ minWidth: 200 }}>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell sx={{ border: 'none', padding: '0.4rem', paddingLeft: '1rem' }}><Typography variant="h5" color="initial"><strong>Sales</strong></Typography>
+                                    <TableCell className="border-none p-4 pl-16" colSpan={2}>
+                                        <h2 className="font-bold text-current-color text-xl"><strong>Sales</strong></h2>
                                     </TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 <TableRow>
-                                    <TableCell component="th" scope="row">Total Sale</TableCell>
+                                    <TableCell component="th" scope="row">
+                                        Total Sale
+                                        <p className="text-xs text-gray-500">with discount</p>
+                                        </TableCell>
+                                    <TableCell align="right">
+                                        {numeral(Number(report.total_sales)+Number(report.total_discount)).format('0,0.00')}
+                                        <p className="text-xs text-red-500">-{numeral(Number(report.total_discount)).format('0,0.00')}</p>
+                                        </TableCell>
+                                </TableRow>
+                                <TableRow>
+                                    <TableCell component="th" scope="row">
+                                        Total Sale
+                                        <p className="text-xs text-gray-500">without discount</p>
+                                        </TableCell>
                                     <TableCell align="right">{numeral(report.total_sales).format('0,0.00')}</TableCell>
                                 </TableRow>
                                 <TableRow>
@@ -153,12 +167,12 @@ export default function SalesReport({ stores, report }) {
                     </TableContainer>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4, md: 3 }}>
-                    <TableContainer component={Paper}>
+                    <TableContainer component={Paper} className="h-full">
                         <Table sx={{ minWidth: 200 }}>
                             <TableHead>
                                 <TableRow>
                                     <TableCell sx={{ border: 'none', padding: '0.3rem', paddingLeft: '1rem' }}>
-                                        <Typography variant="h5" color="initial"><strong>Cash Flow</strong></Typography>
+                                        <h2 className="font-bold text-current-color text-xl"><strong>Cash Flow</strong></h2>
                                     </TableCell>
                                 </TableRow>
                             </TableHead>
@@ -180,12 +194,12 @@ export default function SalesReport({ stores, report }) {
                     </TableContainer>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 4, md: 3 }}>
-                    <TableContainer component={Paper}>
+                    <TableContainer component={Paper} className="h-full">
                         <Table sx={{ minWidth: 200 }}>
                             <TableHead>
                                 <TableRow>
                                     <TableCell sx={{ border: 'none', padding: '0.3rem', paddingLeft: '1rem' }}>
-                                        <Typography variant="h5" color="initial"><strong>Profit</strong></Typography>
+                                        <h2 className="font-bold text-current-color text-xl"><strong>Profit</strong></h2>
                                     </TableCell>
                                 </TableRow>
                             </TableHead>

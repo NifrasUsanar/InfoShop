@@ -31,6 +31,7 @@ class POSController extends Controller
     {
         $imageUrl = '/storage/';
         if (app()->environment('production')) $imageUrl = 'public/storage/';
+        $allProducts = $filters['all_products'] ?? false;
 
         $query = Product::query();
         $query->select(
