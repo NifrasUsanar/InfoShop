@@ -32,7 +32,7 @@
         "@fortawesome/free-regular-svg-icons": "^7.0.1",
         "@fortawesome/free-solid-svg-icons": "^7.0.1",
         "@fortawesome/react-fontawesome": "^3.0.2",
-        "@inertiajs/progress": "^0.2.7",
+        "@inertiajs/progress": "^0.1.2",
         "@mui/icons-material": "^7.3.2",
         "@mui/material": "^7.3.2",
         "@mui/x-charts": "^8.11.1",

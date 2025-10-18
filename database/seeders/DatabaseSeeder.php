@@ -1,6 +1,8 @@
 <?php
 
 namespace Database\Seeders;
+
+use App\Models\Product;
 use Illuminate\Support\Facades\Hash;
 
 use App\Models\User;
@@ -19,10 +21,10 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
         Store::create([
-            'name' => 'INFO SHOP',
-            'address'=>'Main Street, Oddamavadi',
-            'contact_number'=>'00000001',
-            'sale_prefix'=>'IS',
+            'name' => 'Afnan shop ',
+            'address'=>'Asad Petrol pump Mandew',
+            'contact_number'=>'03329667974',
+            'sale_prefix'=>'AF-',
             'current_sale_number'=>0,
         ]);
 
@@ -87,28 +89,29 @@ class DatabaseSeeder extends Seeder
         $userRole->givePermissionTo($userPermissions);
         
         $superAdmin=User::create([
-            'name' => 'Admin',
-            'user_name'=>'master',
+            'name' => 'Afnan Khan super admin',
+            'user_name'=>'afnan_super_admin',
             'user_role'=>'super-admin',
-            'email' => 'master@infomax.lk',
+            'email' => 'super_admin@gmail.com',
             'store_id' => 1,
-            'password' => Hash::make('8236'),
+            'password' => Hash::make('12345678'),
         ]);
         $superAdmin->assignRole($superAdminRole);
 
         $admin=User::create([
-            'name' => 'Admin',
-            'user_name'=>'admin',
+            'name' => 'Afnan Khan admin',
+            'user_name'=>'afnan_admin',
             'user_role'=>'admin',
-            'email' => 'admin@infomax.lk',
+            'email' => 'admin@gmail.com',
             'store_id' => 1,
-            'password' => Hash::make('8236'),
+            'password' => Hash::make('12345678'),
         ]);
         $admin->assignRole($adminRole);
 
         $this->call([
             ContactSeeder::class,
             SettingSeeder::class,
+            ProductSeeder::class,
         ]);
     }
 }

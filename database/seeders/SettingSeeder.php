@@ -14,8 +14,10 @@ class SettingSeeder extends Seeder
     public function run(): void
     {
         $settings = [
-            ['meta_key' => 'shop_name', 'meta_value' => 'Info Shop'],
-            ['meta_key' => 'shop_logo', 'meta_value' => 'oneshop-logo.png'],
+            ['meta_key' => 'shop_name', 'meta_value' => 'Afnan shop'],
+            ['meta_key' => 'shop_address', 'meta_value' => 'Asad Petrol pump Mandew'],
+            ['meta_key' => 'shop_contact', 'meta_value' => '03329667974'],
+            ['meta_key' => 'shop_logo', 'meta_value' => 'afnan-logo.png'],
             ['meta_key' => 'sale_receipt_note', 'meta_value' => 'Thank you'],
             ['meta_key' => 'sale_print_padding_right', 'meta_value' => '35'],
             ['meta_key' => 'sale_print_padding_left', 'meta_value' => '2'],

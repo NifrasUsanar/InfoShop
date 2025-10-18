@@ -116,7 +116,7 @@ class QuotationController extends Controller
 
         return Inertia::render('Quotation/QuotationView', [
             'quotation' => $quotation,
-            'template' => $template->meta_value,
+            'template' => $template?->meta_value,
         ]);
     }
 }

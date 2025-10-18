@@ -1,0 +1,21 @@
+barcode,name,alert_quantity,unit,batch_number,cost,price,supplier,quantity
+1234567890123,Blue Ball Pen,10,PC,B001,15.0,25.0,ABC Stationery,100
+9876543210987,White Board Marker,20,PC,B002,30.5,50.0,ABC Stationery,80
+1122334455667,Notebook A4,15,PC,B003,60.0,100.0,Paper World,150
+2233445566778,Pencil HB,25,PC,B004,5.0,10.0,ABC Stationery,200
+3344556677889,Eraser Small,30,PC,B005,3.5,8.0,Paper World,300
+4455667788990,Electric Bulb 60W,20,PC,E001,120.0,200.0,Power Line Traders,90
+5566778899001,Extension Board 4-Port,10,PC,E002,750.0,1100.0,Power Line Traders,40
+6677889900112,Switch 2-Way,15,PC,E003,150.0,250.0,City Electric Store,120
+7788990011223,Wire Roll 1mm,10,PC,E004,950.0,1500.0,City Electric Store,60
+8899001122334,LED Tube Light 18W,12,PC,E005,850.0,1300.0,Power Line Traders,50
+9900112233445,Electric Fan Regulator,8,PC,E006,180.0,300.0,City Electric Store,70
+1011121314156,Stapler Machine,12,PC,B006,180.0,300.0,Office Needs,50
+1112131415167,Highlighter Pen Set,20,PC,B007,220.0,400.0,Office Needs,90
+1213141516178,Paper Ream A4 80gsm,30,PC,B008,850.0,1200.0,Paper World,120
+1314151617189,Desk Calculator 12-Digit,10,PC,B009,950.0,1500.0,ABC Stationery,40
+1415161718190,"Ceiling Fan 56""",10,PC,E007,4500.0,6000.0,Power Line Traders,30
+1516171819201,Tube Light Holder,25,PC,E008,60.0,100.0,City Electric Store,150
+1617181920212,Electric Iron,8,PC,E009,2500.0,3800.0,Power Line Traders,25
+1718192021223,Marker Ink Bottle,15,PC,B010,180.0,300.0,ABC Stationery,60
+1819202122234,Scotch Tape Large,20,PC,B011,60.0,100.0,Office Needs,140
