@@ -59,40 +59,49 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
         window.open(whatsappUrl, '_blank'); // Open in a new tab
     };
 
-    const handleImageDownload = async (addPadding, format) => {
-        if (contentRef.current) {
-            const elementToCapture = contentRef.current.cloneNode(true);
+    const handleImageDownload = async (addPadding = false, format = 'png') => {
+        if (!contentRef.current) return;
 
-            elementToCapture.style.width = '500px';
-            elementToCapture.style.position = 'absolute';
-            elementToCapture.style.left = '-9999px';
-            elementToCapture.style.top = '-9999px'; // Ensure it's not visible
+        // Clone the element to avoid affecting the original
+        const elementToCapture = contentRef.current.cloneNode(true);
 
-            if (addPadding) {
-                elementToCapture.style.padding = '20px';
-            }
-            elementToCapture.style.fontSize = '14px';
-            document.body.appendChild(elementToCapture);
-            try {
-                const downloadPromise = snapdom.download(elementToCapture, {
-                    filename: `receipt-${sale.id}.${format}`,
-                    format: `${format}`,
-                    scale: 2,
-                    quality: 1,
-                    dpr: 2,
-                });
+        // Off-screen styling
+        Object.assign(elementToCapture.style, {
+            width: '500px',
+            position: 'absolute',
+            left: '-9999px',
+            top: '-9999px',
+            overflow: 'hidden',
+            fontSize: '14px',
+            padding: addPadding ? '20px' : '0',
+        });
 
-                await downloadPromise;
-                console.log("Image downloaded successfully!", downloadPromise);
+        elementToCapture.querySelectorAll('table').forEach(table => {
+            table.style.width = '450px';
+            table.style.minWidth = '0';
+            table.style.tableLayout = 'auto';
+            table.style.overflow = 'hidden';
+        });
 
-            } catch (error) {
-                console.error('Failed to capture and download:', error);
-            }
-            finally {
-                document.body.removeChild(elementToCapture);
-            }
+        document.body.appendChild(elementToCapture);
+
+        try {
+            await snapdom.download(elementToCapture, {
+                filename: `receipt-${sale.id}.${format}`,
+                format,
+                scale: 2,
+                quality: 1,
+                dpr: 2,
+            });
+
+            console.log('Image downloaded successfully!');
+        } catch (error) {
+            console.error('Failed to capture and download:', error);
+        } finally {
+            document.body.removeChild(elementToCapture);
         }
     };
+
 
     const handleReceiptDownload = async (addPadding, format) => {
         const element = contentRef.current;
@@ -335,9 +344,9 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                 className="receipt-divider-after-details"
                             />
 
-                            <TableContainer>
+                            <TableContainer sx={{ height: "100%", overflow: "hidden" }}>
                                 <Table
-                                    sx={{ width: "100%", padding: "0" }}
+                                    sx={{ padding: "0", height: "100%" }}
                                     id="receipt-items-table"
                                 >
                                     <TableHead>
@@ -936,12 +945,12 @@ function ReceiptPrinter({ salesItems }) {
 }
 
 function wrapColumn(text, width) {
-  const regex = new RegExp(`(.{1,${width}})(\\s|$)`, "g");
-  return text.match(regex)?.map(line => line.trim()) || [text];
+    const regex = new RegExp(`(.{1,${width}})(\\s|$)`, "g");
+    return text.match(regex)?.map(line => line.trim()) || [text];
 }
 
 function generateSalesTable(salesItems, productWidth = 20, totalWidth = 15) {
-  const html = `
+    const html = `
     <table border="0" cellpadding="2" cellspacing="0">
       <thead>
         <tr>
@@ -952,19 +961,19 @@ function generateSalesTable(salesItems, productWidth = 20, totalWidth = 15) {
       </thead>
       <tbody>
         ${salesItems.map(item => {
-          const total = parseFloat(item.unit_price) * item.quantity - parseFloat(item.discount) - parseFloat(item.flat_discount);
-          const totalDiscount = (parseFloat(item.discount) + parseFloat(item.flat_discount)).toFixed(2);
+        const total = parseFloat(item.unit_price) * item.quantity - parseFloat(item.discount) - parseFloat(item.flat_discount);
+        const totalDiscount = (parseFloat(item.discount) + parseFloat(item.flat_discount)).toFixed(2);
 
-          // wrap product name
-          const wrappedName = wrapColumn(item.name, productWidth);
-          // wrap total column (discount + total)
-          const totalText = `${totalDiscount} / ${total.toFixed(2)}`;
-          const wrappedTotal = wrapColumn(totalText, totalWidth);
+        // wrap product name
+        const wrappedName = wrapColumn(item.name, productWidth);
+        // wrap total column (discount + total)
+        const totalText = `${totalDiscount} / ${total.toFixed(2)}`;
+        const wrappedTotal = wrapColumn(totalText, totalWidth);
 
-          // combine lines for row
-          const maxLines = Math.max(wrappedName.length, wrappedTotal.length);
-          const lines = [];
-          for (let i = 0; i < maxLines; i++) {
+        // combine lines for row
+        const maxLines = Math.max(wrappedName.length, wrappedTotal.length);
+        const lines = [];
+        for (let i = 0; i < maxLines; i++) {
             lines.push(`
               <tr>
                 <td>${wrappedName[i] || ""}</td>
@@ -972,18 +981,18 @@ function generateSalesTable(salesItems, productWidth = 20, totalWidth = 15) {
                 <td align="right">${wrappedTotal[i] || ""}</td>
               </tr>
             `);
-          }
-          return lines.join("");
-        }).join("")}
+        }
+        return lines.join("");
+    }).join("")}
       </tbody>
     </table>
   `;
 
-  return convert(html, {
-    wordwrap: false,
-    tables: true,
-    preserveNewlines: true,
-  });
+    return convert(html, {
+        wordwrap: false,
+        tables: true,
+        preserveNewlines: true,
+    });
 }
 
 

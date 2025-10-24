@@ -64,6 +64,15 @@ input[type=number] {
   z-index: 999 !important;
 }
 
+/* Optional: hide scrollbars completely */
+#receipt-items-table::-webkit-scrollbar {
+    display: none;         /* Chrome, Safari */
+}
+#receipt-items-table {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+}
+
 @layer utilities {
   .border, 
   .border-t, 

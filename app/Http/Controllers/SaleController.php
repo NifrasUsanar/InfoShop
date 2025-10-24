@@ -313,6 +313,7 @@ class SaleController extends Controller
             'sale_items.quantity',
             'sale_items.unit_price',
             'sale_items.discount',
+            'sale_items.free_quantity',
             DB::raw("CONCAT(' [', DATE_FORMAT(sale_items.sale_date, '%Y-%m-%d'), '] - ', products.name) as name"),
             'sale_items.sale_id', // Include sale_id for mapping
             DB::raw("CASE 

@@ -31,6 +31,7 @@ use App\Http\Controllers\ChequeController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SaleTemplateController;
+use App\Http\Controllers\BackupController;
 
 Route::get('/', function () {
     return redirect('login');
@@ -68,6 +69,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/collections', [CollectionController::class, 'index'])->name('collection');
     Route::post('/collection', [CollectionController::class, 'store']);
     Route::post('/collection/{id}', [CollectionController::class, 'update']);
+    Route::delete('/collections/{id}', [CollectionController::class, 'destroy']);
 
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
@@ -148,6 +150,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/user/role', [UserController::class, 'storeRole'])->name('user.storeRole');
     Route::post('/user/{roleId}/role', [UserController::class, 'updateRole'])->name('user.updateRole');
     Route::post('/user/{id}', [UserController::class, 'update'])->name('user.update');
+    Route::post('/users/{id}/deactivate', [UserController::class, 'userDeactivate'])->name('user.deactivate');
 
     // Route::get('reports/daily',[ReportController::class, 'getDailyReport'])->name('reports.daily');
     Route::get('reports/dailycash', [ReportController::class, 'getDailyCashReport'])->name('reports.dailycash');
@@ -209,6 +212,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/check-update', function () {
         return 'Update';
     });
+
+    Route::get('/download-backup/{file}', [BackupController::class, 'download']);
+    Route::get('/backup-now', [BackupController::class, 'downloadBackupZip']);
     
     Route::post('/test-mail', function (Request $request) {
         Mail::raw('Test email', function ($message) use ($request) {

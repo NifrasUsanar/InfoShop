@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\User;
 use App\Models\Store;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Redirect;
 use Spatie\Permission\Models\Role;
@@ -17,7 +18,7 @@ class UserController extends Controller
     public function index(){
         $stores = Store::select('id', 'name')->get();
         $roles = Role::where('name', '!=', 'super-admin')->get();
-        $users=User::select('users.id','users.name','user_name', 'user_role', 'email', 'stores.name as store_name', 'users.created_at', 'store_id')->leftJoin('stores','stores.id','=','users.store_id')->where('user_role','!=','super-admin')->get();
+        $users=User::select('users.id','users.name','user_name', 'user_role', 'email', 'stores.name as store_name', 'users.created_at', 'store_id')->leftJoin('stores','stores.id','=','users.store_id')->where('user_role','!=','super-admin')->where('is_active', 1)->get();
         return Inertia::render('User/User',[
             'users'=>$users,
             'stores'=>$stores,
@@ -149,5 +150,19 @@ class UserController extends Controller
         $user->save();
 
         return Redirect::route('users.index');
+    }
+
+    public function userDeactivate($id){
+        $user = User::findOrFail($id);
+
+        if (Auth::user()->id === $user->id) {
+        return response()->json([
+            'message' => 'You cannot deactivate your own account.'
+        ], 403);
+    }
+
+        $user->is_active = 0;
+        $user->save();
+        return response()->json(['message' => 'User deactivated successfully.']);
     }
 }

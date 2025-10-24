@@ -4,7 +4,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { IconButton, TextField, Grid, Box, Alert } from "@mui/material";
+import { IconButton, TextField, Grid, Box, Alert, Chip } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -28,7 +28,7 @@ export default function CartItemModal() {
         selectedCartItem,
         setSelectedCartItem,
     } = useContext(SharedContext);
-    
+
     const [formState, setFormState] = useState([]);
 
     const handleClose = () => {
@@ -152,12 +152,11 @@ export default function CartItemModal() {
                 aria-describedby="dialog-description"
             >
                 <DialogTitle id="alert-dialog-title">
-                    {formState.name}
-
-                    {formState.stock_quantity && formState.product_type !== "reload" &&
-                        formState.stock_quantity !== "" ? (
-                        <>
-                            <Button
+                    <div>
+                        <span className="mr-1.5">{formState.name}</span>
+                        {formState.stock_quantity && formState.product_type !== "reload" &&
+                            formState.stock_quantity !== "" ? (
+                            <Chip
                                 inert
                                 disableElevation={true}
                                 color={
@@ -167,15 +166,11 @@ export default function CartItemModal() {
                                             ? "warning"
                                             : "primary"
                                 }
-                                variant="contained"
-                                sx={{ ml: 1.5 }}
-                                type="button"
-                                size="large"
-                            >
-                                QTY. {formState.stock_quantity}
-                            </Button>
-                        </>
-                    ) : ''}
+                                size="small"
+                                label={`QTY. ${formState.stock_quantity}`}
+                            />
+                        ) : ''}
+                    </div>
                 </DialogTitle>
                 <IconButton
                     aria-label="close"
