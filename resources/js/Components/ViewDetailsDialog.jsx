@@ -18,7 +18,7 @@ import dayjs from "dayjs";
 import InventoryIcon from '@mui/icons-material/Inventory';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
-import numeral from "numeral";
+import { useCurrencyFormatter } from '@/lib/currencyFormatter';
 
 export default function ViewDetailsDialog({
     open,
@@ -26,6 +26,7 @@ export default function ViewDetailsDialog({
     selectedTransaction = null,
     type = 'sale',
 }) {
+    const formatCurrency = useCurrencyFormatter();
     const [tabValue, setTabValue] = React.useState(0);
     const [details, setDetails] = useState([]);
 
@@ -127,11 +128,11 @@ export default function ViewDetailsDialog({
                             </TableRow>
                             <TableRow>
                                 <TableCell align="left">Total</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>{numeral(details.total_amount).format('0,0.00')}</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>{formatCurrency(details.total_amount, false)}</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell align="left">Discount</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>{numeral(details.discount).format('0,0.00')}</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 'bold' }}>{formatCurrency(details.discount, false)}</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell align="left">Created At</TableCell>
@@ -162,9 +163,9 @@ export default function ViewDetailsDialog({
                                         <TableRow key={index}>
                                             <TableCell className="whitespace-nowrap" sx={{ whiteSpace: 'nowrap' }}>{item.name} {item.batch_number !== null && ` | ${item.batch_number}`}</TableCell>
                                             <TableCell>{item.quantity}</TableCell>
-                                            <TableCell>{parseFloat(item.unit_price).toFixed(2)}</TableCell>
-                                            <TableCell>{parseFloat(item.unit_cost).toFixed(2)}</TableCell>
-                                            <TableCell>{parseFloat(item.discount).toFixed(2)}</TableCell>
+                                            <TableCell>{formatCurrency(parseFloat(item.unit_price), false)}</TableCell>
+                                            <TableCell>{formatCurrency(parseFloat(item.unit_cost), false)}</TableCell>
+                                            <TableCell>{formatCurrency(parseFloat(item.discount), false)}</TableCell>
                                         </TableRow>
                                     ))}
                             </TableBody>

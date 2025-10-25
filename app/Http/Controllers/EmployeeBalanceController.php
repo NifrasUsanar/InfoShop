@@ -26,7 +26,7 @@ class EmployeeBalanceController extends Controller
         // Fetch EmployeeBalanceLog records
         $balanceLogs = EmployeeBalanceLog::select(
             'employee_balance_logs.amount',
-            DB::raw("CONCAT('Balance Update: ', employee_balance_logs.description) as description"),
+            DB::raw("'Balance Update: ' || employee_balance_logs.description as description"),
             'employee_balance_logs.log_date'
         )
             ->orderBy('employee_balance_logs.log_date', 'desc');

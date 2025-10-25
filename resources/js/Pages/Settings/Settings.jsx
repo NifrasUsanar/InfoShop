@@ -29,6 +29,7 @@ import Template from "./Partials/Template";
 import MailSetting from "./Partials/MailSetting";
 import TelegramSetting from "./Partials/TelegramSetting";
 import LoyaltyPointsSetting from "./Partials/LoyaltyPointsSetting";
+import CurrencySetting from "./Partials/CurrencySetting";
 
 const VisuallyHiddenInput = styled("input")({
     clip: "rect(0 0 0 0)",
@@ -94,22 +95,45 @@ function TabPanel(props) {
 }
 
 export default function Setting({ settings }) {
-    const [settingFormData, setSettingFormData] = useState({
-        shop_logo: settings.shop_logo,
-        app_icon: settings.app_icon,
-        sale_receipt_note: settings.sale_receipt_note,
-        shop_name: settings.shop_name,
-        sale_print_padding_right: settings.sale_print_padding_right,
-        sale_print_padding_left: settings.sale_print_padding_left,
-        sale_print_font: settings.sale_print_font,
-        show_receipt_shop_name: settings.show_receipt_shop_name ?? 1,
-        show_barcode_store: settings.show_barcode_store,
-        show_barcode_product_price: settings.show_barcode_product_price,
-        show_barcode_product_name: settings.show_barcode_product_name,
-        sale_receipt_second_note: settings.sale_receipt_second_note,
-        enable_unit_discount: 'yes',
-        enable_flat_item_discount: 'no',
-        cart_first_focus: 'quantity',
+    const [settingFormData, setSettingFormData] = useState(() => {
+        let currencySettings = {
+            currency_symbol: 'Rs.',
+            currency_code: 'LKR',
+            symbol_position: 'before',
+            decimal_separator: '.',
+            thousands_separator: ',',
+            decimal_places: '2',
+            negative_format: 'minus',
+            show_currency_code: 'no',
+        };
+
+        if (settings.currency_settings) {
+            try {
+                const parsed = JSON.parse(settings.currency_settings);
+                currencySettings = { ...currencySettings, ...parsed };
+            } catch (error) {
+                console.error("Failed to parse currency settings:", error);
+            }
+        }
+
+        return {
+            shop_logo: settings.shop_logo,
+            app_icon: settings.app_icon,
+            sale_receipt_note: settings.sale_receipt_note,
+            shop_name: settings.shop_name,
+            sale_print_padding_right: settings.sale_print_padding_right,
+            sale_print_padding_left: settings.sale_print_padding_left,
+            sale_print_font: settings.sale_print_font,
+            show_receipt_shop_name: settings.show_receipt_shop_name ?? 1,
+            show_barcode_store: settings.show_barcode_store,
+            show_barcode_product_price: settings.show_barcode_product_price,
+            show_barcode_product_name: settings.show_barcode_product_name,
+            sale_receipt_second_note: settings.sale_receipt_second_note,
+            enable_unit_discount: 'yes',
+            enable_flat_item_discount: 'no',
+            cart_first_focus: 'quantity',
+            ...currencySettings,
+        };
     });
 
     const [barcodeSettings, setBarcodeSettings] = useState(() => {
@@ -231,7 +255,7 @@ export default function Setting({ settings }) {
                         <Tab label="SHOP" value="shop" />
                         <Tab label="RECEIPT" value="receipt" />
                         <Tab label="BARCODE" value="barcode" />
-                        <Tab label="TAX & CURRENCY" value="tax_currency" />
+                        <Tab label="CURRENCY" value="currency" />
                         <Tab label="MISC" value="misc" />
                         <Tab label="MODULES" value="modules" />
                         <Tab label="MAIL" value="mail" />
@@ -603,6 +627,10 @@ export default function Setting({ settings }) {
                             </Grid>
                         </Box>
                     </form>
+                </TabPanel>
+
+                <TabPanel value={tabValue} index={'currency'}>
+                    <CurrencySetting handleSubmit={handleSubmit} settingFormData={settingFormData} handleChange={handleChange} />
                 </TabPanel>
 
                 <TabPanel value={tabValue} index={'misc'}>

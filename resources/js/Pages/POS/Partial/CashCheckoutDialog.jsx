@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -13,40 +13,56 @@ import { router } from '@inertiajs/react';
 import axios from "axios";
 import Swal from "sweetalert2";
 import { usePage } from "@inertiajs/react";
+import { useState, useEffect, useContext } from 'react';
 
 import { useSales as useCart } from '@/Context/SalesContext';
 import { SharedContext } from "@/Context/SharedContext";
-import numeral from "numeral";
+import { useCurrencyFormatter } from "@/lib/currencyFormatter";
+import { useCurrencyStore } from "@/stores/currencyStore";
 
 export default function CashCheckoutDialog({ disabled }) {
+    const formatCurrency = useCurrencyFormatter();
+    const currencySymbol = useCurrencyStore((state) => state.settings.currency_symbol);
     const return_sale = usePage().props.return_sale;
     const return_sale_id = usePage().props.sale_id;
     const edit_sale = usePage().props.edit_sale;
     const edit_sale_id = usePage().props.sale_id;
 
-    const { cartState, cartTotal, totalProfit, emptyCart } = useCart();
+    const { cartState, cartTotal, totalProfit, emptyCart, charges, totalChargeAmount, finalTotal, discount, setDiscount: setContextDiscount, calculateChargesWithDiscount } = useCart();
     const { selectedCustomer, saleDate } = useContext(SharedContext);
     const [loading, setLoading] = useState(false);
 
-    const [discount, setDiscount] = useState(0);
     const [amountReceived, setAmountReceived] = useState(0);
+    const [recalculatedCharges, setRecalculatedCharges] = useState(totalChargeAmount);
     const isMobile = window.innerWidth < 768;
+
+    // Calculate reactive final total with discount
+    const reactiveFinalTotal = (cartTotal - discount) + recalculatedCharges;
+
+    // Initialize recalculated charges when dialog opens or when charges/cartTotal/discount change
+    useEffect(() => {
+        setRecalculatedCharges(calculateChargesWithDiscount(discount));
+    }, [charges, cartTotal, discount]);
 
     const handleDiscountChange = (event) => {
         const inputDiscount = event.target.value;
         const newDiscount = inputDiscount !== "" ? parseFloat(inputDiscount) : 0;
-        setDiscount(newDiscount);
+        setContextDiscount(newDiscount);
+
+        const recalculatedChargeAmount = calculateChargesWithDiscount(newDiscount);
+        setRecalculatedCharges(recalculatedChargeAmount);
     };
 
     const [open, setOpen] = React.useState(false);
 
     const handleClickOpen = () => {
+        setContextDiscount(0);
         setOpen(true);
     };
 
     const handleClose = () => {
         setAmountReceived(0)
-        setDiscount(0)
+        setContextDiscount(0)
         setOpen(false);
     };
 
@@ -58,6 +74,7 @@ export default function CashCheckoutDialog({ disabled }) {
         const formData = new FormData(event.currentTarget);
         const formJson = Object.fromEntries(formData.entries());
         formJson.cartItems = cartState;
+        formJson.charges = charges;
         formJson.profit_amount = totalProfit - discount; //total profit is from the sale items, but we apply discount for the bill also
         formJson.sale_date = saleDate;
         formJson.payment_method = 'Cash'
@@ -79,7 +96,7 @@ export default function CashCheckoutDialog({ disabled }) {
                 });
                 emptyCart() //Clear the cart from the Context API
                 setAmountReceived(0)
-                setDiscount(0)
+                setContextDiscount(0)
                 router.visit('/receipt/' + resp.data.sale_id)
                 axios.get('/sale-notification/' + resp.data.sale_id)
                     .then((resp) => {
@@ -112,7 +129,10 @@ export default function CashCheckoutDialog({ disabled }) {
             return;
         }
         const discountAmount = (cartTotal * discount) / 100;
-        setDiscount(discountAmount);
+        setContextDiscount(discountAmount);
+
+        const recalculatedChargeAmount = calculateChargesWithDiscount(discountAmount);
+        setRecalculatedCharges(recalculatedChargeAmount);
     }
 
     return (
@@ -127,7 +147,7 @@ export default function CashCheckoutDialog({ disabled }) {
                 disabled={disabled}
                 fullWidth
             >
-                {cartTotal < 0 ? `REFUND Rs.${Math.abs(cartTotal)}` : `CASH Rs.${numeral(cartTotal).format('0,0.00')}`}
+                {reactiveFinalTotal < 0 ? `REFUND ${formatCurrency(Math.abs(reactiveFinalTotal))}` : `CASH ${formatCurrency(reactiveFinalTotal)}`}
             </Button>
             <Dialog
                 fullWidth={true}
@@ -184,7 +204,7 @@ export default function CashCheckoutDialog({ disabled }) {
                             input: {
                                 style: { textAlign: 'center' },
                                 placeholder: cartTotal < 0 ? 'Refund Amount' : 'Amount Received',
-                                startAdornment: <InputAdornment position="start">Rs.</InputAdornment>,
+                                startAdornment: <InputAdornment position="start">{currencySymbol}</InputAdornment>,
                             },
                         }}
                     />
@@ -208,7 +228,7 @@ export default function CashCheckoutDialog({ disabled }) {
                                 shrink: true,
                             },
                             input: {
-                                startAdornment: <InputAdornment position="start">Rs.</InputAdornment>,
+                                startAdornment: <InputAdornment position="start">{currencySymbol}</InputAdornment>,
                                 endAdornment: (
                                     <InputAdornment position="start">
                                         <IconButton color="primary" onClick={discountPercentage}>
@@ -222,39 +242,39 @@ export default function CashCheckoutDialog({ disabled }) {
 
                     <Grid container spacing={{ xs: 2, md: 1 }} mt={3}>
                         <Grid size={{ xs: 12, sm: 6 }}>
-                            {/* Net total (after discount) */}
+                            {/* Net total (after discount + recalculated charges) */}
                             <TextField
                                 fullWidth
                                 label="Payable Amount"
                                 variant="outlined"
                                 name="net_total"
-                                value={(cartTotal - discount).toFixed(2)}
+                                value={formatCurrency((cartTotal - discount) + recalculatedCharges, false)}
                                 sx={{input: { textAlign: "center", fontSize: '2rem' }, }}
                                 slotProps={{
                                     input: {
                                         readOnly: true,
                                         style: { textAlign: 'center' },
-                                        startAdornment: <InputAdornment position="start">Rs.</InputAdornment>,
+                                        startAdornment: <InputAdornment position="start">{currencySymbol}</InputAdornment>,
                                     },
                                 }}
                             />
                         </Grid>
                         <Grid size={{ xs: 12, sm:6}}>
                             <TextField
-                            id="txtChange"
-                            fullWidth
-                            label="Change"
-                            variant="outlined"
-                            name="change_amount"
-                            sx={{input: { textAlign: "center", fontSize: '2rem' } }}
-                            value={(amountReceived - (cartTotal - discount)).toFixed(2)}//Change calculation
-                            slotProps={{
-                                input: {
-                                    readOnly: true,
-                                    startAdornment: <InputAdornment position="start">Rs.</InputAdornment>,
-                                },
-                            }}
-                        />
+                                id="txtChange"
+                                fullWidth
+                                label="Change"
+                                variant="outlined"
+                                name="change_amount"
+                                sx={{input: { textAlign: "center", fontSize: '2rem' } }}
+                                value={formatCurrency(amountReceived - ((cartTotal - discount) + recalculatedCharges), false)}
+                                slotProps={{
+                                    input: {
+                                        readOnly: true,
+                                        startAdornment: <InputAdornment position="start">{currencySymbol}</InputAdornment>,
+                                    },
+                                }}
+                            />
                         </Grid>
                     </Grid>
 
@@ -277,12 +297,12 @@ export default function CashCheckoutDialog({ disabled }) {
                         // onClick={handleClose}
                         disabled={
                             !amountReceived ||
-                            (cartTotal < 0 && amountReceived === 0) || // Disable if refund and amount received is 0
-                            (cartTotal < 0 && amountReceived != (cartTotal - discount)) || // Disable if refund and amount received doesn't match cart total minus discount
-                            (cartTotal >= 0 && (amountReceived - (cartTotal - discount)) < 0) || // Disable if cartTotal is positive and amount is insufficient
-                            loading // Disable during loading
+                            (cartTotal < 0 && amountReceived === 0) ||
+                            (cartTotal < 0 && amountReceived != ((cartTotal - discount) + recalculatedCharges)) ||
+                            (cartTotal >= 0 && (amountReceived - ((cartTotal - discount) + recalculatedCharges)) < 0) ||
+                            loading
 
-                        } //amountReceived-(cartTotal-discount) 
+                        }
                     >
                         {loading ? 'Loading...' : cartTotal < 0 ? 'REFUND' : 'PAY'}
                     </Button>

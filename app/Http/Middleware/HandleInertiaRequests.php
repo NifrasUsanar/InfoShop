@@ -40,6 +40,18 @@ class HandleInertiaRequests extends Middleware
         }
 
         $shopNameMeta = Setting::where('meta_key', 'shop_name')->first();
+        $currencySettingsMeta = Setting::where('meta_key', 'currency_settings')->first();
+
+        // Parse currency settings JSON or use defaults
+        $currencySettings = [];
+        if ($currencySettingsMeta) {
+            try {
+                $currencySettings = json_decode($currencySettingsMeta->meta_value, true) ?? [];
+            } catch (\Exception $e) {
+                $currencySettings = [];
+            }
+        }
+
         $modules = Setting::getModules();
         return [
             ...parent::share($request),
@@ -48,6 +60,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'settings'=>[
                 'shop_name'=>$shopNameMeta->meta_value,
+                'currency_settings'=>$currencySettings,
             ],
             'modules'=>$modules,
             'userPermissions'=>$permissions->pluck('name'),

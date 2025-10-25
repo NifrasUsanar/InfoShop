@@ -29,12 +29,14 @@ import { snapdom } from '@zumer/snapdom';
 import { Download, ReceiptText } from "lucide-react";
 import stringWidth from "string-width";
 import { convert } from "html-to-text";
+import { useCurrencyFormatter } from "../../lib/currencyFormatter";
 
 export default function Receipt({ sale, salesItems, settings, user_name, credit_sale = false }) {
     const user = usePage().props.auth.user;
     const contentRef = useRef(null);
     const reactToPrintFn = useReactToPrint({ contentRef });
     const [receiptNo, setReceiptNo] = useState(' ' + sale.sale_prefix + "/" + sale.invoice_number);
+    const formatCurrency = useCurrencyFormatter();
 
     const handleWhatsAppShare = () => {
         const currentUrl = window.location.href; // Get the current URL
@@ -176,7 +178,16 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
         );
     }
 
-    const itemDiscount = salesItems.reduce((acc, item) => acc + item.discount * item.quantity, 0);
+    // Filter out charge items and calculate totals
+    const productItems = salesItems.filter(item => !item.charge_id);
+    const chargeItems = salesItems.filter(item => item.charge_id);
+    const itemDiscount = productItems.reduce((acc, item) => acc + item.discount * item.quantity, 0);
+
+    // Calculate line total of all products
+    const productLineTotal = productItems.reduce((acc, item) => {
+        const lineTotal = (Number(item.quantity) * (item.unit_price - item.discount)) - Number(item.flat_discount);
+        return acc + lineTotal;
+    }, 0);
 
     return (
         <>
@@ -406,7 +417,7 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {salesItems.map((item, index) => (
+                                        {productItems.map((item, index) => (
                                             <React.Fragment key={`item-${index}`}>
                                                 {/* First Row: Product Name */}
                                                 <TableRow
@@ -472,9 +483,7 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                             }
                                                             color="black"
                                                         >
-                                                            {numeral(
-                                                                item.unit_price
-                                                            ).format("0,0.00")}
+                                                            {formatCurrency(item.unit_price, false)}
                                                         </Typography>
                                                     </TableCell>
                                                     <TableCell
@@ -487,7 +496,7 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                             }
                                                             color="black"
                                                         >
-                                                            {numeral(Number(item.discount * item.quantity) + Number(item.flat_discount)).format("0,0.00")}
+                                                            {formatCurrency(Number(item.discount * item.quantity) + Number(item.flat_discount), false)}
                                                         </Typography>
                                                     </TableCell>
                                                     <TableCell
@@ -501,7 +510,7 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                             color="black"
                                                         >
                                                             <strong>
-                                                                {Number(item.quantity) * (item.unit_price - item.discount) === 0 ? 'Free' : numeral((Number(item.quantity) * (item.unit_price - item.discount)) - Number(item.flat_discount)).format("0,0.00")}
+                                                                {Number(item.quantity) * (item.unit_price - item.discount) === 0 ? 'Free' : formatCurrency((Number(item.quantity) * (item.unit_price - item.discount)) - Number(item.flat_discount), false)}
                                                             </strong>
                                                         </Typography>
                                                     </TableCell>
@@ -520,36 +529,15 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                             />
                                         </TableRow>
 
-                                        {itemDiscount !== 0 && (
-                                            <TableRow
-                                                sx={{ border: "none", }}
-                                                className="receipt-summary-row"
-                                            >
-                                                <TableCell
-                                                    sx={{ ...styles.receiptSummaryText, paddingBottom: 1 }}
-                                                    colSpan={5}
-                                                    align="center"
-                                                >
-                                                    <Typography
-                                                        sx={{ ...styles.receiptSummaryText, border: 'solid 2px', width: '100%', padding: 1 }}
-                                                        color="black"
-                                                    >
-                                                        Item Discount: {numeral(itemDiscount).format("0,0.00")}
-                                                    </Typography>
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-
-                                        {/* Row for Total, Discount, Subtotal, Amount Received, Change */}
+                                        {/* Total Row (Products Total) */}
                                         <TableRow
                                             sx={{ border: "none" }}
                                             className="receipt-summary-row"
                                         >
                                             <TableCell
-                                                sx={styles.receiptSummaryText}
+                                                sx={{ ...styles.receiptSummaryText, paddingTop: 2 }}
                                                 colSpan={4}
                                                 align="right"
-                                                color="black"
                                             >
                                                 <Typography
                                                     sx={
@@ -561,9 +549,8 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                 </Typography>
                                             </TableCell>
                                             <TableCell
-                                                sx={styles.receiptSummaryText}
+                                                sx={{ ...styles.receiptSummaryText, paddingTop: 2 }}
                                                 align="right"
-                                                color="black"
                                             >
                                                 <Typography
                                                     sx={
@@ -571,12 +558,12 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                     }
                                                     color="black"
                                                 >
-                                                    Rs.
-                                                    {numeral(parseFloat(sale.total_amount) + parseFloat(sale.discount)).format("0,0.00")}
+                                                    {formatCurrency(productLineTotal)}
                                                 </Typography>
                                             </TableCell>
                                         </TableRow>
 
+                                        {/* Discount Row */}
                                         {parseFloat(sale.discount) !== 0 && (
                                             <TableRow
                                                 sx={{ border: "none" }}
@@ -601,20 +588,18 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                     align="right"
                                                 >
                                                     <Typography
-                                                        sx={
-                                                            styles.receiptSummaryTyp
-                                                        }
-                                                        color="black"
-                                                    >
-                                                        Rs.
-                                                        {numeral(
-                                                            sale.discount
-                                                        ).format("0,0.00")}
-                                                    </Typography>
-                                                </TableCell>
-                                            </TableRow>
+                                                    sx={
+                                                        styles.receiptSummaryTyp
+                                                    }
+                                                    color="black"
+                                                >
+                                                    {formatCurrency(sale.discount)}
+                                                </Typography>
+                                            </TableCell>
+                                        </TableRow>
                                         )}
 
+                                        {/* Subtotal Row */}
                                         <TableRow
                                             sx={{ border: "none" }}
                                             className="receipt-summary-row"
@@ -643,13 +628,87 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                     }
                                                     color="black"
                                                 >
-                                                    Rs.
-                                                    {numeral(
-                                                        sale.total_amount
-                                                    ).format("0,0.00")}
+                                                    {formatCurrency(productLineTotal - parseFloat(sale.discount))}
                                                 </Typography>
                                             </TableCell>
                                         </TableRow>
+
+                                        {/* Charges Breakdown */}
+                                        {chargeItems.length > 0 && (
+                                            <>
+                                                {chargeItems.map((charge, index) => (
+                                                    <TableRow
+                                                        key={`charge-${index}`}
+                                                        sx={{ border: "none" }}
+                                                        className="receipt-charge-row"
+                                                    >
+                                                        <TableCell
+                                                            sx={styles.itemsCells}
+                                                            colSpan={3}
+                                                        >
+                                                            <Typography
+                                                                sx={
+                                                                    styles.itemsCellsTyp
+                                                                }
+                                                                color="black"
+                                                            >
+                                                                {charge.description} {charge.rate_type === 'percentage' ? `(${charge.rate_value}%)` : '(Fixed)'}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={styles.itemsCells}
+                                                            align="right"
+                                                            colSpan={2}
+                                                        >
+                                                            <Typography
+                                                            sx={
+                                                                styles.itemsCellsTyp
+                                                            }
+                                                            color="black"
+                                                        >
+                                                            {formatCurrency(charge.unit_price)}
+                                                        </Typography>
+                                                    </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        {/* Payable Amount Row - Only show if there are charges */}
+                                        {chargeItems.length > 0 && (
+                                            <TableRow
+                                                sx={{ border: "none" }}
+                                                className="receipt-summary-row"
+                                            >
+                                                <TableCell
+                                                    sx={{ ...styles.receiptSummaryText, paddingTop: 2, paddingBottom: 2 }}
+                                                    colSpan={4}
+                                                    align="right"
+                                                >
+                                                    <Typography
+                                                        sx={
+                                                            styles.receiptSummaryTyp
+                                                        }
+                                                        color="black"
+                                                    >
+                                                        Payable Amount:
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{ ...styles.receiptSummaryText, paddingTop: 2, paddingBottom: 2 }}
+                                                    align="right"
+                                                >
+                                                    <Typography
+                                                    sx={
+                                                        styles.receiptSummaryTyp
+                                                    }
+                                                    color="black"
+                                                >
+                                                    {formatCurrency(sale.total_amount)}
+                                                </Typography>
+                                            </TableCell>
+                                        </TableRow>
+                                        )}
 
                                         <TableRow
                                             sx={{ border: "none" }}
@@ -679,10 +738,7 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                     }
                                                     color="black"
                                                 >
-                                                    Rs.
-                                                    {numeral(
-                                                        sale.amount_received
-                                                    ).format("0,0.00")}
+                                                    {formatCurrency(sale.amount_received)}
                                                 </Typography>
                                             </TableCell>
                                         </TableRow>
@@ -714,15 +770,7 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                     }
                                                     color="black"
                                                 >
-                                                    Rs.
-                                                    {numeral(
-                                                        parseFloat(
-                                                            sale.amount_received
-                                                        ) -
-                                                        parseFloat(
-                                                            sale.total_amount
-                                                        )
-                                                    ).format("0,0.00")}
+                                                    {formatCurrency(parseFloat(sale.amount_received) - parseFloat(sale.total_amount))}
                                                 </Typography>
                                             </TableCell>
                                         </TableRow>
@@ -754,11 +802,11 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                             sx={styles.receiptSummaryTyp}
                                                             color="black"
                                                         >
-                                                            Rs.{numeral(
+                                                            {formatCurrency(
                                                                 parseFloat(sale.balance) -
                                                                 (parseFloat(sale.amount_received) -
                                                                     parseFloat(sale.total_amount))
-                                                            ).format("0,0.00")}
+                                                            )}
                                                         </Typography>
                                                     </TableCell>
                                                 </TableRow>
@@ -786,7 +834,7 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                                                             sx={styles.receiptSummaryTyp}
                                                             color="black"
                                                         >
-                                                            Rs.{numeral(sale.balance).format("0,0.00")}
+                                                            {formatCurrency(sale.balance)}
                                                         </Typography>
                                                     </TableCell>
                                                 </TableRow>
@@ -833,170 +881,8 @@ export default function Receipt({ sale, salesItems, settings, user_name, credit_
                             />
                         </ReceiptPrintContainer>
                     </div>
-                    <ReceiptPrinter salesItems={salesItems} />
                 </ReceiptContainer>
             </Box>
         </>
     );
 }
-
-function ReceiptPrinter({ salesItems }) {
-    const tableHtml = generateSalesTable(salesItems);
-    const RECEIPT_WIDTH = 42;
-
-    const padRight = (text, width) => {
-        const len = stringWidth(text);
-        return len >= width ? text : text + " ".repeat(width - len);
-    };
-
-    const padLeft = (text, width) => {
-        const len = stringWidth(text);
-        return len >= width ? text : " ".repeat(width - len) + text;
-    };
-
-    const wrapText = (text, width) => {
-        const words = text.split(" ");
-        const lines = [];
-        let current = "";
-
-        words.forEach((word) => {
-            if (stringWidth(current + (current ? " " : "") + word) > width) {
-                if (current) lines.push(current);
-                current = word;
-            } else {
-                current += (current ? " " : "") + word;
-            }
-        });
-
-        if (current) lines.push(current);
-        return lines;
-    };
-
-    const htmlTableToPlainText = (tableHtml) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(tableHtml, "text/html");
-        const rows = Array.from(doc.querySelectorAll("tr"));
-
-        const colWidths = [20, 10, 10];
-        const numericCols = [1, 2]; // Only these columns are right-aligned
-        const lines = [];
-
-        rows.forEach((tr) => {
-            const cells = Array.from(tr.children);
-            const cellLines = [];
-
-            cells.forEach((cell, idx) => {
-                const colspan = parseInt(cell.getAttribute("colspan") || "1", 10);
-                const width = colWidths.slice(idx, idx + colspan).reduce((a, b) => a + b + 1, -1);
-
-                const cellText = Array.from(cell.childNodes)
-                    .map((n) => (n.textContent ? n.textContent.trim() : ""))
-                    .join(" ")
-                    .replace(/\s+/g, " ");
-
-                const wrapped = wrapText(cellText, width);
-                cellLines.push({ wrapped, colspan, startIdx: idx, width });
-            });
-
-            const maxLines = Math.max(...cellLines.map((c) => c.wrapped.length));
-
-            for (let i = 0; i < maxLines; i++) {
-                let line = "";
-                let colPointer = 0;
-
-                cellLines.forEach((c) => {
-                    // Fill skipped columns
-                    while (colPointer < c.startIdx) {
-                        line += " ".repeat(colWidths[colPointer]) + " ";
-                        colPointer++;
-                    }
-
-                    const text = c.wrapped[i] || "";
-
-                    // Right-align only if the cell is a single column in numericCols
-                    if (c.colspan === 1 && numericCols.includes(c.startIdx)) {
-                        line += padLeft(text, c.width) + " ";
-                    } else {
-                        line += padRight(text, c.width) + " ";
-                    }
-
-                    colPointer += c.colspan;
-                });
-
-                // Fill remaining columns
-                while (colPointer < colWidths.length) {
-                    line += " ".repeat(colWidths[colPointer]) + " ";
-                    colPointer++;
-                }
-
-                lines.push(line.trimEnd());
-            }
-        });
-
-        // Insert separators
-        lines.splice(2, 0, "-".repeat(RECEIPT_WIDTH));
-        lines.splice(lines.length - 3, 0, "-".repeat(RECEIPT_WIDTH));
-
-        return lines.join("\n");
-    };
-
-    const plainText = generateSalesTable(salesItems);
-    console.log(plainText);
-}
-
-function wrapColumn(text, width) {
-    const regex = new RegExp(`(.{1,${width}})(\\s|$)`, "g");
-    return text.match(regex)?.map(line => line.trim()) || [text];
-}
-
-function generateSalesTable(salesItems, productWidth = 20, totalWidth = 15) {
-    const html = `
-    <table border="0" cellpadding="2" cellspacing="0">
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th align="right">Unit Price</th>
-          <th align="right">Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${salesItems.map(item => {
-        const total = parseFloat(item.unit_price) * item.quantity - parseFloat(item.discount) - parseFloat(item.flat_discount);
-        const totalDiscount = (parseFloat(item.discount) + parseFloat(item.flat_discount)).toFixed(2);
-
-        // wrap product name
-        const wrappedName = wrapColumn(item.name, productWidth);
-        // wrap total column (discount + total)
-        const totalText = `${totalDiscount} / ${total.toFixed(2)}`;
-        const wrappedTotal = wrapColumn(totalText, totalWidth);
-
-        // combine lines for row
-        const maxLines = Math.max(wrappedName.length, wrappedTotal.length);
-        const lines = [];
-        for (let i = 0; i < maxLines; i++) {
-            lines.push(`
-              <tr>
-                <td>${wrappedName[i] || ""}</td>
-                <td align="right">${i === 0 ? `${item.quantity} x ${item.unit_price}` : ""}</td>
-                <td align="right">${wrappedTotal[i] || ""}</td>
-              </tr>
-            `);
-        }
-        return lines.join("");
-    }).join("")}
-      </tbody>
-    </table>
-  `;
-
-    return convert(html, {
-        wordwrap: false,
-        tables: true,
-        preserveNewlines: true,
-    });
-}
-
-
-
-// Render anywhere in JSX:
-// <ReceiptPrinter tableHtml={sampleTableHtml} />
-

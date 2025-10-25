@@ -235,11 +235,25 @@ class SettingController extends Controller
                 'shop_name' => 'required|string',
                 'shop_logo' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
             ]);
-        } 
-        else if ($setting_type == "receipt") 
+        }
+        else if ($setting_type == 'currency')
         {
-            
-        } 
+            $currencySettings = [
+                'currency_symbol' => $request->input('currency_symbol'),
+                'currency_code' => $request->input('currency_code'),
+                'symbol_position' => $request->input('symbol_position'),
+                'decimal_separator' => $request->input('decimal_separator'),
+                'thousands_separator' => $request->input('thousands_separator'),
+                'decimal_places' => $request->input('decimal_places'),
+                'negative_format' => $request->input('negative_format'),
+                'show_currency_code' => $request->input('show_currency_code'),
+            ];
+            $settingsData['currency_settings'] = json_encode($currencySettings);
+        }
+        else if ($setting_type == "receipt")
+        {
+
+        }
         else if ($setting_type == "barcode") 
         {
             $settingsData['show_barcode_store'] = $request->has('show_barcode_store') ? 'on' : 'off';

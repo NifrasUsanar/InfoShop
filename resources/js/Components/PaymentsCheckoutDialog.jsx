@@ -1,4 +1,3 @@
-import React, { useState, useContext, useMemo, useEffect } from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -25,6 +24,9 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { usePage } from "@inertiajs/react";
 import { X } from "lucide-react";
+import React, { useState, useEffect, useContext, useMemo } from 'react';
+import { useCurrencyFormatter } from "@/lib/currencyFormatter";
+import { useCurrencyStore } from "@/stores/currencyStore";
 
 export default function PaymentsCheckoutDialog({
     useCart,
@@ -34,7 +36,9 @@ export default function PaymentsCheckoutDialog({
     formData,
     is_sale = false,
 }) {
-    const { cartState, cartTotal, emptyCart, totalProfit } = useCart();
+    const formatCurrency = useCurrencyFormatter();
+    const currencySymbol = useCurrencyStore((state) => state.settings.currency_symbol);
+    const { cartState, cartTotal, emptyCart, totalProfit, charges, totalChargeAmount, finalTotal, discount, setDiscount: setContextDiscount, calculateChargesWithDiscount } = useCart();
     const return_sale = usePage().props.return_sale;
     const return_sale_id = usePage().props.sale_id;
     const edit_sale = usePage().props.edit_sale;
@@ -42,10 +46,20 @@ export default function PaymentsCheckoutDialog({
 
     const [loading, setLoading] = useState(false);
 
-    const [discount, setDiscount] = useState(0);
-    const [amount, setAmount] = useState((cartTotal - discount))
+    const [amount, setAmount] = useState((finalTotal - discount))
     const [payments, setPayments] = useState([])
     const [amountReceived, setAmountReceived] = useState(0)
+    const [recalculatedCharges, setRecalculatedCharges] = useState(totalChargeAmount)
+
+    // Calculate reactive final total with discount
+    const reactiveFinalTotal = (cartTotal - discount) + recalculatedCharges;
+
+    // Initialize recalculated charges when charges/cartTotal/discount change
+    useEffect(() => {
+        const initialCharges = calculateChargesWithDiscount(discount);
+        setRecalculatedCharges(initialCharges);
+        setAmount((cartTotal - discount) + initialCharges);
+    }, [charges, cartTotal, discount]);
 
     const [anchorEl, setAnchorEl] = React.useState(null);
     const openPayment = Boolean(anchorEl);
@@ -60,20 +74,29 @@ export default function PaymentsCheckoutDialog({
         const inputDiscount = event.target.value;
         const newDiscount =
             inputDiscount !== "" ? parseFloat(inputDiscount) : 0;
-        setDiscount(newDiscount);
+        setContextDiscount(newDiscount);
+
+        const recalculatedChargeAmount = calculateChargesWithDiscount(newDiscount);
+        setRecalculatedCharges(recalculatedChargeAmount);
     };
 
     const handleClose = () => {
         setPayments([])
         setAmountReceived(0)
-        setAmount(cartTotal - discount)
+        setContextDiscount(0)
         setOpen(false);
     };
 
     useEffect(() => {
-        setAmount(cartTotal - discount);
+        if (open) {
+            setContextDiscount(0);
+        }
+    }, [open])
+
+    useEffect(() => {
+        const initialAmount = (cartTotal - discount) + recalculatedCharges;
+        setAmount(initialAmount);
         setAmountReceived(payments.reduce((sum, payment) => sum + payment.amount, 0));
-        setAmount(cartTotal - discount)
     }, [])
 
     useEffect(() => {
@@ -90,6 +113,7 @@ export default function PaymentsCheckoutDialog({
         let formJson = Object.fromEntries(submittedFormData.entries());
         // formData = Object.fromEntries(formData);
         formJson.cartItems = cartState;
+        formJson.charges = charges;
         formJson.contact_id = selectedContact.id;
         formJson.payments = payments;
         formJson = { ...formJson, ...formData } //Form data from the POS / Purchase form
@@ -114,7 +138,7 @@ export default function PaymentsCheckoutDialog({
                     timerProgressBar: true,
                 });
                 emptyCart(); //Clear the cart from the Context API
-                setDiscount(0);
+                setContextDiscount(0);
                 setPayments([])
                 if (!is_sale) router.visit("/purchases");
                 else {
@@ -145,7 +169,7 @@ export default function PaymentsCheckoutDialog({
 
     // Function to handle the addition of a payment
     const addPayment = (paymentMethod) => {
-        const netTotal = cartTotal - discount
+        const netTotal = (cartTotal - discount) + recalculatedCharges;
         const balance = amountReceived + parseFloat(amount)
         if (netTotal < balance) {
             alert('Payment cannot be exceeded the total amount')
@@ -154,7 +178,7 @@ export default function PaymentsCheckoutDialog({
             const newPayment = { payment_method: paymentMethod, amount: parseFloat(amount) };
             setPayments([...payments, newPayment]);
             const newBalance = netTotal - balance;
-            setAmount(newBalance > 0 ? newBalance : 0); // Clear the amount input after adding
+            setAmount(newBalance > 0 ? newBalance : 0);
         }
         handlePaymentClose()
     };
@@ -172,7 +196,10 @@ export default function PaymentsCheckoutDialog({
             return;
         }
         const discountAmount = (cartTotal * discount) / 100;
-        setDiscount(discountAmount);
+        setContextDiscount(discountAmount);
+
+        const recalculatedChargeAmount = calculateChargesWithDiscount(discountAmount);
+        setRecalculatedCharges(recalculatedChargeAmount);
     }
 
     return (
@@ -223,7 +250,7 @@ export default function PaymentsCheckoutDialog({
                                     input: {
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                Rs.
+                                                {currencySymbol}
                                             </InputAdornment>
                                         ),
                                         endAdornment: (
@@ -248,7 +275,7 @@ export default function PaymentsCheckoutDialog({
                                 label="Total"
                                 variant="outlined"
                                 sx={{ input: { fontWeight: 'bold', } }}
-                                value={(cartTotal - discount).toFixed(2)}
+                                value={formatCurrency(reactiveFinalTotal, false)}
                                 onFocus={(event) => {
                                     event.target.select();
                                 }}
@@ -259,7 +286,7 @@ export default function PaymentsCheckoutDialog({
                                     input: {
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                Rs.
+                                                {currencySymbol}
                                             </InputAdornment>
                                         ),
                                         readOnly: true,
@@ -292,7 +319,7 @@ export default function PaymentsCheckoutDialog({
                                         input: {
                                             startAdornment: (
                                                 <InputAdornment position="start">
-                                                    Rs.
+                                                    {currencySymbol}
                                                 </InputAdornment>
                                             ),
                                         },
@@ -373,7 +400,7 @@ export default function PaymentsCheckoutDialog({
 
                                     {/* Display Payment Amount */}
                                     <TableCell align="right">
-                                        <strong>Rs. {(payment.amount).toFixed(2)}</strong>
+                                        <strong>{formatCurrency(payment.amount)}</strong>
                                     </TableCell>
 
                                     {/* Action Button to delete payment */}
@@ -403,8 +430,7 @@ export default function PaymentsCheckoutDialog({
                         fullWidth
                         sx={{ paddingY: "15px", fontSize: "1.5rem" }}
                         type="submit"
-                        // onClick={handleClose}
-                        disabled={amountReceived - (cartTotal - discount) < 0 || loading || amountReceived > (cartTotal - discount)} //amountReceived-(cartTotal-discount)
+                        disabled={amountReceived - ((cartTotal - discount) + recalculatedCharges) < 0 || loading || amountReceived > ((cartTotal - discount) + recalculatedCharges)}
                     >
                         {loading ? 'Loading...' : 'PAY'}
                     </Button>

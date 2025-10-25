@@ -498,7 +498,7 @@ class ReportController extends Controller
             ->DateFilter($start_date, $end_date)
             ->selectRaw('
                 SUM(total_amount) as total_sales,
-                SUM(LEAST(total_amount, amount_received)) as total_received,
+                SUM(CASE WHEN total_amount < amount_received THEN total_amount ELSE amount_received END) as total_received,
                 SUM(profit_amount) as total_profit,
                 SUM(discount) as sale_discount
             ')

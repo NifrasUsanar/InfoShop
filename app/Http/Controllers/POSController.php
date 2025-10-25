@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Charge;
 
 class POSController extends Controller
 {
@@ -124,6 +125,23 @@ class POSController extends Controller
         $miscSettings = Setting::where('meta_key', 'misc_settings')->first();
         $miscSettings = json_decode($miscSettings->meta_value, true);
         $cart_first_focus = $miscSettings['cart_first_focus'] ?? 'quantity';
+
+        // Get default charges
+        $defaultCharges = Charge::where('is_active', true)
+            ->where('is_default', true)
+            ->get()
+            ->map(function($charge) {
+                return [
+                    'id' => $charge->id,
+                    'name' => $charge->name,
+                    'charge_type' => $charge->charge_type,
+                    'rate_value' => $charge->rate_value,
+                    'rate_type' => $charge->rate_type,
+                    'is_active' => $charge->is_active,
+                ];
+            })
+            ->toArray();
+
         return Inertia::render('POS/POS', [
             'products' => $products,
             'urlImage' => url('/storage/'),
@@ -133,7 +151,8 @@ class POSController extends Controller
             'sale_id' => null,
             'categories' => $categories,
             'cart_first_focus' => $cart_first_focus,
-            'misc_settings' => $miscSettings
+            'misc_settings' => $miscSettings,
+            'default_charges' => $defaultCharges
         ]);
     }
 
@@ -149,6 +168,23 @@ class POSController extends Controller
         $miscSettings = json_decode($miscSettings->meta_value, true);
         $cart_first_focus = $miscSettings['cart_first_focus'] ?? 'quantity';
 
+        // Get charges from the sale's sale_items
+        $defaultCharges = SaleItem::where('sale_id', $sale_id)
+            ->where('item_type', 'charge')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->charge_id ?? $item->id ?? rand(100000, 999999),
+                    'name' => $item->description ?? 'Charge',
+                    'charge_type' => $item->charge_type ?? 'custom',
+                    'rate_value' => $item->rate_value ?? 0,
+                    'rate_type' => $item->rate_type ?? 'fixed',
+                    'is_active' => true,
+                ];
+            })
+            ->values()
+            ->toArray();
+
         return Inertia::render('POS/POS', [
             'products' => $products,
             'urlImage' => url('/storage/'),
@@ -160,7 +196,8 @@ class POSController extends Controller
             'cart_first_focus' => $cart_first_focus,
             'edit_sale' => true,
             'sale_data' => $sale,
-            'misc_settings' => $miscSettings
+            'misc_settings' => $miscSettings,
+            'default_charges' => $defaultCharges
         ]);
     }
 
@@ -197,7 +234,11 @@ class POSController extends Controller
         )
             ->join('sale_items AS si', function ($join) use ($sale_id) {
                 $join->on('products.id', '=', 'si.product_id')
-                    ->where('si.sale_id', '=', $sale_id); // Ensure product is associated with the given sale_id
+                    ->where('si.sale_id', '=', $sale_id) // Ensure product is associated with the given sale_id
+                    ->where(function($q) {
+                        $q->where('si.item_type', '!=', 'charge')
+                          ->orWhereNull('si.item_type');
+                    });
             })
             ->leftJoin('product_batches AS pb', 'products.id', '=', 'pb.product_id') // Join with product_batches using product_id
             ->leftJoin('product_stocks AS ps', 'pb.id', '=', 'si.batch_id') // Join with product_stocks using batch_id
@@ -218,6 +259,23 @@ class POSController extends Controller
             )
             ->get();
 
+        // Get original charges from sale_items
+        $defaultCharges = SaleItem::where('sale_id', $sale_id)
+            ->where('item_type', 'charge')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'id' => $item->charge_id ?? $item->id ?? rand(100000, 999999),
+                    'name' => $item->description ?? 'Charge',
+                    'charge_type' => $item->charge_type ?? 'custom',
+                    'rate_value' => $item->rate_value ?? 0,
+                    'rate_type' => $item->rate_type ?? 'fixed',
+                    'is_active' => true,
+                ];
+            })
+            ->values()
+            ->toArray();
+
         return Inertia::render('POS/POS', [
             'products' => $products,
             'urlImage' => url('/storage/'),
@@ -225,7 +283,8 @@ class POSController extends Controller
             'return_sale' => true,
             'sale_id' => $sale_id,
             'cart_first_focus' => $cart_first_focus,
-            'misc_settings' => $miscSettings
+            'misc_settings' => $miscSettings,
+            'default_charges' => $defaultCharges,
         ]);
     }
 
@@ -298,6 +357,7 @@ class POSController extends Controller
         $amountReceived = $request->input('amount_received', 0);
         $total = $request->input('net_total');
         $cartItems = $request->input('cartItems');
+        $charges = $request->input('charges', []);
         $paymentMethod = $request->input('payment_method', 'none');
         $payments = $request->payments;
 
@@ -362,7 +422,15 @@ class POSController extends Controller
                 $sale->save();
             }
 
+            // Calculate product line total for base_amount of charges
+            $productLineTotal = 0;
+            $returnedQuantity = 0;
+
             foreach ($cartItems as $item) {
+                $lineTotal = ($item['quantity'] * ($item['price'] - $item['discount'])) - ($item['flat_discount'] ?? 0);
+                $productLineTotal += $lineTotal;
+                $returnedQuantity += $item['quantity'];
+
                 $sale_item = SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $item['id'],
@@ -424,6 +492,113 @@ class POSController extends Controller
                         'description' => $item['product_type'],
                     ]);
                 }
+            }
+
+            // Calculate base amount for charges (product subtotal - discount)
+            $chargeBaseAmount = $productLineTotal - $sale->discount;
+
+            // Calculate total charge amount
+            $totalChargeAmount = 0;
+
+            // Check if this is a return transaction for Smart Charge Reversal (Option A)
+            $isReturn = $sale->sale_type === 'return';
+            $returnProportionPercentage = 0;
+
+            if ($isReturn && $sale->reference_id) {
+                // Get the original sale
+                $originalSale = Sale::find($sale->reference_id);
+
+                if ($originalSale) {
+                    // Get original product items (exclude charges)
+                    $originalProducts = SaleItem::where('sale_id', $originalSale->id)
+                        ->where(function($query) {
+                            $query->where('item_type', '!=', 'charge')
+                                  ->orWhereNull('item_type');
+                        })
+                        ->get();
+
+                    // Calculate original quantity
+                    $originalQuantity = 0;
+                    foreach ($originalProducts as $item) {
+                        $originalQuantity += $item->quantity;
+                    }
+
+                    // Calculate return proportion
+                    if ($originalQuantity > 0) {
+                        $returnProportionPercentage = ($returnedQuantity / $originalQuantity) * 100;
+                    }
+
+                    // Get original charges
+                    $originalCharges = SaleItem::where('sale_id', $originalSale->id)
+                        ->where('item_type', 'charge')
+                        ->get();
+
+                    // Create reversed charges based on original charges and return proportion
+                    if ($originalCharges->isNotEmpty()) {
+                        foreach ($originalCharges as $originalCharge) {
+                            // Calculate proportional reversed charge amount
+                            $reversalAmount = ($originalCharge->unit_price * $returnProportionPercentage) / 100;
+
+                            // Store as negative charge (reversal)
+                            $totalChargeAmount -= $reversalAmount;
+
+                            // Create SaleItem for charge reversal with negative amount
+                            SaleItem::create([
+                                'sale_id' => $sale->id,
+                                'item_type' => 'charge',
+                                'charge_id' => $originalCharge->charge_id,
+                                'charge_type' => $originalCharge->charge_type,
+                                'rate_value' => $originalCharge->rate_value,
+                                'rate_type' => $originalCharge->rate_type,
+                                'base_amount' => $chargeBaseAmount,
+                                'quantity' => 1,
+                                'unit_price' => -$reversalAmount,  // Negative amount for reversal
+                                'unit_cost' => 0,
+                                'sale_date' => $sale->sale_date,
+                                'description' => $originalCharge->description . ' (Reversal)',
+                                'notes' => 'Proportional reversal: ' . round($returnProportionPercentage, 2) . '% of original',
+                            ]);
+                        }
+                    }
+                }
+            } else {
+                // Normal sale: apply charges as configured
+                if (!empty($charges)) {
+                    foreach ($charges as $charge) {
+                        $chargeAmount = 0;
+
+                        // Calculate charge amount based on rate type
+                        if ($charge['rate_type'] === 'percentage') {
+                            $chargeAmount = ($chargeBaseAmount * $charge['rate_value']) / 100;
+                        } else {
+                            $chargeAmount = $charge['rate_value'];
+                        }
+
+                        $totalChargeAmount += $chargeAmount;
+
+                        // Create SaleItem for charge
+                        SaleItem::create([
+                            'sale_id' => $sale->id,
+                            'item_type' => 'charge',
+                            'charge_id' => $charge['id'],
+                            'charge_type' => $charge['charge_type'],
+                            'rate_value' => $charge['rate_value'],
+                            'rate_type' => $charge['rate_type'],
+                            'base_amount' => $chargeBaseAmount,
+                            'quantity' => 1,
+                            'unit_price' => $chargeAmount,
+                            'unit_cost' => 0,
+                            'sale_date' => $sale->sale_date,
+                            'description' => $charge['name'],
+                        ]);
+                    }
+                }
+            }
+
+            // Update sale with charge amounts (can be negative for returns)
+            if ($totalChargeAmount != 0) {
+                $sale->total_charge_amount = $totalChargeAmount;
+                $sale->save();
             }
 
             DB::commit();

@@ -14,15 +14,15 @@ import {
 import FindReplaceIcon from "@mui/icons-material/FindReplace";
 import dayjs from "dayjs";
 import Select2 from "react-select";
-import numeral from "numeral";
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import Swal from "sweetalert2";
+import { useCurrencyFormatter } from '@/lib/currencyFormatter';
 
 import { DataGrid } from "@mui/x-data-grid";
 import CustomPagination from "@/Components/CustomPagination";
 import ViewDetailsDialog from "@/Components/ViewDetailsDialog";
 
-const columns = (handleRowClick) => [
+const columns = (handleRowClick, formatCurrency) => [
     {
         field: "id", headerName: "ID", width: 80,
         renderCell: (params) => {
@@ -67,7 +67,7 @@ const columns = (handleRowClick) => [
     {
         field: "amount", headerName: "Total Amount", width: 120, align: 'right', headerAlign: 'right',
         renderCell: (params) => {
-            return numeral(params.value).format('0,0.00');
+            return formatCurrency(params.value, false);
         },
     },
     {
@@ -88,6 +88,7 @@ const columns = (handleRowClick) => [
 ];
 
 export default function Payment({ payments, transactionType, contacts, selected_contact }) {
+    const formatCurrency = useCurrencyFormatter();
     const [dataPayments, setDataPayments] = useState(payments);
     const [paymentSelect, setPaymentSelect] = useState(transactionType);
     const [totalAmount, setTotalAmount] = useState(0)
@@ -295,12 +296,12 @@ export default function Payment({ payments, transactionType, contacts, selected_
             >
                 <DataGrid
                     rows={dataPayments?.data}
-                    columns={columns(handleRowClick)}
+                    columns={columns(handleRowClick, formatCurrency)}
                     hideFooter
                 />
             </Box>
             <Grid size={12} container justifyContent={"end"} spacing={2} alignItems={"center"}>
-                <Chip size="large" label={'Total:' + numeral(totalAmount).format('0,0.00')} color="primary" />
+                <Chip size="large" label={'Total: ' + formatCurrency(totalAmount, false)} color="primary" />
                 <CustomPagination
                     refreshTable={refreshPayments}
                     setSearchTerms={setSearchTerms}

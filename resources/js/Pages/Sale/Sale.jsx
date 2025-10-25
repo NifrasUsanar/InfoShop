@@ -5,9 +5,9 @@ import { Head, Link, router } from "@inertiajs/react";
 import { Button, Box, IconButton, TextField, MenuItem, Tooltip, Chip, Grid } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 import Select2 from "react-select";
-import numeral from "numeral";
 import dayjs from "dayjs";
 import Swal from "sweetalert2";
+import { useCurrencyFormatter } from '@/lib/currencyFormatter';
 
 import PrintIcon from "@mui/icons-material/Print";
 import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
@@ -21,7 +21,7 @@ import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import SalesList from "./Partials/SalesList";
 
-const columns = (handleRowClick) => [
+const columns = (handleRowClick, formatCurrency) => [
     {
         field: "id",
         headerName: "ID",
@@ -54,13 +54,13 @@ const columns = (handleRowClick) => [
     {
         field: "discount", headerName: "Discount", width: 80, align: 'right', headerAlign: 'right',
         renderCell: (params) => {
-            return numeral(params.value).format('0,0.00');
+            return formatCurrency(params.value, false);
         },
     },
     {
         field: "total_amount", headerName: "Bill Amount", width: 120, align: 'right', headerAlign: 'right',
         renderCell: (params) => {
-            return numeral(params.value).format('0,0.00');
+            return formatCurrency(params.value, false);
         },
     },
     {
@@ -78,7 +78,7 @@ const columns = (handleRowClick) => [
                     justifyContent: "flex-end",
                 }}
             >
-                {numeral(params.value).format('0,0.00')}
+                {formatCurrency(params.value, false)}
             </Button>
         ),
     },
@@ -88,7 +88,7 @@ const columns = (handleRowClick) => [
         width: 100, align: 'right', headerAlign: 'right',
         renderCell: (params) => {
             const change = params.row.amount_received - params.row.total_amount;
-            return numeral(change).format('0,0.00');
+            return formatCurrency(change, false);
         },
     },
     { field: 'profit_amount', headerName: 'Profit', width: 120 },
@@ -134,6 +134,7 @@ const columns = (handleRowClick) => [
 ];
 
 export default function Sale({ sales, contacts }) {
+    const formatCurrency = useCurrencyFormatter();
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
     const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -351,7 +352,7 @@ export default function Sale({ sales, contacts }) {
                 >
                     <DataGrid
                         rows={dataSales.data}
-                        columns={columns(handleRowClick)}
+                        columns={columns(handleRowClick, formatCurrency)}
                         initialState={{
                             columns: {
                                 columnVisibilityModel: {

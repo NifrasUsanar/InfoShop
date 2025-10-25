@@ -4,6 +4,7 @@ import { Table, TableBody, Button, TableCell, TableContainer, TableHead, TableRo
 import DeleteIcon from '@mui/icons-material/Delete'; // Import the Delete icon
 import Badge from '@mui/material/Badge';
 import { usePurchase } from "@/Context/PurchaseContext";
+import { useCurrencyFormatter } from '@/lib/currencyFormatter';
 
 export default function PurchaseCartItems() {
     const {
@@ -13,6 +14,7 @@ export default function PurchaseCartItems() {
         updateProductQuantity,
         totalProfit,
     } = usePurchase();
+    const formatCurrency = useCurrencyFormatter();
 
     const handleQuantityChange = (item, newQuantity) => {
         if (newQuantity == '' || newQuantity == null) newQuantity = 0
@@ -67,7 +69,7 @@ export default function PurchaseCartItems() {
                             <strong>Total Cost Amount:</strong>
                         </TableCell>
                         <TableCell>
-                            <strong>Rs.{cartTotal.toFixed(2)}</strong>
+                            <strong>{formatCurrency(cartTotal)}</strong>
                         </TableCell>
                     </TableRow>
                     <TableRow>
@@ -75,7 +77,7 @@ export default function PurchaseCartItems() {
                             <strong>Total Profit Amount:</strong>
                         </TableCell>
                         <TableCell>
-                            <strong>Rs.{totalProfit.toFixed(2)}</strong>
+                            <strong>{formatCurrency(totalProfit)}</strong>
                         </TableCell>
                     </TableRow>
                     <TableRow>

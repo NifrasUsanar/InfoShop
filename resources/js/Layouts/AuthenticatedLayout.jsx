@@ -252,6 +252,16 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     />
                 )}
 
+                {permissions.includes("charges") && (
+                    <NavItem
+                        href="/charges"
+                        icon={PaymentsIcon}
+                        label="Charges"
+                        open={open}
+                        selected={isSelected("/charges")}
+                    />
+                )}
+
                 {permissions.includes("quotations") && (
                     <NavItem
                         href="/quotations"

@@ -16,6 +16,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import axios from "axios";
 import Swal from "sweetalert2";
 import dayjs from "dayjs";
+import { useCurrencyStore } from "../stores/currencyStore";
 
 const initialPaymentFormState = {
     amount: 0,
@@ -37,6 +38,7 @@ export default function AddPaymentDialog({
 }) {
     const [loading, setLoading] = useState(false);
     const [paymentForm, setPaymentFormState] = useState(initialPaymentFormState);
+    const currencySymbol = useCurrencyStore((state) => state.settings.currency_symbol);
 
     const getButtonText = () => {
         if (loading) {
@@ -161,7 +163,7 @@ export default function AddPaymentDialog({
                                     input: {
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                Rs.
+                                                {currencySymbol}
                                             </InputAdornment>
                                         ),
                                     },

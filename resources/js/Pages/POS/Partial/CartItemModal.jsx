@@ -14,10 +14,12 @@ import { usePage } from "@inertiajs/react";
 import { useSales } from "@/Context/SalesContext";
 import { SharedContext } from "@/Context/SharedContext";
 import Commission from "../ProductTypes/Commission";
+import { useCurrencyStore } from "@/stores/currencyStore";
 
 export default function CartItemModal() {
     const { return_sale, cart_first_focus, misc_settings } = usePage().props ?? {};
     const [showCost, setShowCost] = useState(false);
+    const currencySymbol = useCurrencyStore((state) => state.settings.currency_symbol);
     const handleClickShowCost = () => setShowCost((show) => !show);
     const focusInputRef = useRef(null);
 
@@ -289,7 +291,7 @@ export default function CartItemModal() {
                                     input: {
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                Rs.
+                                                {currencySymbol}
                                             </InputAdornment>
                                         ),
                                     },
@@ -327,7 +329,7 @@ export default function CartItemModal() {
                                         input: {
                                             startAdornment: (
                                                 <InputAdornment position="start">
-                                                    Rs.
+                                                    {currencySymbol}
                                                 </InputAdornment>
                                             ),
                                         },
@@ -361,7 +363,7 @@ export default function CartItemModal() {
                                         input: {
                                             startAdornment: (
                                                 <InputAdornment position="start">
-                                                    Rs.
+                                                    {currencySymbol}
                                                 </InputAdornment>
                                             ),
                                         },
@@ -422,52 +424,52 @@ export default function CartItemModal() {
                                             event.target.select();
                                         }}
                                         slotProps={{
-                                            inputLabel: {
-                                                shrink: true,
-                                            },
-                                            input: {
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        Rs.
-                                                    </InputAdornment>
-                                                ),
-                                                readOnly: true,
-                                            },
-                                        }}
-                                    />
-                                </Grid>
-                                <Grid size={4}>
-                                    <TextField
-                                        fullWidth
-                                        type="number"
-                                        name="commission"
-                                        label="Total Commission"
-                                        variant="outlined"
-                                        required
-                                        value={formState.commission}
-                                        onChange={handleInputChange}
-                                        sx={{
-                                            mt: "0.5rem",
-                                            input: { fontSize: "1rem" },
-                                        }}
-                                        onFocus={(event) => {
-                                            event.target.select();
-                                        }}
-                                        slotProps={{
-                                            inputLabel: {
-                                                shrink: true,
-                                            },
-                                            input: {
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        Rs.
-                                                    </InputAdornment>
-                                                ),
-                                                readOnly: true,
-                                            },
-                                        }}
-                                    />
-                                </Grid>
+                                    inputLabel: {
+                                        shrink: true,
+                                    },
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                {currencySymbol}
+                                            </InputAdornment>
+                                        ),
+                                        readOnly: true,
+                                    },
+                                }}
+                            />
+                        </Grid>
+                        <Grid size={4}>
+                            <TextField
+                                fullWidth
+                                type="number"
+                                name="commission"
+                                label="Total Commission"
+                                variant="outlined"
+                                required
+                                value={formState.commission}
+                                onChange={handleInputChange}
+                                sx={{
+                                    mt: "0.5rem",
+                                    input: { fontSize: "1rem" },
+                                }}
+                                onFocus={(event) => {
+                                    event.target.select();
+                                }}
+                                slotProps={{
+                                    inputLabel: {
+                                        shrink: true,
+                                    },
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                {currencySymbol}
+                                            </InputAdornment>
+                                        ),
+                                        readOnly: true,
+                                    },
+                                }}
+                            />
+                        </Grid>
                             </>
                         )}
                         {formState.product_type === "simple" && (
@@ -497,7 +499,7 @@ export default function CartItemModal() {
                                                 input: {
                                                     startAdornment: (
                                                         <InputAdornment position="start">
-                                                            Rs.
+                                                            {currencySymbol}
                                                         </InputAdornment>
                                                     ),
                                                 },
@@ -533,7 +535,7 @@ export default function CartItemModal() {
                                                     input: {
                                                         startAdornment: (
                                                             <InputAdornment position="start">
-                                                                Rs.
+                                                                {currencySymbol}
                                                             </InputAdornment>
                                                         ),
                                                     },
@@ -609,7 +611,7 @@ export default function CartItemModal() {
                                             formState.product_type === "reload", //Make cost un editable if reload enabled
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                Rs.
+                                                {currencySymbol}
                                             </InputAdornment>
                                         ),
                                         endAdornment: (

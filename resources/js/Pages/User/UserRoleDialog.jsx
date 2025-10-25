@@ -19,6 +19,7 @@ export default function UserRoleDialog({ open, handleClose, user_role }) {
     "sales",
     "customers",
     "vendors",
+    'charges',
     "collections",
     "expenses",
     "quotations",
@@ -31,7 +32,7 @@ export default function UserRoleDialog({ open, handleClose, user_role }) {
     "employees",
     "payroll",
     "media",
-    "settings"
+    "settings",
   ];
 
   useEffect(() => {

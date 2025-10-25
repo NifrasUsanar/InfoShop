@@ -8,10 +8,12 @@ import { usePage } from "@inertiajs/react";
 import { useSales as useCart } from "@/Context/SalesContext";
 import { SharedContext } from "@/Context/SharedContext";
 import productplaceholder from "@/Pages/Product/product-placeholder.webp";
+import { useCurrencyFormatter } from "@/lib/currencyFormatter";
 
 export default function ProductItem({ product }) {
     const return_sale = usePage().props.return_sale;
-    
+    const formatCurrency = useCurrencyFormatter();
+
     const { name, price, image_url, quantity } = product;
     const { addToCart, cartState } = useCart();
     const { setCartItemModalOpen, setSelectedCartItem } = useContext(SharedContext);
@@ -70,7 +72,7 @@ export default function ProductItem({ product }) {
                         borderRadius: '4px',
                     }}
                 >
-                    Rs.{price}
+                    {formatCurrency(price, false)}
                 </Box>
             )}
         </Card>
