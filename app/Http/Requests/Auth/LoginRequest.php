@@ -63,14 +63,23 @@ class LoginRequest extends FormRequest
 
         // Check if the input is an email or username
         $user = User::where('email', $usernameOrEmail)
-                    ->orWhere('user_name', $usernameOrEmail)
-                    ->first();
+            ->orWhere('user_name', $usernameOrEmail)
+            ->first();
 
-        // If user is found and password matches
-        if ($user && Auth::attempt(['email' => $user->email, 'password' => $this->input('password')], $this->boolean('remember'))) {
-            session(['store_id' => $user->store_id]);
-            RateLimiter::clear($this->throttleKey());
-            return; // Authentication successful
+        // If user exists, check active status before authentication
+        if ($user) {
+            if (!$user->is_active) {
+                throw ValidationException::withMessages([
+                    'email' => 'Your account is inactive. Please contact support.',
+                ]);
+            }
+
+            // Now attempt login using user's email
+            if (Auth::attempt(['email' => $user->email, 'password' => $this->input('password')], $this->boolean('remember'))) {
+                session(['store_id' => $user->store_id]);
+                RateLimiter::clear($this->throttleKey());
+                return;
+            }
         }
 
         // If authentication fails
@@ -109,6 +118,6 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        return Str::transliterate(Str::lower($this->string('email')) . '|' . $this->ip());
     }
 }

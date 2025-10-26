@@ -31,6 +31,9 @@ use App\Http\Controllers\ChequeController;
 use App\Http\Controllers\QuotationController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\SaleTemplateController;
+use App\Http\Controllers\BackupController;
+use App\Http\Controllers\DevDatabaseController;
+use App\Http\Controllers\ChargeController;
 
 Route::get('/', function () {
     return redirect('login');
@@ -51,6 +54,9 @@ Route::get('/pending-sales-receipt/{contact_id}', [SaleController::class, 'pendi
 Route::get('/version', [UpgradeController::class, 'checkVersion']);
 Route::post('/api/application-update', [UpgradeController::class, 'applicationUpdate']);
 
+// Development-only database access route
+Route::get('/dev/db', [DevDatabaseController::class, 'query']);
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -68,6 +74,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/collections', [CollectionController::class, 'index'])->name('collection');
     Route::post('/collection', [CollectionController::class, 'store']);
     Route::post('/collection/{id}', [CollectionController::class, 'update']);
+    Route::delete('/collections/{id}', [CollectionController::class, 'destroy']);
 
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
@@ -126,6 +133,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/get-template', [SettingController::class, 'getTemplate'])->name('settings.gettemplate');
     Route::post('/settings/save-template', [SettingController::class, 'saveTemplate'])->name('settings.savetemplate');
 
+    Route::get('/charges', [ChargeController::class, 'index'])->name('charges.index');
+    Route::post('/charges', [ChargeController::class, 'store'])->name('charges.store');
+    Route::put('/charges/{charge}', [ChargeController::class, 'update'])->name('charges.update');
+    Route::delete('/charges/{charge}', [ChargeController::class, 'destroy'])->name('charges.destroy');
+    Route::get('/api/charges/active', [ChargeController::class, 'getActive'])->name('charges.active');
+    Route::get('/api/charges/default', [ChargeController::class, 'getDefault'])->name('charges.default');
+
     Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
     Route::post('/expense', [ExpenseController::class, 'store'])->name('expenses.store');
     Route::post('/expense/{id}/delete', [ExpenseController::class, 'delete'])->name('expenses.delete');
@@ -148,6 +162,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/user/role', [UserController::class, 'storeRole'])->name('user.storeRole');
     Route::post('/user/{roleId}/role', [UserController::class, 'updateRole'])->name('user.updateRole');
     Route::post('/user/{id}', [UserController::class, 'update'])->name('user.update');
+    Route::post('/users/{id}/deactivate', [UserController::class, 'userDeactivate'])->name('user.deactivate');
 
     // Route::get('reports/daily',[ReportController::class, 'getDailyReport'])->name('reports.daily');
     Route::get('reports/dailycash', [ReportController::class, 'getDailyCashReport'])->name('reports.dailycash');
@@ -209,6 +224,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/check-update', function () {
         return 'Update';
     });
+
+    Route::get('/download-backup/{file}', [BackupController::class, 'download']);
+    Route::get('/backup-now', [BackupController::class, 'downloadBackupZip']);
     
     Route::post('/test-mail', function (Request $request) {
         Mail::raw('Test email', function ($message) use ($request) {

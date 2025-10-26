@@ -48,7 +48,7 @@ const DrawerFooter = styled("div")(({ theme }) => ({
     zIndex: "999",
 }));
 
-function POS({ products, customers, return_sale, categories, edit_sale, sale_data }) {
+function POS({ products, customers, return_sale, categories, edit_sale, sale_data, default_charges }) {
     const cartType = edit_sale ? 'sale_edit_cart' : (return_sale ? 'sales_return_cart' : 'sales_cart');
     const [mobileOpen, setMobileOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -72,11 +72,11 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
 
     useEffect(() => {
         if (cartType === "sales_return_cart") {
-            localStorage.setItem('sales_return_cart', []);
+            localStorage.setItem('sales_return_cart', JSON.stringify([]));
         }
 
         if (cartType === "sale_edit_cart") {
-            localStorage.setItem('sale_edit_cart', []);
+            localStorage.setItem('sale_edit_cart', JSON.stringify([]));
         }
     }, [cartType])
 
@@ -136,7 +136,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
     );
 
     return (
-        <SalesProvider cartType={cartType}>
+        <SalesProvider cartType={cartType} defaultCharges={default_charges}>
             <Head title="Point of Sale" />
             <Box sx={{ display: "flex" }}>
                 <CssBaseline />

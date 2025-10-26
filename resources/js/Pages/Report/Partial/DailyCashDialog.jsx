@@ -16,6 +16,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import axios from "axios";
 import Swal from "sweetalert2";
 import dayjs from "dayjs";
+import { useCurrencyStore } from "@/stores/currencyStore";
 export default function DailyCashDialog({
     open,
     setOpen,
@@ -23,6 +24,7 @@ export default function DailyCashDialog({
     refreshTransactions,
     auth
 }) {
+    const { settings: currencySettings } = useCurrencyStore();
     const initialFormState = {
         amount: 0,
         transaction_date: dayjs().format("YYYY-MM-DD"), // Today's date in 'YYYY-MM-DD' format
@@ -134,7 +136,7 @@ export default function DailyCashDialog({
                                     input: {
                                         startAdornment: (
                                             <InputAdornment position="start">
-                                                Rs.
+                                                {currencySettings.currency_symbol}
                                             </InputAdornment>
                                         ),
                                     },

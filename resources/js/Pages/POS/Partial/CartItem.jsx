@@ -15,14 +15,15 @@ import MenuItem from '@mui/material/MenuItem';
 import { useSales as useCart } from '@/Context/SalesContext';
 import { SharedContext } from "@/Context/SharedContext";
 import productplaceholder from "@/Pages/Product/product-placeholder.webp";
-import numeral from 'numeral';
+import { useCurrencyFormatter } from '@/lib/currencyFormatter';
 
 export default function CartItems() {
+  const formatCurrency = useCurrencyFormatter();
   const return_sale = usePage().props.return_sale;
   const edit_sale = usePage().props.edit_sale;
   const sale_data = usePage().props.sale_data;
 
-  const { cartState, removeFromCart, emptyCart, addToCart } = useCart();
+  const { cartState, removeFromCart, emptyCart, emptyCartItemsOnly, addToCart } = useCart();
   const { setCartItemModalOpen, setSelectedCartItem, cartItemModalOpen } = useContext(SharedContext);
 
   // Handle cart item menu
@@ -52,16 +53,9 @@ export default function CartItems() {
     handleClose()
   };
 
-
-  useEffect(() => {
-    if (return_sale) {
-      emptyCart()
-    }
-  }, [return_sale])
-
   useEffect(() => {
     if (edit_sale && sale_data?.cart_snapshot) {
-      emptyCart()
+      emptyCartItemsOnly()
       const cartItems = JSON.parse(sale_data.cart_snapshot);
       cartItems.forEach((item) => {
         addToCart(item, item.quantity);
@@ -100,8 +94,8 @@ export default function CartItems() {
                       <span className='bg-green-600 text-white px-2 py-1 rounded-md'>Free</span>
                     ) : (
                       <>
-                        {(item.price - item.discount).toFixed(2)} X {item.quantity} = <b>{numeral((item.price - item.discount) * item.quantity).format('0,0.00')} 
-                        {item.flat_discount > 0 && ' - '+numeral(item.flat_discount).format('0,0.00')}</b>
+                        {formatCurrency(item.price - item.discount, false)} X {item.quantity} = <b>{formatCurrency((item.price - item.discount) * item.quantity, false)}
+                        {item.flat_discount > 0 && ' - '+formatCurrency(item.flat_discount, false)}</b>
                       </>
                     )}
                     <br />

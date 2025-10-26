@@ -102,6 +102,7 @@ class SaleController extends Controller
             'contact_id',            // Customer ID
             'sale_date',              // Sale date
             'total_amount',           // Total amount (Total amount after discount [net_total - discount])
+            'total_charge_amount',    // Total charge amount
             'discount',                // Discount
             'amount_received',         // Amount received
             'status',                  // Sale status
@@ -131,11 +132,17 @@ class SaleController extends Controller
             'sale_items.discount',
             'sale_items.flat_discount',
             'sale_items.free_quantity',
+            'sale_items.charge_id',
+            'sale_items.item_type',
+            'sale_items.description',
+            'sale_items.charge_type',
+            'sale_items.rate_value',
+            'sale_items.rate_type',
             'products.name',
-            DB::raw("CASE 
-                WHEN products.product_type = 'reload' 
-                THEN reload_and_bill_metas.account_number 
-                ELSE NULL 
+            DB::raw("CASE
+                WHEN products.product_type = 'reload'
+                THEN reload_and_bill_metas.account_number
+                ELSE NULL
              END as account_number")
         )
             ->leftJoin('products', 'sale_items.product_id', '=', 'products.id') // Join with contacts table using customer_id
@@ -309,16 +316,22 @@ class SaleController extends Controller
         }
 
         // Fetch all sale items related to the fetched sales
+        // Build database-agnostic date format SQL
+        $dateFormat = DB::getDriverName() === 'mysql'
+            ? "CONCAT(' [', DATE_FORMAT(sale_items.sale_date, '%Y-%m-%d'), '] - ', products.name)"
+            : "' [' || strftime('%Y-%m-%d', sale_items.sale_date) || '] - ' || products.name";
+
         $salesItems = SaleItem::select(
             'sale_items.quantity',
             'sale_items.unit_price',
             'sale_items.discount',
-            DB::raw("CONCAT(' [', DATE_FORMAT(sale_items.sale_date, '%Y-%m-%d'), '] - ', products.name) as name"),
+            'sale_items.free_quantity',
+            DB::raw("$dateFormat as name"),
             'sale_items.sale_id', // Include sale_id for mapping
-            DB::raw("CASE 
+            DB::raw("CASE
                 WHEN products.product_type = 'reload'
-                THEN reload_and_bill_metas.account_number 
-                ELSE NULL 
+                THEN reload_and_bill_metas.account_number
+                ELSE NULL
              END as account_number")
         )
             ->whereIn('sale_items.sale_id', $sales->pluck('id')) // Fetch only items for the selected sales

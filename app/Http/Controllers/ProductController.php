@@ -32,7 +32,7 @@ class ProductController extends Controller
             'product_stocks.id as stock_id',
             'product_batches.is_featured',
             'product_batches.id AS batch_id',
-            DB::raw("CONCAT('{$imageUrl}', products.image_url) AS image_url"),
+            DB::raw("'{$imageUrl}' || products.image_url AS image_url"),
             'products.name',
             'products.barcode',
             DB::raw("COALESCE(products.sku, 'N/A') AS sku"),

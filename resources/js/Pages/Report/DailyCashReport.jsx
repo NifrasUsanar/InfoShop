@@ -103,13 +103,13 @@ export default function DailyReport({ logs, stores, users }) {
                 size={12}
                 sx={{ mb: 1 }}
             >
-                <Grid size={{ xs: 8, sm: 4, md: 2 }}>
+                <Grid size={{ xs: 12, sm: 4, md: 2 }}>
                     <TextField
                         label="Date"
                         name="transaction_date"
                         placeholder="Transaction Date"
                         fullWidth
-                        size="large"
+                        size="small"
                         type="date"
                         sx={{ height: "100%" }}
                         slotProps={{
@@ -128,7 +128,7 @@ export default function DailyReport({ logs, stores, users }) {
                         select
                         value={formState.store_id}
                         label="Store"
-                        size="large"
+                        size="small"
                         onChange={handleFieldChange}
                         required
                         name="store_id"
@@ -151,7 +151,7 @@ export default function DailyReport({ logs, stores, users }) {
                         value={formState.user_id}
                         fullWidth
                         name="user_id"
-                        size="large"
+                        size="small"
                         label="User/Cashier"
                         onChange={handleFieldChange}
                         select
@@ -173,7 +173,7 @@ export default function DailyReport({ logs, stores, users }) {
                         onClick={() => refreshLogs(window.location.pathname)}
                         sx={{ height: "100%", }}
                         fullWidth
-                        size="large"
+                        size="small"
                     >
                         <FindReplaceIcon />
                     </Button>
@@ -185,7 +185,7 @@ export default function DailyReport({ logs, stores, users }) {
                         onClick={() => setModalOpen(true)}
                         sx={{ height: "100%", }}
                         startIcon={<AddCircleIcon />}
-                        size="large"
+                        size="small"
                         fullWidth
                         color="success"
                     >

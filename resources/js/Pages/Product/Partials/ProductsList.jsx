@@ -2,8 +2,10 @@ import React from 'react';
 import { Button, IconButton } from '@mui/material';
 import { Barcode, History, Star } from 'lucide-react';
 import { Link, router } from '@inertiajs/react';
+import { useCurrencyFormatter } from '@/lib/currencyFormatter';
 
 const ProductsList = ({ products, handleProductEdit }) => {
+    const formatCurrency = useCurrencyFormatter();
     return (
         <ul className='faded-bottom no-scrollbar grid gap-2 overflow-auto pt-1 pb-1 w-full'>
             {products.map((product) => (
@@ -28,11 +30,11 @@ const ProductsList = ({ products, handleProductEdit }) => {
                     <div className="mt-2 grid grid-cols-3 gap-4">
                         <div onClick={() => handleProductEdit(product, 'batch')}>
                             <div className="text-gray-500 text-sm">Sale Price</div>
-                            <div className="text-gray-700 text-sm font-bold">Rs. {product.price}</div>
+                            <div className="text-gray-700 text-sm font-bold">{formatCurrency(product.price, false)}</div>
                         </div>
                         <div onClick={() => handleProductEdit(product, 'batch')}>
                             <div className="text-gray-500 text-sm">Cost</div>
-                            <div className="text-gray-700 text-sm font-bold">Rs {product.cost}</div>
+                            <div className="text-gray-700 text-sm font-bold">{formatCurrency(product.cost, false)}</div>
                         </div>
                         <div onClick={() => handleProductEdit(product, 'qty')}>
                             <div className="text-gray-500 text-sm">In Stock</div>

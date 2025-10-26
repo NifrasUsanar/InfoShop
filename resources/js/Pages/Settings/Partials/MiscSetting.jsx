@@ -5,22 +5,23 @@ import { useEffect } from 'react';
 const MiscSetting = ({ handleSubmit, settingFormData, handleChange, setSettingFormData, settings }) => {
 
     useEffect(() => {
+        if (!settings?.misc_settings) return;
         try {
             const parsedSettings = JSON.parse(settings.misc_settings);
-            setSettingFormData({
-                ...settingFormData,
+            setSettingFormData(prev => ({
+                ...prev,
                 optimize_image_width: parsedSettings.optimize_image_width,
                 optimize_image_size: parsedSettings.optimize_image_size,
                 cheque_alert: parsedSettings.cheque_alert,
                 product_alert: parsedSettings.product_alert,
-                cart_first_focus: parsedSettings.cart_first_focus ? parsedSettings.cart_first_focus : 'quantity',
+                cart_first_focus: parsedSettings.cart_first_focus ?? 'quantity',
                 enable_unit_discount: parsedSettings.enable_unit_discount ?? 'yes',
                 enable_flat_item_discount: parsedSettings.enable_flat_item_discount ?? 'no',
-            });
+            }));
         } catch (error) {
             console.error("Failed to parse misc settings:", error);
         }
-    }, []);
+    }, [settings?.misc_settings]);
 
     return (
         <form

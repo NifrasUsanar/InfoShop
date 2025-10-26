@@ -3,9 +3,7 @@ import { useState, useEffect } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, usePage, Link } from "@inertiajs/react";
 import {
-    Typography,
     Grid,
-    TextField,
     ListItem,
     List,
     ListItemButton,
@@ -17,10 +15,7 @@ import {
     IconButton
 } from "@mui/material";
 import dayjs from "dayjs";
-import {
-    Card,
-    CardContent,
-} from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import PaidIcon from "@mui/icons-material/Paid";
@@ -28,7 +23,7 @@ import PaymentsIcon from "@mui/icons-material/Payments";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
-import axios from "axios";
+import axios, { Axios } from "axios";
 import numeral from "numeral";
 
 import Summaries from "./Partials/Summaries";
@@ -36,6 +31,7 @@ import { SalesChart } from "./Partials/SalesChart";
 import { OverViewCards } from "./Partials/OverViewCards";
 import { DatePicker } from "@mui/x-date-pickers";
 import MUIDatePicker from "@/Components/ui/MUIDatePicker";
+import { DatabaseBackup } from "lucide-react";
 
 export default function Dashboard({ data, logo, version, store_name }) {
     const auth = usePage().props.auth.user;
@@ -225,48 +221,28 @@ export default function Dashboard({ data, logo, version, store_name }) {
                     <SalesChart></SalesChart>
                 </Grid>
 
-                {/* <Grid size={{ xs: 12, sm: 4, md: 4 }}>
-                    <Card className="pt-0 w-full h-full">
-                            <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-                            <Grid
-                                container
-                                display="flex"
-                                flexDirection={"column"}
-                                spacing={2}
-                                width={"100%"}
-                            >
-                                <Typography variant="h4" color="initial">
-                                    Hello,
-                                </Typography>
-                                <Typography variant="h2" color="initial">
-                                    {auth.name}
-                                </Typography>
-                                <Typography variant="h4" color="initial">
-                                    {store_name}
-                                </Typography>
-                            </Grid>
-                        </CardContent>
-                    </Card>
-                </Grid>
-                <Grid size={{ xs: 12, sm: 4, md: 4 }}>
-                    <Card className="w-full h-full p-2 flex justify-center p-5">
-                        <img src={logo} style={{ maxHeight: '250px', objectFit: 'contain' }} alt="" />
-                    </Card>
-                </Grid> */}
-
                 {(auth.user_role == "admin" || auth.user_role == "super-admin") && (
                     <Summaries></Summaries>
                 )}
+
+                {/* <ContactsList /> */}
             </Grid>
 
             <Box sx={{ justifyContent: 'center', alignItems: 'center', position: 'fixed', backgroundColor: '#c9c9c9', bottom: '2px', right: '6px', padding: '10px', paddingRight: 2 }}>
                 <Grid container spacing={1} alignItems={'center'}>
                     <Grid>
-                        <Link href="/clear-cache" title="Refresh cache">
+                        <a href="/clear-cache" title="Refresh cache">
                             <IconButton>
                                 <RefreshIcon />
                             </IconButton>
-                        </Link>
+                        </a>
+                    </Grid>
+                    <Grid>
+                        <a href="/backup-now" title="Backup now" target="_blank">
+                            <IconButton>
+                                <DatabaseBackup />
+                            </IconButton>
+                        </a>
                     </Grid>
                     <Grid>
                         <IconButton onClick={() => {

@@ -51,4 +51,10 @@ class CollectionController extends Controller
 
         return redirect()->route('collection')->with('success', 'Collection updated successfully!');
     }
+
+    public function destroy($id)
+    {
+        Collection::findOrFail($id)->delete();
+       return response()->json(['success' => 'Collection deleted successfully'], 200);
+    }
 }

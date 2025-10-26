@@ -13,9 +13,11 @@ import _ from "lodash";
 import AddToPurchase from "./AddToPurchase";
 
 import { usePurchase } from "@/Context/PurchaseContext";
+import { useCurrencyStore } from "@/stores/currencyStore";
 
 export default function ProductSearch() {
     const { addToCart } = usePurchase();
+    const { settings: currencySettings } = useCurrencyStore();
 
     const [productOptions, setProductOptions] = useState([]); // Stores the options from the API
     const [selectedProductOption, setSelectedProductOption] = useState(null); // Stores the selected option
@@ -108,7 +110,7 @@ export default function ProductSearch() {
                 isClearable // Allow the user to clear the selected option
                 noOptionsMessage={() => "No products found"}
                 getOptionLabel={(option) =>
-                    `${option.name} | ${option.batch_number} | Rs.${option.cost}  | Rs.${option.price} | ${option.quantity} | ${option.barcode} ${option.sku ? `| ${option.sku}` : ""}`
+                    `${option.name} | ${option.batch_number} | ${currencySettings.currency_symbol}${option.cost}  | ${currencySettings.currency_symbol}${option.price} | ${option.quantity} | ${option.barcode} ${option.sku ? `| ${option.sku}` : ""}`
                 }
                 getOptionValue={(option) => option.batch_id}
             ></Select2>

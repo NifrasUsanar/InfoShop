@@ -71,11 +71,11 @@ class DashboardController extends Controller
             ->count();
 
         //Sales chart
-        $totalSaleAmount = Sale::selectRaw('DATE(sale_date) as date, SUM(total_amount) as sale, 0 as cash')
+        $totalSaleAmount = Sale::selectRaw('date(sale_date) as date, SUM(total_amount) as sale, 0 as cash')
             ->whereBetween('sale_date', [now()->startOfMonth()->subMonths(3), now()])
             ->groupBy('date');
 
-        $totalPayments = Transaction::selectRaw('DATE(transaction_date) as date, 0 as sale, SUM(amount) as cash')
+        $totalPayments = Transaction::selectRaw('date(transaction_date) as date, 0 as sale, SUM(amount) as cash')
             ->whereBetween('transaction_date', [now()->startOfMonth()->subMonths(3), now()])
             ->where('payment_method', 'Cash')
             ->groupBy('date');

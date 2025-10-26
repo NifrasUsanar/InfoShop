@@ -17,9 +17,9 @@ import PendingActionsIcon from '@mui/icons-material/PendingActions';
 
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import MobileContactsList from './Partial/MobileContactsList';
+// import MobileContactsList from './Partial/MobileContactsList';
 
-import { syncPosProducts, getLocalPosProducts } from '@/localdb/pos_products';
+// import { syncPosProducts, getLocalPosProducts } from '@/localdb/pos_products';
 import { SalesProvider } from "@/Context/SalesContext";
 
 const columns = (handleRowClick) => [
@@ -172,12 +172,12 @@ export default function Contact({ contacts, type, stores }) {
         }
     }, [dataContacts]);
 
-    useEffect(() => {
-        (async () => {
-            // sync fresh from API
-            const fresh = await syncPosProducts();
-        })();
-    }, [])
+    // useEffect(() => {
+    //     (async () => {
+    //         // sync fresh from API
+    //         const fresh = await syncPosProducts();
+    //     })();
+    // }, [])
 
     return (
         <AuthenticatedLayout>
@@ -264,11 +264,11 @@ export default function Contact({ contacts, type, stores }) {
                     </Box>
                 )}
 
-                {isMobile && (
+                {/* {isMobile && (
                     <SalesProvider cartType={'sales_cart'}>
                         <MobileContactsList contacts={dataContacts.data} handleContactEdit={handleRowClick} />
                     </SalesProvider>
-                )}
+                )} */}
 
                 <Grid size={12} container justifyContent={"end"}>
                     <CustomPagination
