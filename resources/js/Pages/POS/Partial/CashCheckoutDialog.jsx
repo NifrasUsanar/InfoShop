@@ -17,7 +17,7 @@ import { useState, useEffect, useContext } from 'react';
 
 import { useSales as useCart } from '@/Context/SalesContext';
 import { SharedContext } from "@/Context/SharedContext";
-import { useCurrencyFormatter } from "@/lib/currencyFormatter";
+import { useCurrencyFormatter, toNumeric } from "@/lib/currencyFormatter";
 import { useCurrencyStore } from "@/stores/currencyStore";
 
 export default function CashCheckoutDialog({ disabled }) {
@@ -73,8 +73,23 @@ export default function CashCheckoutDialog({ disabled }) {
 
         const formData = new FormData(event.currentTarget);
         const formJson = Object.fromEntries(formData.entries());
-        formJson.cartItems = cartState;
-        formJson.charges = charges;
+
+        // Sanitize numeric fields
+        formJson.amount_received = toNumeric(formJson.amount_received);
+        formJson.discount = toNumeric(formJson.discount);
+        formJson.net_total = toNumeric((cartTotal - discount) + recalculatedCharges);
+        formJson.change_amount = toNumeric(amountReceived - ((cartTotal - discount) + recalculatedCharges));
+
+        formJson.cartItems = cartState.map(item => ({
+            ...item,
+            price: toNumeric(item.price),
+            quantity: toNumeric(item.quantity),
+            discount: toNumeric(item.discount || 0)
+        }));
+        formJson.charges = charges.map(c => ({
+            ...c,
+            rate_value: toNumeric(c.rate_value)
+        }));
         formJson.profit_amount = totalProfit - discount; //total profit is from the sale items, but we apply discount for the bill also
         formJson.sale_date = saleDate;
         formJson.payment_method = 'Cash'
