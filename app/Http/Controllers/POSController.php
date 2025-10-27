@@ -40,6 +40,7 @@ class POSController extends Controller
             DB::raw("CONCAT('{$imageUrl}', products.image_url) AS image_url"),
             'products.name',
             'products.is_stock_managed',
+            'products.unit',
             DB::raw("COALESCE(pb.batch_number, 'N/A') AS batch_number"),
             DB::raw("COALESCE(product_stocks.quantity, 0) AS quantity"),
             DB::raw("COALESCE(product_stocks.quantity, 0) AS stock_quantity"),
@@ -50,10 +51,12 @@ class POSController extends Controller
             'products.product_type',
             'products.alert_quantity',
             'pb.discount',
-            'pb.discount_percentage'
+            'pb.discount_percentage',
+            DB::raw('COALESCE(c.name, NULL) AS brand_name')
         )
             ->leftJoin('product_batches AS pb', 'products.id', '=', 'pb.product_id') // Join with product_batches using product_id
             ->leftJoin('product_stocks', 'pb.id', '=', 'product_stocks.batch_id') // Join with product_stocks using batch_id
+            ->leftJoin('collections AS c', 'products.brand_id', '=', 'c.id')
             ->where('product_stocks.store_id', session('store_id', Auth::user()->store_id))
             ->where('pb.is_active', 1);
 
@@ -70,6 +73,7 @@ class POSController extends Controller
             'products.name',
             'products.discount',
             'products.is_stock_managed',
+            'products.unit',
             DB::raw("COALESCE(pb.batch_number, 'N/A')"),
             'pb.cost',
             'pb.price',
@@ -79,7 +83,8 @@ class POSController extends Controller
             'products.meta_data',
             'products.alert_quantity',
             'pb.discount',
-            'pb.discount_percentage'
+            'pb.discount_percentage',
+            'c.name'
         );
 
         if (!isset($allProducts)) {

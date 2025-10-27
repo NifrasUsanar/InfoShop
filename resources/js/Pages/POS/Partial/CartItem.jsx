@@ -79,7 +79,7 @@ export default function CartItems() {
                   className='hover:underline'
                   onClick={() => { setSelectedCartItem({ ...item, cart_index: index }); setCartItemModalOpen(true); }}
                 >
-                  {item.name}
+                  {item.name}{item.unit ? ` | ${item.unit}` : ''}
                 </Typography>
               }
               sx={{ ml: '10px' }}

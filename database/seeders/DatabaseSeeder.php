@@ -52,6 +52,7 @@ class DatabaseSeeder extends Seeder
             'payroll',
             'media',
             'settings',
+            'charges'
         ];
 
         foreach ($permissions as $permission) {

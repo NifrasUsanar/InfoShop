@@ -273,7 +273,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     />
                 )}
 
-                {(permissions.includes("reloads") && modules.includes("Reloads")) && (
+                {/* {(permissions.includes("reloads") && modules.includes("Reloads")) && (
                     <NavItem
                         href="/reloads"
                         icon={PhoneForwardedIcon}
@@ -281,9 +281,9 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         open={open}
                         selected={isSelected("/reloads")}
                     />
-                )}
+                )} */}
 
-                {(permissions.includes("cheques") && modules.includes("Cheques")) && (
+                {/* {(permissions.includes("cheques") && modules.includes("Cheques")) && (
                     <NavItem
                         href="/cheques?status=pending"
                         icon={faMoneyCheck}
@@ -292,7 +292,8 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         open={open}
                         selected={isSelected("/cheques")}
                     />
-                )}
+                )} */}
+
                 {permissions.includes("sold-items") && (
                     <NavItem
                         href="/sold-items"

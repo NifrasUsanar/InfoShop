@@ -15,6 +15,7 @@ export default function ProductItem({ product }) {
     const formatCurrency = useCurrencyFormatter();
 
     const { name, price, image_url, quantity } = product;
+    const brandName = product.brand_name || null;
     const { addToCart, cartState } = useCart();
     const { setCartItemModalOpen, setSelectedCartItem } = useContext(SharedContext);
 
@@ -45,7 +46,7 @@ export default function ProductItem({ product }) {
             elevation={1}
         >
             <CardMedia
-                sx={{ height: {xs:70, sm:100} }}
+                sx={{ height: { xs: 70, sm: 100 } }}
                 image={image_url ? image_url : productplaceholder}
                 title={name}
             />
@@ -60,6 +61,28 @@ export default function ProductItem({ product }) {
                     {/* - ({quantity}) */}
                 </Typography>
             </CardContent>
+            {/* {price > 0 && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                        color: 'white',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        textAlign: 'right'
+                    }}
+                >
+                    <div>{formatCurrency(price, false)}</div>
+                    {brandName && (
+                        <Typography variant="caption" sx={{ display: 'block', opacity: 0.9 }}>
+                            {brandName}
+                        </Typography>
+                    )}
+                </Box>
+            )} */}
+
             {price > 0 && (
                 <Box
                     sx={{
@@ -70,11 +93,32 @@ export default function ProductItem({ product }) {
                         color: 'white',
                         padding: '2px 8px',
                         borderRadius: '4px',
+                        textAlign: 'right'
                     }}
                 >
-                    {formatCurrency(price, false)}
+                    <div>{formatCurrency(price, false)}</div>
                 </Box>
             )}
+
+            {brandName && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        backgroundColor: 'rgba(0,0,0, 0.6)',
+                        color: 'white',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        textAlign: 'left',
+                        fontWeight: 500,
+                        fontSize: '0.80rem',
+                    }}
+                >
+                    {brandName}
+                </Box>
+            )}
+
         </Card>
     );
 }

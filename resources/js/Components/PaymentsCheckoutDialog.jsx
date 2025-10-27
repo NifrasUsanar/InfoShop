@@ -116,13 +116,16 @@ export default function PaymentsCheckoutDialog({
         formJson.charges = charges;
         formJson.contact_id = selectedContact.id;
         formJson.payments = payments;
-        formJson = { ...formJson, ...formData } //Form data from the POS / Purchase form
+        formJson = { ...formData, ...formJson } //Form data from the POS / Purchase form (ensure local values win)
         formJson.profit_amount = totalProfit - discount
 
         formJson.return_sale = return_sale;
         formJson.return_sale_id = return_sale_id;
         formJson.edit_sale_id = edit_sale_id;
         formJson.edit_sale = edit_sale;
+
+        // Ensure net_total is always a numeric value and not overwritten
+        formJson.net_total = reactiveFinalTotal;
 
         let url = '/pos/checkout';
         if (!is_sale) { url = "/purchase/store" }
@@ -275,7 +278,7 @@ export default function PaymentsCheckoutDialog({
                                 label="Total"
                                 variant="outlined"
                                 sx={{ input: { fontWeight: 'bold', } }}
-                                value={formatCurrency(reactiveFinalTotal, false)}
+                                value={reactiveFinalTotal}
                                 onFocus={(event) => {
                                     event.target.select();
                                 }}
@@ -348,6 +351,7 @@ export default function PaymentsCheckoutDialog({
                                             component="label"
                                             role={undefined}
                                             variant="contained"
+                                            title=" pay later"
                                             startIcon={<PauseCircleOutlineIcon />}
                                             onClick={() => addPayment('Credit')}
                                             color="error"
@@ -363,9 +367,9 @@ export default function PaymentsCheckoutDialog({
                                         role={undefined}
                                         variant="contained"
                                         startIcon={<CreditCardIcon />}
-                                        onClick={() => addPayment('Cheque')}
+                                        onClick={() => addPayment('Bank')}
                                     >
-                                        CHEQUE
+                                        BANK
                                     </Button>
                                 </Grid>
                                 <Grid size={{xs:6,sm:4}}>
@@ -375,9 +379,9 @@ export default function PaymentsCheckoutDialog({
                                         role={undefined}
                                         variant="contained"
                                         startIcon={<FontAwesomeIcon icon={faCreditCard} size={"2xl"} />}
-                                        onClick={() => addPayment('Card')}
+                                        onClick={() => addPayment('Easypaisa')}
                                     >
-                                        CARD
+                                        EASYPaisa
                                     </Button>
                                 </Grid>
                             </Grid>
@@ -393,7 +397,8 @@ export default function PaymentsCheckoutDialog({
                                     {/* Display Payment Method Icon */}
                                     <TableCell sx={{ padding: '5px 16px' }}>
                                         {payment.payment_method === 'Cash' && <PaymentsIcon />}
-                                        {payment.payment_method === 'Cheque' && <CreditCardIcon />}
+                                        {payment.payment_method === 'Bank' && <CreditCardIcon />}
+                                        {payment.payment_method === 'Easypaisa' && <FontAwesomeIcon icon={faCreditCard} />}
                                         {payment.payment_method === 'Credit' && <PauseCircleOutlineIcon />}
                                         <span className="ml-2"><strong>{payment.payment_method}</strong></span>
                                     </TableCell>

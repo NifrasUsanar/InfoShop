@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useMemo, useState, useEffect, useRef } from 'react';
 import useCartBase from './useCartBase';
 import axios from 'axios';
-import { number } from 'motion';
 
 const SalesContext = createContext();
 
