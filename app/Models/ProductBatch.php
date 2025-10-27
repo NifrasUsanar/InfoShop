@@ -16,8 +16,8 @@ class ProductBatch extends Model
     protected $fillable = [
         'product_id',
         'batch_number',
-        'expiry_date', 
-        'cost', 
+        'expiry_date',
+        'cost',
         'price',
         'is_active',
         'is_featured',
@@ -25,4 +25,14 @@ class ProductBatch extends Model
         'contact_id',
         'discount_percentage',
     ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function stocks()
+    {
+        return $this->hasMany(ProductStock::class, 'batch_id');
+    }
 }

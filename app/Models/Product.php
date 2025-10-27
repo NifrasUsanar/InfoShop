@@ -48,4 +48,14 @@ class Product extends Model
     protected $casts = [
         'meta_data' => 'array', // Ensure the meta_data column is treated as an array
     ];
+
+    public function batches()
+    {
+        return $this->hasMany(ProductBatch::class, 'product_id');
+    }
+
+    public function stocks()
+    {
+        return $this->hasMany(ProductStock::class, 'product_id');
+    }
 }

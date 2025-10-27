@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "abdce5827bb4cdbe47bea62d9de052ae",
+    "content-hash": "a3f617bd9b2edecc9d6835c075382562",
     "packages": [
         {
             "name": "brick/math",
@@ -509,6 +509,46 @@
                 }
             ],
             "time": "2023-10-06T06:47:41+00:00"
+        },
+        {
+            "name": "froiden/laravel-installer",
+            "version": "11.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Froiden/laravel-installer.git",
+                "reference": "d06362a45a07531969fec475f71f07bfdc286c10"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Froiden/laravel-installer/zipball/d06362a45a07531969fec475f71f07bfdc286c10",
+                "reference": "d06362a45a07531969fec475f71f07bfdc286c10",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/functions.php"
+                ],
+                "psr-4": {
+                    "Froiden\\LaravelInstaller\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ajay Kumar Choudhary",
+                    "email": "ajay@froiden.com"
+                }
+            ],
+            "description": "Laravel web installer",
+            "support": {
+                "issues": "https://github.com/Froiden/laravel-installer/issues",
+                "source": "https://github.com/Froiden/laravel-installer/tree/11.0.0"
+            },
+            "time": "2024-08-13T10:47:34+00:00"
         },
         {
             "name": "fruitcake/php-cors",

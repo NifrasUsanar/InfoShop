@@ -34,6 +34,7 @@ use App\Http\Controllers\SaleTemplateController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\DevDatabaseController;
 use App\Http\Controllers\ChargeController;
+use App\Http\Controllers\SyncController;
 
 Route::get('/', function () {
     return redirect('login');
@@ -56,6 +57,25 @@ Route::post('/api/application-update', [UpgradeController::class, 'applicationUp
 
 // Development-only database access route
 Route::get('/dev/db', [DevDatabaseController::class, 'query']);
+
+// Sync API endpoints for offline-first InfoPOS app
+Route::prefix('api/sync')->group(function () {
+    Route::get('/health', [SyncController::class, 'healthCheck']);
+    Route::get('/products', [SyncController::class, 'getProducts']);
+    Route::get('/contacts', [SyncController::class, 'getContacts']);
+    Route::get('/charges', [SyncController::class, 'getCharges']);
+    Route::get('/stock', [SyncController::class, 'getStock']);
+    Route::get('/manifest', [SyncController::class, 'getSyncManifest']);
+    Route::get('/delta', [SyncController::class, 'getSyncDelta']);
+
+    Route::post('/sales', [SyncController::class, 'syncSales']);
+    Route::post('/transactions', [SyncController::class, 'syncTransactions']);
+    Route::post('/stock', [SyncController::class, 'syncStock']);
+    Route::post('/contacts', [SyncController::class, 'syncContacts']);
+});
+
+// Store config endpoint
+Route::get('/api/stores/{storeId}', [SyncController::class, 'getStoreConfig']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -105,7 +125,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/sold-items-summary', [SaleController::class, 'soldItemSummary'])->name('sales.items.summary');
     Route::delete('/sales/{id}', [SaleController::class, 'destroy'])->name('sales.destroy');
     Route::get('/sale-notification/{id}', [SaleController::class, 'sendNotification']);
-    
+
     Route::get('/purchases', [PurchaseController::class, 'index'])->name('purchases.index');
     Route::get('/purchase/create', [PurchaseController::class, 'create'])->name('purchases.create');
     Route::post('/purchase/store', [PurchaseController::class, 'store'])->name('purchases.store');
@@ -227,7 +247,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/download-backup/{file}', [BackupController::class, 'download']);
     Route::get('/backup-now', [BackupController::class, 'downloadBackupZip']);
-    
+
     Route::post('/test-mail', function (Request $request) {
         Mail::raw('Test email', function ($message) use ($request) {
             $message->to($request->input('test_mail'))->subject('Mail received');

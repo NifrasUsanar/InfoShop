@@ -113,6 +113,18 @@ export const formatCurrency = (amount, settings = {}, includeCurrencySymbol = tr
 };
 
 /**
+ * Convert any value to a clean numeric value
+ * Removes formatting characters (commas, spaces, etc), handles negatives
+ * @param {number|string} value - Value to convert
+ * @returns {number} - Clean numeric value
+ */
+export const toNumeric = (value) => {
+    if (value === null || value === undefined || value === '') return 0;
+    const cleaned = String(value).replace(/[^\d.-]/g, '');
+    return parseFloat(cleaned) || 0;
+};
+
+/**
  * React hook to use formatCurrency with automatic Zustand-based currency settings
  * @returns {function} - formatCurrency function bound to store settings
  * Usage:
