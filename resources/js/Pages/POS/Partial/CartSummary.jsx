@@ -58,7 +58,7 @@ export default function CartSummary() {
     const chargesAvailableToAdd = getAvailableChargesToAdd();
 
     return (
-        <List sx={{ width: "100%", bgcolor: "background.paper", pb: 3 }}>
+        <List sx={{ width: "100%", pb: 3 }}>
             <Divider
                 sx={{
                     borderBottom: "2px dashed",

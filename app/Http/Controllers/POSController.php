@@ -63,7 +63,13 @@ class POSController extends Controller
         // Apply category filter if set
         if (isset($filters['category_id'])) {
             $query->where('products.category_id', $filters['category_id']);
-        } else if (!isset($filters['all_products'])) {
+        }
+        // Apply brand filter if set
+        if (isset($filters['brand_id'])) {
+            $query->where('products.brand_id', $filters['brand_id']);
+        }
+        // Show featured only when neither category nor brand filter is applied, and not fetching all_products
+        if (!isset($filters['category_id']) && !isset($filters['brand_id']) && !isset($filters['all_products'])) {
             $query->where('pb.is_featured', 1);
         }
 
@@ -99,12 +105,16 @@ class POSController extends Controller
     public function getProductsByFilter(Request $request)
     {
         $categoryId = $request->input('category_id');
+        $brandId = $request->input('brand_id');
         $allProducts = $request->input('all_products');
 
         $filters = [];
 
         if ($categoryId != 0) {
             $filters['category_id'] = $categoryId;
+        }
+        if (!empty($brandId)) {
+            $filters['brand_id'] = $brandId;
         }
 
         //Return all products
@@ -126,6 +136,7 @@ class POSController extends Controller
             return redirect()->route('store'); // Adjust the route name as necessary
         }
         $categories = Collection::where('collection_type', 'category')->get();
+        $brands = Collection::where('collection_type', 'brand')->get();
         $products = $this->getProducts();
         $miscSettings = Setting::where('meta_key', 'misc_settings')->first();
         $miscSettings = json_decode($miscSettings->meta_value, true);
@@ -157,6 +168,7 @@ class POSController extends Controller
             'categories' => $categories,
             'cart_first_focus' => $cart_first_focus,
             'misc_settings' => $miscSettings,
+            'brands' => $brands,
             'default_charges' => $defaultCharges
         ]);
     }
@@ -202,6 +214,7 @@ class POSController extends Controller
             'edit_sale' => true,
             'sale_data' => $sale,
             'misc_settings' => $miscSettings,
+            'brands' => $brands,
             'default_charges' => $defaultCharges
         ]);
     }

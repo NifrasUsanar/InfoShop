@@ -9,13 +9,15 @@ import {
     IconButton,
     Toolbar,
     Typography,
-     Grid,
+    Grid,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeIcon from "@mui/icons-material/Home";
+import InventoryIcon from "@mui/icons-material/Inventory";
 
 import ProductItem from "./Partial/ProductItem";
+import BrandBar from "./Partial/BrandBar";
 import CartItems from "./Partial/CartItem";
 import CartSummary from "./Partial/CartSummary";
 import CartFooter from "./Partial/CartFooter";
@@ -27,6 +29,7 @@ import CartItemsTop from "./Partial/CartItemsTop";
 import POSBottomBar from "./Partial/POSBottomBar";
 import SaleTemplateItem from "./SaleTemplate/SaleTemplateItems";
 import Swal from "sweetalert2";
+import Tooltip from "@mui/material/Tooltip";
 
 const drawerWidth = 530;
 
@@ -48,7 +51,7 @@ const DrawerFooter = styled("div")(({ theme }) => ({
     zIndex: "999",
 }));
 
-function POS({ products, customers, return_sale, categories, edit_sale, sale_data, default_charges }) {
+function POS({ products, customers, return_sale, categories, brands, edit_sale, sale_data, default_charges }) {
     const cartType = edit_sale ? 'sale_edit_cart' : (return_sale ? 'sales_return_cart' : 'sales_cart');
     const [mobileOpen, setMobileOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
@@ -138,7 +141,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
     return (
         <SalesProvider cartType={cartType} defaultCharges={default_charges}>
             <Head title="Point of Sale" />
-            <Box sx={{ display: "flex" }}>
+            <Box sx={{ display: "flex" }} >
                 <CssBaseline />
                 <AppBar
                     position="fixed"
@@ -165,22 +168,44 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                         {/* Product Search Box  */}
 
                         <SearchBox></SearchBox>
+                        <Tooltip title="go back home">
+                            <Link href="/dashboard">
+                                <IconButton
+                                    color="inherit"
 
-                        <Link href="/dashboard">
-                            <IconButton
-                                color="inherit"
-                                sx={{
-                                    ml: 0,
-                                    p: "10px",
-                                    color: "default", // Unchecked color
-                                    "& .MuiSvgIcon-root": {
-                                        fontSize: 30, // Customize icon size
-                                    },
-                                }}
-                                type="button"
-                            >
-                                <HomeIcon />
-                            </IconButton>
+                                    sx={{
+                                        ml: 0,
+                                        p: "10px",
+                                        color: "default", // Unchecked color
+                                        "& .MuiSvgIcon-root": {
+                                            fontSize: 30, // Customize icon size
+                                        },
+                                    }}
+                                    type="button"
+                                >
+                                    <HomeIcon />
+                                </IconButton>
+                            </Link>
+                        </Tooltip>
+                        <Link href="/products/create">
+                            <Tooltip title="create new product">
+                                <IconButton
+                                    color="inherit"
+
+                                    sx={{
+                                        ml: 0,
+                                        p: "10px",
+                                        color: "default", // Unchecked color
+                                        "& .MuiSvgIcon-root": {
+                                            fontSize: 30, // Customize icon size
+                                        },
+                                    }}
+                                    type="button"
+                                    target="_blank"
+                                >
+                                    <InventoryIcon />
+                                </IconButton>
+                            </Tooltip>
                         </Link>
 
                     </Toolbar>
@@ -190,23 +215,33 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                     sx={{
                         flexGrow: 1,
                         p: 3,
-                        width: { sm: `calc(100% - ${drawerWidth}px)` },
+                        width: { sm: `calc(100% - ${drawerWidth}px)` }
                     }}
                 >
                     <Toolbar />
 
-                    {/* Product items area  */}
+                    {/* Product items area */}
                     <Grid container spacing={1} sx={{ mb: 8 }}>
-                        <SaleTemplateItem templates={templates} setTemplates={setTemplates} />
-                        {dataProducts?.map((product) => (
-                            <Grid
-                                key={product.id + product.batch_number}
-                                size={{ xs: 6, sm: 6, md: 2 }}
-                                sx={{ cursor: "pointer", }}
-                            >
-                                <ProductItem product={product}></ProductItem>
+
+                        {!return_sale && (
+                            <Box sx={{ mb: 5 }}>
+                                <BrandBar brands={brands || []} setProducts={setDataProducts} setTemplates={setTemplates} />
+                            </Box>
+                        )}
+                        <Grid size={{ xs: 12, sm: 12, md: 12 }}>
+                            <SaleTemplateItem templates={templates} setTemplates={setTemplates} />
+                            <Grid container spacing={1}>
+                                {dataProducts?.map((product) => (
+                                    <Grid
+                                        key={product.id + product.batch_number}
+                                        size={{ xs: 6, sm: 6, md: 2 }}
+                                        sx={{ cursor: "pointer" }}
+                                    >
+                                        <ProductItem product={product} />
+                                    </Grid>
+                                ))}
                             </Grid>
-                        ))}
+                        </Grid>
 
                         {/* Featured and categories */}
                         {!return_sale && (

@@ -26,7 +26,7 @@ export default function POSBottomBar({ setProducts, drawerWidth, categories, set
     };
 
     return (
-        <AppBar position="fixed" color="primary" sx={{ top: 'auto', bottom: 0, left: 0, width: { sm: `calc(100% - ${drawerWidth}px)` }, padding: 1 }}>
+        <AppBar position="fixed" sx={{ top: 'auto', bottom: 0, left: 0, width: { sm: `calc(100% - ${drawerWidth}px)` }, padding: 1, }}>
             <Tabs
                 value={tabValue}
                 onChange={handleTabChange}

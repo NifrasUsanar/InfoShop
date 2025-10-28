@@ -101,26 +101,43 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         {
                             minHeight: 48,
                             px: 2.5,
-                            "&.Mui-selected": {
-                                color: "white",
-                                backgroundColor: "#1976d2", // Background color when selected
+                            transition: "all 0.2s ease-in-out",
+
+                            // 🔹 Base style for all items
+                            color: (theme) => theme.palette.text.primary,
+                            "& .MuiListItemIcon-root": {
+                                color: (theme) => theme.palette.text.secondary,
+                            },
+
+                            // 🔹 Hover — same for all items
+                            "&:hover": {
+                                color: (theme) => theme.palette.primary.contrastText,
+                                backgroundColor: (theme) => theme.palette.primary.light,
                                 "& .MuiListItemIcon-root": {
-                                    // Target the icon within the selected state
-                                    color: "white", // Icon color when selected
+                                    color: (theme) => theme.palette.primary.contrastText,
                                 },
                             },
-                            "&:hover": {
-                                color: "white",
-                                backgroundColor: "#5f72f5", // Background color on hover
+
+                            // 🔹 Selected — visually stronger (but distinct from hover)
+                            "&.Mui-selected": {
+                                color: (theme) => theme.palette.primary.contrastText,
+                                backgroundColor: (theme) => theme.palette.primary.main,
+                                borderLeft: (theme) => `4px solid ${theme.palette.primary.main}`,
+                                boxShadow: (theme) =>
+                                    `inset 3px 0 0 ${theme.palette.primary.dark}`, // left highlight bar effect
                                 "& .MuiListItemIcon-root": {
-                                    color: "white", // Icon color on hover
+                                    color: (theme) => theme.palette.primary.contrastText,
+                                },
+
+                                // 🔹 Keep hover behavior consistent even when selected
+                                "&:hover": {
+                                    backgroundColor: (theme) => theme.palette.primary.dark,
                                 },
                             },
                         },
-                        open
-                            ? { justifyContent: "initial" }
-                            : { justifyContent: "center" },
+                        open ? { justifyContent: "initial" } : { justifyContent: "center" },
                     ]}
+
                     onClick={onClick}
                 >
                     <ListItemIcon

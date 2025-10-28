@@ -120,7 +120,7 @@ export default function SearchBox() {
                     alignItems: "center",
                     width: "100%",
                     height: "55px",
-                    backgroundColor: "white",
+                    // backgroundColor: "white",
                     borderRadius: "5px",
                 }}
             >
@@ -178,6 +178,7 @@ export default function SearchBox() {
                             }}
                             sx={{
                                 "& .MuiOutlinedInput-root": {
+                                    backgroundColor: "rgba(25, 118, 210, 0.08)",
                                     "& fieldset": {
                                         border: "none", // Remove the border
                                     },
@@ -193,10 +194,10 @@ export default function SearchBox() {
                     )}
                 />
 
-                <Divider sx={{ height: 28, m: 0.5 }} orientation="vertical" />
+                {/* <Divider sx={{ height: 28, m: 0.5 }} orientation="vertical" /> */}
                 <IconButton
                     type="button"
-                    sx={{ p: "10px" }}
+                    sx={{ p: "10px", color: "#fff" }}
                     aria-label="search"
                 >
                     <SearchIcon />

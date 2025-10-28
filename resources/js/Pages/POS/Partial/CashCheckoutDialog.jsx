@@ -5,7 +5,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import PaymentsIcon from "@mui/icons-material/Payments";
-import { Box,  Grid, IconButton, TextField } from "@mui/material";
+import { Box, Grid, IconButton, TextField } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import PercentIcon from '@mui/icons-material/Percent';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -83,6 +83,9 @@ export default function CashCheckoutDialog({ disabled }) {
         formJson.return_sale_id = return_sale_id;
         formJson.edit_sale_id = edit_sale_id;
         formJson.edit_sale = edit_sale;
+        // Ensure numeric values are sent (avoid formatted strings)
+        formJson.net_total = (cartTotal - discount) + recalculatedCharges;
+        formJson.amount_received = Number(amountReceived || 0);
 
         axios.post('/pos/checkout', formJson)
             .then((resp) => {
@@ -111,7 +114,7 @@ export default function CashCheckoutDialog({ disabled }) {
                 // console.error("Submission failed with errors:", error);
                 Swal.fire({
                     title: "Failed!",
-                    text: error.response.data.error,
+                    text: error?.response?.data?.error || 'Checkout failed. Please check Laravel logs for details.',
                     icon: "error",
                     showConfirmButton: true,
                     // timer: 2000,
@@ -249,7 +252,7 @@ export default function CashCheckoutDialog({ disabled }) {
                                 variant="outlined"
                                 name="net_total"
                                 value={formatCurrency((cartTotal - discount) + recalculatedCharges, false)}
-                                sx={{input: { textAlign: "center", fontSize: '2rem' }, }}
+                                sx={{ input: { textAlign: "center", fontSize: '2rem' }, }}
                                 slotProps={{
                                     input: {
                                         readOnly: true,
@@ -259,14 +262,14 @@ export default function CashCheckoutDialog({ disabled }) {
                                 }}
                             />
                         </Grid>
-                        <Grid size={{ xs: 12, sm:6}}>
+                        <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField
                                 id="txtChange"
                                 fullWidth
                                 label="Change"
                                 variant="outlined"
                                 name="change_amount"
-                                sx={{input: { textAlign: "center", fontSize: '2rem' } }}
+                                sx={{ input: { textAlign: "center", fontSize: '2rem' } }}
                                 value={formatCurrency(amountReceived - ((cartTotal - discount) + recalculatedCharges), false)}
                                 slotProps={{
                                     input: {

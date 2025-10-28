@@ -64,7 +64,7 @@ export default function CartItems() {
   }, [edit_sale, sale_data?.cart_snapshot])
 
   return (
-    <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+    <List sx={{ width: '100%' }}>
       {cartState.map((item, index) => (
         <React.Fragment key={index}>
           <ListItem alignItems="center" sx={{ padding: { sm: 0.5, xs: 0 }, paddingY: 0.5 }}>
@@ -95,7 +95,7 @@ export default function CartItems() {
                     ) : (
                       <>
                         {formatCurrency(item.price - item.discount, false)} X {item.quantity} = <b>{formatCurrency((item.price - item.discount) * item.quantity, false)}
-                        {item.flat_discount > 0 && ' - '+formatCurrency(item.flat_discount, false)}</b>
+                          {item.flat_discount > 0 && ' - ' + formatCurrency(item.flat_discount, false)}</b>
                       </>
                     )}
                     <br />
