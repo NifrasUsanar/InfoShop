@@ -25,7 +25,7 @@ import Swal from "sweetalert2";
 import { usePage } from "@inertiajs/react";
 import { X } from "lucide-react";
 import React, { useState, useEffect, useContext, useMemo } from 'react';
-import { useCurrencyFormatter } from "@/lib/currencyFormatter";
+import { useCurrencyFormatter, toNumeric } from "@/lib/currencyFormatter";
 import { useCurrencyStore } from "@/stores/currencyStore";
 
 export default function PaymentsCheckoutDialog({
@@ -111,9 +111,21 @@ export default function PaymentsCheckoutDialog({
 
         const submittedFormData = new FormData(event.currentTarget);
         let formJson = Object.fromEntries(submittedFormData.entries());
-        // formData = Object.fromEntries(formData);
-        formJson.cartItems = cartState;
-        formJson.charges = charges;
+
+        // Sanitize numeric fields
+        formJson.discount = toNumeric(formJson.discount);
+        formJson.net_total = toNumeric(reactiveFinalTotal);
+
+        formJson.cartItems = cartState.map(item => ({
+            ...item,
+            price: toNumeric(item.price),
+            quantity: toNumeric(item.quantity),
+            discount: toNumeric(item.discount || 0)
+        }));
+        formJson.charges = charges.map(c => ({
+            ...c,
+            rate_value: toNumeric(c.rate_value)
+        }));
         formJson.contact_id = selectedContact.id;
         formJson.payments = payments;
         formJson = { ...formData, ...formJson } //Form data from the POS / Purchase form (ensure local values win)

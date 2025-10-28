@@ -8,7 +8,7 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
-                'resources/js/app.jsx', // or resources/js/app.js
+                'resources/js/app.jsx',
             ],
             refresh: true,
         }),
@@ -17,5 +17,12 @@ export default defineConfig({
     ],
     esbuild: {
         jsx: 'automatic',
+    },
+    build: {
+        rollupOptions: {
+            external: [
+                'laravel-vite-plugin',
+            ],
+        },
     },
 });
