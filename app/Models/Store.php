@@ -22,18 +22,6 @@ class Store extends Model
         'current_sale_number',
     ];
 
-    // Accessor for formatted updated_at date
-    public function getUpdatedAtAttribute($value)
-    {
-        return \Carbon\Carbon::parse($value)->format('Y-m-d'); // Adjust the format as needed
-    }
-
-    // Accessor for formatted created_at date
-    public function getCreatedAtAttribute($value)
-    {
-        return \Carbon\Carbon::parse($value)->format('Y-m-d'); // Adjust the format as needed
-    }
-
     public function scopeForCurrentUser($query)
     {
         if (Auth::user()->user_role === 'admin' || Auth::user()->user_role === 'super-admin') {

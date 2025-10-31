@@ -38,24 +38,27 @@ class Sale extends Model
         parent::boot();
 
         static::created(function ($sale) {
-            DB::transaction(function () use ($sale) {
-                $store = Store::find($sale->store_id);
-                if ($store) {
-                    $sale_number = $store->current_sale_number+1;
-                    $year = $sale->sale_date instanceof \Carbon\Carbon 
-                        ? $sale->sale_date->year 
-                        : \Carbon\Carbon::parse($sale->sale_date)->year;
-                    $padded_sale_id = str_pad($sale->id, 4, '0', STR_PAD_LEFT);
-                    // Generate the invoice number based on the sale prefix and current sale number
-                    $sale->invoice_number = $year.'/'.$padded_sale_id.'/'.str_pad($sale_number, 4, '0', STR_PAD_LEFT);
+            // Only generate invoice number if not already provided (e.g., from mobile/offline sales)
+            if (empty($sale->invoice_number)) {
+                DB::transaction(function () use ($sale) {
+                    $store = Store::find($sale->store_id);
+                    if ($store) {
+                        $sale_number = $store->current_sale_number+1;
+                        $year = $sale->sale_date instanceof \Carbon\Carbon
+                            ? $sale->sale_date->year
+                            : \Carbon\Carbon::parse($sale->sale_date)->year;
+                        $padded_sale_id = str_pad($sale->id, 4, '0', STR_PAD_LEFT);
+                        // Generate the invoice number based on the sale prefix and current sale number
+                        $sale->invoice_number = $year.'/'.$padded_sale_id.'/'.str_pad($sale_number, 4, '0', STR_PAD_LEFT);
 
-                    // Save the updated invoice number
-                    $sale->save();
+                        // Save the updated invoice number
+                        $sale->save();
 
-                    // Increment the current sale number in the store
-                    $store->increment('current_sale_number');
-                }
-            });
+                        // Increment the current sale number in the store
+                        $store->increment('current_sale_number');
+                    }
+                });
+            }
         });
     }
 
@@ -87,7 +90,12 @@ class Sale extends Model
     {
         return $this->hasMany(SaleItem::class, 'sale_id');
     }
-    
+
+    public function items()
+    {
+        return $this->hasMany(SaleItem::class, 'sale_id');
+    }
+
     // Scope to filter sales by store_id
     public function scopeStoreId($query, $storeId)
     {

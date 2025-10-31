@@ -54,7 +54,7 @@ class POSController extends Controller
         )
             ->leftJoin('product_batches AS pb', 'products.id', '=', 'pb.product_id') // Join with product_batches using product_id
             ->leftJoin('product_stocks', 'pb.id', '=', 'product_stocks.batch_id') // Join with product_stocks using batch_id
-            ->where('product_stocks.store_id', session('store_id', Auth::user()->store_id))
+            ->where('product_stocks.store_id', session('store_id', Auth::user()->store_id ?? 1))
             ->where('pb.is_active', 1);
 
         // Apply category filter if set

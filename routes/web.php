@@ -58,21 +58,13 @@ Route::post('/api/application-update', [UpgradeController::class, 'applicationUp
 // Development-only database access route
 Route::get('/dev/db', [DevDatabaseController::class, 'query']);
 
-// Sync API endpoints for offline-first InfoPOS app
-Route::prefix('api/sync')->group(function () {
-    Route::get('/health', [SyncController::class, 'healthCheck']);
-    Route::get('/products', [SyncController::class, 'getProducts']);
-    Route::get('/contacts', [SyncController::class, 'getContacts']);
-    Route::get('/charges', [SyncController::class, 'getCharges']);
-    Route::get('/stock', [SyncController::class, 'getStock']);
-    Route::get('/manifest', [SyncController::class, 'getSyncManifest']);
-    Route::get('/delta', [SyncController::class, 'getSyncDelta']);
-
-    Route::post('/sales', [SyncController::class, 'syncSales']);
-    Route::post('/transactions', [SyncController::class, 'syncTransactions']);
-    Route::post('/stock', [SyncController::class, 'syncStock']);
-    Route::post('/contacts', [SyncController::class, 'syncContacts']);
-});
+// Unified Sync API endpoints for offline-first InfoPOS app
+// GET /api/sync?table=products - Fetch data
+// POST /api/sync?table=sales - Push data
+// GET /api/sync/health - Health check
+Route::get('/api/sync/health', [SyncController::class, 'healthCheck']);
+Route::get('/api/sync', [SyncController::class, 'fetch']);
+Route::post('/api/sync', [SyncController::class, 'push']);
 
 // Store config endpoint
 Route::get('/api/stores/{storeId}', [SyncController::class, 'getStoreConfig']);
