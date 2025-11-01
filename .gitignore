@@ -4,6 +4,8 @@
 /public/hot
 /public/storage
 /storage/*.key
+!storage/app/public/templates/
+!storage/app/public/templates/**
 /vendor
 .env
 .env.backup

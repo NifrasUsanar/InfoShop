@@ -34,6 +34,7 @@ use App\Http\Controllers\SaleTemplateController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\DevDatabaseController;
 use App\Http\Controllers\ChargeController;
+use App\Http\Controllers\SyncController;
 
 Route::get('/', function () {
     return redirect('login');
@@ -54,8 +55,22 @@ Route::get('/pending-sales-receipt/{contact_id}', [SaleController::class, 'pendi
 Route::get('/version', [UpgradeController::class, 'checkVersion']);
 Route::post('/api/application-update', [UpgradeController::class, 'applicationUpdate']);
 
+// V2 Update routes (migration-based)
+Route::post('/api/application-update-v2', [UpgradeController::class, 'applicationUpdateV2']);
+
 // Development-only database access route
 Route::get('/dev/db', [DevDatabaseController::class, 'query']);
+
+// Unified Sync API endpoints for offline-first InfoPOS app
+// GET /api/sync?table=products - Fetch data
+// POST /api/sync?table=sales - Push data
+// GET /api/sync/health - Health check
+Route::get('/api/sync/health', [SyncController::class, 'healthCheck']);
+Route::get('/api/sync', [SyncController::class, 'fetch']);
+Route::post('/api/sync', [SyncController::class, 'push']);
+
+// Store config endpoint
+Route::get('/api/stores/{storeId}', [SyncController::class, 'getStoreConfig']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -105,7 +120,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/sold-items-summary', [SaleController::class, 'soldItemSummary'])->name('sales.items.summary');
     Route::delete('/sales/{id}', [SaleController::class, 'destroy'])->name('sales.destroy');
     Route::get('/sale-notification/{id}', [SaleController::class, 'sendNotification']);
-    
+
     Route::get('/purchases', [PurchaseController::class, 'index'])->name('purchases.index');
     Route::get('/purchase/create', [PurchaseController::class, 'create'])->name('purchases.create');
     Route::post('/purchase/store', [PurchaseController::class, 'store'])->name('purchases.store');
@@ -182,8 +197,18 @@ Route::middleware('auth')->group(function () {
         return 'Linked with storage';
     });
 
-    Route::get('/update', [UpgradeController::class, 'showUploadForm'])->name('upload.form');
+    // Maintenance Routes
+    Route::get('/maintenance', [UpgradeController::class, 'showMaintenance'])->name('maintenance.index');
+    Route::post('/upload-v2', [UpgradeController::class, 'handleUploadV2'])->name('maintenance.upload');
+Route::get('/update', [UpgradeController::class, 'showUploadForm'])->name('upload.form');
     Route::post('/upload', [UpgradeController::class, 'handleUpload'])->name('upload.handle');
+    
+    // Database Management Routes
+    Route::get('/api/maintenance/database/tables', [UpgradeController::class, 'getDatabaseTables']);
+    Route::get('/api/maintenance/database/migrations', [UpgradeController::class, 'getMigrationStatus']);
+    Route::post('/api/maintenance/database/migrate', [UpgradeController::class, 'runMigrations']);
+    Route::post('/api/maintenance/database/seed', [UpgradeController::class, 'runSeeders']);
+    Route::get('/api/maintenance/database/backup', [UpgradeController::class, 'backupDatabase']);
 
     Route::get('/media', [MediaController::class, 'index']);
     Route::get('/migrate-images', [MediaController::class, 'migrateImages']);
@@ -227,7 +252,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/download-backup/{file}', [BackupController::class, 'download']);
     Route::get('/backup-now', [BackupController::class, 'downloadBackupZip']);
-    
+
     Route::post('/test-mail', function (Request $request) {
         Mail::raw('Test email', function ($message) use ($request) {
             $message->to($request->input('test_mail'))->subject('Mail received');

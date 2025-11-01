@@ -54,7 +54,7 @@ class POSController extends Controller
         )
             ->leftJoin('product_batches AS pb', 'products.id', '=', 'pb.product_id') // Join with product_batches using product_id
             ->leftJoin('product_stocks', 'pb.id', '=', 'product_stocks.batch_id') // Join with product_stocks using batch_id
-            ->where('product_stocks.store_id', session('store_id', Auth::user()->store_id))
+            ->where('product_stocks.store_id', session('store_id', Auth::user()->store_id ?? 1))
             ->where('pb.is_active', 1);
 
         // Apply category filter if set
@@ -293,8 +293,13 @@ class POSController extends Controller
         $edit_sale = $request->input('edit_sale');
         $edit_sale_id = $request->input('edit_sale_id');
 
+        // Get store_id from request, session, or authenticated user (in that order)
+        $storeId = $request->input('store_id')
+            ?? session('store_id')
+            ?? (Auth::user() ? Auth::user()->store_id : null);
+
         $saleData = [
-            'store_id' => session('store_id', Auth::user()->store_id),
+            'store_id' => $storeId,
             'reference_id' => $request->input('return_sale_id'),
             'sale_type' => $request->input('return_sale') ? 'return' : 'sale',
             'contact_id' => $request->input('contact_id'),
@@ -306,9 +311,14 @@ class POSController extends Controller
             'status' => 'pending',
             'payment_status' => 'pending',
             'note' => $request->input('note'),
-            'created_by' => Auth::id(),
+            'created_by' => $request->input('created_by') ?? Auth::id(),
             'cart_snapshot' => json_encode($request->input('cartItems')),
         ];
+
+        // Add invoice_number if provided (for offline sync)
+        if ($request->has('invoice_number') && !empty($request->input('invoice_number'))) {
+            $saleData['invoice_number'] = $request->input('invoice_number');
+        }
 
         if ($edit_sale && $edit_sale_id) {
             $sale = Sale::findOrFail($edit_sale_id);
@@ -616,7 +626,7 @@ class POSController extends Controller
             ]);
 
             // Return error response
-            return response()->json(['error' => $e], 500);
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 

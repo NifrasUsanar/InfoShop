@@ -16,10 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        // Exclude specific routes from CSRF
+        // Exclude API routes from CSRF (offline-first sync)
         $middleware->validateCsrfTokens(except: [
-            '/api/application-update',
-            '/api/receipt/{id}',
+            '/api/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

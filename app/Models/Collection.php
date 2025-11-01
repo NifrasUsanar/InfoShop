@@ -27,16 +27,4 @@ class Collection extends Model
     {
         return $this->hasMany(Collection::class, 'parent_id');
     }
-
-    // Accessor for formatted updated_at date
-    public function getUpdatedAtAttribute($value)
-    {
-        return \Carbon\Carbon::parse($value)->format('Y-m-d'); // Adjust the format as needed
-    }
-
-    // Accessor for formatted created_at date
-    public function getCreatedAtAttribute($value)
-    {
-        return \Carbon\Carbon::parse($value)->format('Y-m-d'); // Adjust the format as needed
-    }
 }
