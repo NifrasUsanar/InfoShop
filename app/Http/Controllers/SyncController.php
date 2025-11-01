@@ -101,8 +101,12 @@ class SyncController extends Controller
                 'pb.price',
                 'pb.discount',
                 'pb.discount_percentage',
-                DB::raw("COALESCE(product_stocks.quantity, 0) AS quantity"),
-                DB::raw("COALESCE(product_stocks.quantity, 0) AS stock_quantity")
+                DB::raw("COALESCE(product_stocks.quantity, 0) AS stock_quantity"),
+                DB::raw("GREATEST(
+                    products.updated_at,
+                    pb.updated_at,
+                    COALESCE(product_stocks.updated_at, '1970-01-01')
+                ) AS last_modified")
             )
             ->leftJoin('product_batches AS pb', 'products.id', '=', 'pb.product_id')
             ->leftJoin('product_stocks', function($join) use ($storeId) {
@@ -112,10 +116,11 @@ class SyncController extends Controller
             ->where('pb.is_active', 1);
 
         if ($lastSync) {
-            $query->where(function($q) use ($lastSync) {
-                $q->where('products.updated_at', '>=', $lastSync)
-                  ->orWhere('pb.updated_at', '>=', $lastSync)
-                  ->orWhere('product_stocks.updated_at', '>=', $lastSync);
+            $lastSyncStr = $lastSync->toDateTimeString();
+            $query->where(function($q) use ($lastSyncStr) {
+                $q->whereRaw('products.updated_at >= ?', [$lastSyncStr])
+                  ->orWhereRaw('pb.updated_at >= ?', [$lastSyncStr])
+                  ->orWhereRaw('product_stocks.updated_at >= ?', [$lastSyncStr]);
             });
         }
 
@@ -142,14 +147,15 @@ class SyncController extends Controller
                 'price' => (float) ($product->price ?? 0),
                 'discount' => (float) ($product->discount ?? 0),
                 'discount_percentage' => (float) ($product->discount_percentage ?? 0),
-                'quantity' => (float) $product->quantity,
                 'stock_quantity' => (float) $product->stock_quantity,
-                'created_at' => $product->created_at instanceof \Carbon\Carbon
+                'created_at' => $product->created_at instanceof Carbon
                     ? $product->created_at->toIso8601String()
-                    : \Carbon\Carbon::parse($product->created_at)->toIso8601String(),
-                'updated_at' => $product->updated_at instanceof \Carbon\Carbon
-                    ? $product->updated_at->toIso8601String()
-                    : \Carbon\Carbon::parse($product->updated_at)->toIso8601String(),
+                    : Carbon::parse($product->created_at)->toIso8601String(),
+                'updated_at' => isset($product->last_modified)
+                    ? Carbon::parse($product->last_modified)->toIso8601String()
+                    : ($product->updated_at instanceof Carbon
+                        ? $product->updated_at->toIso8601String()
+                        : Carbon::parse($product->updated_at)->toIso8601String()),
             ];
         });
 
@@ -172,7 +178,7 @@ class SyncController extends Controller
         $query = Contact::query();
 
         if ($lastSync) {
-            $query->where('updated_at', '>=', $lastSync);
+            $query->whereRaw('updated_at >= ?', [$lastSync->toDateTimeString()]);
         }
 
         $contacts = $query->get()->map(function ($contact) use ($storeId) {
@@ -185,12 +191,12 @@ class SyncController extends Controller
                 'contact_type' => $contact->contact_type ?? $contact->type, // Handle both column names
                 'address' => $contact->address,
                 'balance' => (float) ($contact->balance ?? 0),
-                'created_at' => $contact->created_at instanceof \Carbon\Carbon
+                'created_at' => $contact->created_at instanceof Carbon
                     ? $contact->created_at->toIso8601String()
-                    : \Carbon\Carbon::parse($contact->created_at)->toIso8601String(),
-                'updated_at' => $contact->updated_at instanceof \Carbon\Carbon
+                    : Carbon::parse($contact->created_at)->toIso8601String(),
+                'updated_at' => $contact->updated_at instanceof Carbon
                     ? $contact->updated_at->toIso8601String()
-                    : \Carbon\Carbon::parse($contact->updated_at)->toIso8601String(),
+                    : Carbon::parse($contact->updated_at)->toIso8601String(),
             ];
         });
 
@@ -213,7 +219,7 @@ class SyncController extends Controller
         $query = Charge::query()->where('is_active', true);
 
         if ($lastSync) {
-            $query->where('updated_at', '>=', $lastSync);
+            $query->whereRaw('updated_at >= ?', [$lastSync->toDateTimeString()]);
         }
 
         $charges = $query->get()->map(function ($charge) use ($storeId) {
@@ -227,12 +233,12 @@ class SyncController extends Controller
                 'description' => $charge->description,
                 'is_active' => (bool) $charge->is_active,
                 'is_default' => (bool) $charge->is_default,
-                'created_at' => $charge->created_at instanceof \Carbon\Carbon
+                'created_at' => $charge->created_at instanceof Carbon
                     ? $charge->created_at->toIso8601String()
-                    : \Carbon\Carbon::parse($charge->created_at)->toIso8601String(),
-                'updated_at' => $charge->updated_at instanceof \Carbon\Carbon
+                    : Carbon::parse($charge->created_at)->toIso8601String(),
+                'updated_at' => $charge->updated_at instanceof Carbon
                     ? $charge->updated_at->toIso8601String()
-                    : \Carbon\Carbon::parse($charge->updated_at)->toIso8601String(),
+                    : Carbon::parse($charge->updated_at)->toIso8601String(),
             ];
         });
 
@@ -259,10 +265,10 @@ class SyncController extends Controller
         }
 
         if ($lastSync) {
-            $query->where('updated_at', '>=', $lastSync);
+            $query->whereRaw('updated_at >= ?', [$lastSync->toDateTimeString()]);
         }
 
-        $sales = $query->with('items')->get()->map(function ($sale) {
+        $sales = $query->with(['items.product', 'items.charge', 'transactions'])->get()->map(function ($sale) {
             return [
                 'id' => $sale->id,
                 'store_id' => (string) $sale->store_id,
@@ -276,18 +282,57 @@ class SyncController extends Controller
                 'profit_amount' => (float) $sale->profit_amount,
                 'status' => $sale->status,
                 'payment_status' => $sale->payment_status,
-                'payment_method' => $sale->payment_method,
                 'note' => $sale->note,
-                'sale_date' => $sale->sale_date ? Carbon::parse($sale->sale_date)->timestamp * 1000 : null,
+                'sale_date' => $sale->sale_date,
                 'sale_time' => $sale->sale_time,
                 'total_charge_amount' => (float) ($sale->total_charge_amount ?? 0),
-                'items' => $sale->items->toArray(),
-                'created_at' => $sale->created_at instanceof \Carbon\Carbon
+                'items' => $sale->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'batch_id' => $item->batch_id,
+                        'name' => $item->item_type === 'charge'
+                            ? ($item->charge->name ?? $item->description ?? 'Charge')
+                            : ($item->product->name ?? $item->description ?? 'Unknown Product'),
+                        'quantity' => (float) $item->quantity,
+                        'price' => (float) $item->unit_price,
+                        'unit_price' => (float) $item->unit_price,
+                        'unit_cost' => (float) $item->unit_cost,
+                        'discount' => (float) $item->discount,
+                        'flat_discount' => (float) ($item->flat_discount ?? 0),
+                        'item_type' => $item->item_type,
+                        'charge_id' => $item->charge_id,
+                        'charge_type' => $item->charge_type,
+                        'rate_value' => $item->rate_value,
+                        'rate_type' => $item->rate_type,
+                    ];
+                })->toArray(),
+                'transactions' => $sale->transactions->map(function ($txn) {
+                    return [
+                        'id' => $txn->id,
+                        'sales_id' => $txn->sales_id,
+                        'store_id' => (string) $txn->store_id,
+                        'contact_id' => $txn->contact_id,
+                        'transaction_date' => $txn->transaction_date,
+                        'amount' => (float) $txn->amount,
+                        'payment_method' => $txn->payment_method,
+                        'transaction_type' => $txn->transaction_type,
+                        'note' => $txn->note,
+                        'parent_id' => $txn->parent_id,
+                        'created_at' => $txn->created_at instanceof Carbon
+                            ? $txn->created_at->toIso8601String()
+                            : Carbon::parse($txn->created_at)->toIso8601String(),
+                        'updated_at' => $txn->updated_at instanceof Carbon
+                            ? $txn->updated_at->toIso8601String()
+                            : Carbon::parse($txn->updated_at)->toIso8601String(),
+                    ];
+                })->toArray(),
+                'created_at' => $sale->created_at instanceof Carbon
                     ? $sale->created_at->toIso8601String()
-                    : \Carbon\Carbon::parse($sale->created_at)->toIso8601String(),
-                'updated_at' => $sale->updated_at instanceof \Carbon\Carbon
+                    : Carbon::parse($sale->created_at)->toIso8601String(),
+                'updated_at' => $sale->updated_at instanceof Carbon
                     ? $sale->updated_at->toIso8601String()
-                    : \Carbon\Carbon::parse($sale->updated_at)->toIso8601String(),
+                    : Carbon::parse($sale->updated_at)->toIso8601String(),
             ];
         });
 
@@ -332,20 +377,25 @@ class SyncController extends Controller
         }
 
         $synced = 0;
+        $errors = [];
 
-        DB::beginTransaction();
-        try {
-            foreach ($sales as $saleData) {
+        foreach ($sales as $saleData) {
+            try {
                 $this->createOrUpdateSale($saleData, $storeId);
                 $synced++;
+            } catch (\Exception $e) {
+                $errors[] = [
+                    'invoice_number' => $saleData['invoice_number'] ?? 'unknown',
+                    'error' => $e->getMessage()
+                ];
             }
-            DB::commit();
-
-            return response()->json(['status' => 'success', 'synced' => $synced]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
+
+        return response()->json([
+            'status' => empty($errors) ? 'success' : 'partial',
+            'synced' => $synced,
+            'errors' => $errors
+        ]);
     }
 
     /**
@@ -465,55 +515,110 @@ class SyncController extends Controller
     }
 
     /**
-     * Create or update sale
+     * Create or update sale by delegating to POSController checkout
      */
     private function createOrUpdateSale($saleData, $storeId)
     {
-        $sale = Sale::updateOrCreate(
-            ['id' => $saleData['id'] ?? null],
-            [
-                'invoice_number' => $saleData['invoice_number'] ?? null,
-                'store_id' => $storeId,
-                'contact_id' => $saleData['contact_id'] ?? null,
-                'sale_type' => $saleData['sale_type'] ?? 'normal',
-                'total_amount' => $saleData['total_amount'],
-                'discount' => $saleData['discount'] ?? 0,
-                'amount_received' => $saleData['amount_received'],
-                'profit_amount' => $saleData['profit_amount'] ?? 0,
-                'status' => $saleData['status'] ?? 'completed',
-                'payment_status' => $saleData['payment_status'] ?? 'completed',
-                'payment_method' => $saleData['payment_method'] ?? null,
-                'note' => $saleData['note'] ?? null,
-                'sale_date' => isset($saleData['sale_date']) 
-                    ? $this->parseTimestamp($saleData['sale_date']) 
-                    : now(),
-                'sale_time' => $saleData['sale_time'] ?? now()->format('H:i:s'),
-                'total_charge_amount' => $saleData['total_charge_amount'] ?? 0,
-            ]
-        );
+        // Check if sale already exists by invoice_number
+        $existingSale = Sale::where('invoice_number', $saleData['invoice_number'])->first();
 
-        // Handle items
-        if (isset($saleData['items'])) {
-            $items = is_string($saleData['items']) ? json_decode($saleData['items'], true) : $saleData['items'];
+        if ($existingSale) {
+            // Sale already synced, skip
+            return $existingSale;
+        }
 
-            foreach ($items as $itemData) {
-                SaleItem::updateOrCreate(
-                    [
-                        'sale_id' => $sale->id,
-                        'product_id' => $itemData['product_id'] ?? null,
-                    ],
-                    [
-                        'batch_id' => $itemData['batch_id'] ?? null,
-                        'quantity' => $itemData['quantity'] ?? 0,
-                        'unit_price' => $itemData['unit_price'] ?? 0,
-                        'item_type' => $itemData['item_type'] ?? 'product',
-                        'charge_id' => $itemData['charge_id'] ?? null,
-                    ]
-                );
+        // Transform offline sale data to match checkout request format
+        $checkoutRequest = new Request();
+
+        // Parse items
+        $items = isset($saleData['items'])
+            ? (is_string($saleData['items']) ? json_decode($saleData['items'], true) : $saleData['items'])
+            : [];
+
+        // Separate product items and charges based on item_type
+        $cartItems = [];
+        $charges = [];
+
+        foreach ($items as $item) {
+            if (isset($item['item_type']) && $item['item_type'] === 'charge') {
+                // This is a charge item
+                $charges[] = [
+                    'id' => $item['charge_id'] ?? null,
+                    'name' => $item['name'] ?? 'Charge',
+                    'charge_type' => $item['charge_type'] ?? 'tax',
+                    'rate_value' => $item['rate_value'] ?? 0,
+                    'rate_type' => $item['rate_type'] ?? 'percentage',
+                ];
+            } else {
+                // This is a product item - map all fields correctly
+                $cartItems[] = [
+                    'id' => $item['id'] ?? $item['product_id'] ?? null,
+                    'batch_id' => $item['batch_id'] ?? null,
+                    'quantity' => $item['quantity'] ?? 0,
+                    'price' => $item['price'] ?? $item['unit_price'] ?? 0,
+                    'cost' => $item['cost'] ?? $item['unit_cost'] ?? 0,
+                    'discount' => $item['discount'] ?? 0,
+                    'flat_discount' => $item['flat_discount'] ?? 0,
+                    'is_stock_managed' => $item['is_stock_managed'] ?? 1,
+                    'is_free' => $item['is_free'] ?? 0,
+                    'free_quantity' => $item['free_quantity'] ?? 0,
+                    'category_name' => $item['category_name'] ?? null,
+                    'product_type' => $item['product_type'] ?? 'normal',
+                ];
             }
         }
 
-        return $sale;
+        // Map transactions to payments format
+        $transactions = $saleData['transactions'] ?? [];
+        $payments = [];
+
+        foreach ($transactions as $txn) {
+            $payments[] = [
+                'payment_method' => $txn['payment_method'] ?? $txn['paymentMethod'] ?? 'Cash',
+                'amount' => $txn['amount'] ?? 0,
+            ];
+        }
+
+        // Build checkout request data
+        $requestData = [
+            'store_id' => $storeId, // Include store_id in request
+            'created_by' => $saleData['created_by'] ?? 1, // Default to user ID 1 if not provided
+            'invoice_number' => $saleData['invoice_number'],
+            'contact_id' => $saleData['contact_id'] ?? null,
+            'sale_date' => isset($saleData['sale_date'])
+                ? $this->parseTimestamp($saleData['sale_date'])->toDateString()
+                : now()->toDateString(),
+            'net_total' => $saleData['total_amount'],
+            'discount' => $saleData['discount'] ?? 0,
+            'amount_received' => $saleData['amount_received'] ?? 0,
+            'profit_amount' => $saleData['profit_amount'] ?? 0,
+            'note' => $saleData['note'] ?? null,
+            'cartItems' => $cartItems,
+            'charges' => $charges,
+            'payment_method' => empty($payments) ? 'Cash' : null, // Only set default if no payments
+            'return_sale' => ($saleData['sale_type'] ?? 'normal') === 'return',
+            'return_sale_id' => $saleData['reference_id'] ?? null,
+            'payments' => $payments, // Mapped from transactions
+        ];
+
+        // Create request with data
+        $checkoutRequest->replace($requestData);
+
+        // Call POSController checkout method
+        $posController = new POSController();
+        $response = $posController->checkout($checkoutRequest);
+
+        // Check if response is successful
+        $responseData = $response->getData();
+
+        if (isset($responseData->error)) {
+            $errorMessage = is_string($responseData->error)
+                ? $responseData->error
+                : json_encode($responseData->error);
+            throw new \Exception($errorMessage);
+        }
+
+        return Sale::find($responseData->sale_id);
     }
 
     /**
@@ -530,12 +635,12 @@ class SyncController extends Controller
             $timestamp = intval($timestamp / 1000);
         }
 
-        // If still numeric, create from Unix timestamp
+        // If still numeric, create from Unix timestamp and convert to server timezone
         if (is_numeric($timestamp)) {
-            return Carbon::createFromTimestamp($timestamp);
+            return Carbon::createFromTimestamp($timestamp)->timezone(config('app.timezone'));
         }
 
-        // Otherwise parse as date string
-        return Carbon::parse($timestamp);
+        // Otherwise parse as date string in server timezone
+        return Carbon::parse($timestamp)->timezone(config('app.timezone'));
     }
 }

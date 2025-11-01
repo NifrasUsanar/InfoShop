@@ -1,0 +1,39 @@
+{
+  "version": "2.0.0",
+  "from_version": "1.9.0",
+  "release_date": "2024-01-15",
+  "required_php_version": "8.1.0",
+  "required_laravel_version": "11.0",
+  "required_mysql_version": "5.7",
+  "description": "Major feature update with new POS capabilities",
+  "changelog": [
+    "Added V2 migration-based update system",
+    "Improved backup and rollback functionality",
+    "Enhanced pre-flight validation checks",
+    "Added maintenance mode during updates"
+  ],
+  "migrations": [
+    "2025_01_15_000100_add_new_feature_table.php",
+    "2025_01_15_000200_update_existing_table.php"
+  ],
+  "files": {
+    "app": "Updated application core files",
+    "config": "New configuration options",
+    "resources": "Frontend updates and new UI",
+    "routes": "API route changes",
+    "public/build": "Compiled frontend assets",
+    "database/migrations": "Database schema updates"
+  },
+  "post_install_commands": [
+    "cache:clear",
+    "config:clear",
+    "route:clear",
+    "view:clear",
+    "optimize:clear"
+  ],
+  "warnings": [
+    "This update will put the application in maintenance mode",
+    "A backup of critical files will be created automatically",
+    "Ensure you have at least 100MB of free disk space"
+  ]
+}

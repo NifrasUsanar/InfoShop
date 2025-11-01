@@ -55,6 +55,9 @@ Route::get('/pending-sales-receipt/{contact_id}', [SaleController::class, 'pendi
 Route::get('/version', [UpgradeController::class, 'checkVersion']);
 Route::post('/api/application-update', [UpgradeController::class, 'applicationUpdate']);
 
+// V2 Update routes (migration-based)
+Route::post('/api/application-update-v2', [UpgradeController::class, 'applicationUpdateV2']);
+
 // Development-only database access route
 Route::get('/dev/db', [DevDatabaseController::class, 'query']);
 
@@ -194,8 +197,18 @@ Route::middleware('auth')->group(function () {
         return 'Linked with storage';
     });
 
-    Route::get('/update', [UpgradeController::class, 'showUploadForm'])->name('upload.form');
+    // Maintenance Routes
+    Route::get('/maintenance', [UpgradeController::class, 'showMaintenance'])->name('maintenance.index');
+    Route::post('/upload-v2', [UpgradeController::class, 'handleUploadV2'])->name('maintenance.upload');
+Route::get('/update', [UpgradeController::class, 'showUploadForm'])->name('upload.form');
     Route::post('/upload', [UpgradeController::class, 'handleUpload'])->name('upload.handle');
+    
+    // Database Management Routes
+    Route::get('/api/maintenance/database/tables', [UpgradeController::class, 'getDatabaseTables']);
+    Route::get('/api/maintenance/database/migrations', [UpgradeController::class, 'getMigrationStatus']);
+    Route::post('/api/maintenance/database/migrate', [UpgradeController::class, 'runMigrations']);
+    Route::post('/api/maintenance/database/seed', [UpgradeController::class, 'runSeeders']);
+    Route::get('/api/maintenance/database/backup', [UpgradeController::class, 'backupDatabase']);
 
     Route::get('/media', [MediaController::class, 'index']);
     Route::get('/migrate-images', [MediaController::class, 'migrateImages']);
