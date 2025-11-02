@@ -58,8 +58,6 @@ Route::post('/api/application-update', [UpgradeController::class, 'applicationUp
 // V2 Update routes (migration-based)
 Route::post('/api/application-update-v2', [UpgradeController::class, 'applicationUpdateV2']);
 
-// Development-only database access route
-Route::get('/dev/db', [DevDatabaseController::class, 'query']);
 
 // Unified Sync API endpoints for offline-first InfoPOS app
 // GET /api/sync?table=products - Fetch data
@@ -102,6 +100,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/productbatch/{id}', [ProductController::class, 'updateBatch'])->name('products.updatebatch');
     Route::get('/getproducts/{store_id}', [ProductController::class, 'getProductsResponse'])->name('products.getproducts');
     Route::get('/product/{batch_id}/barcode', [ProductController::class, 'getBarcode'])->name('products.barcode');
+    Route::get('/product/{batch_id}/barcode-v2', [ProductController::class, 'barcodeV2'])->name('products.barcode-v2');
 
     Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
     Route::get('/pos/{sale_id}/return', [POSController::class, 'returnIndex'])->name('pos.return');
@@ -147,6 +146,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/module/{action}', [SettingController::class, 'updateModule']);
     Route::post('/settings/get-template', [SettingController::class, 'getTemplate'])->name('settings.gettemplate');
     Route::post('/settings/save-template', [SettingController::class, 'saveTemplate'])->name('settings.savetemplate');
+
+    Route::get('/api/barcode-template', [SettingController::class, 'getBarcodeTemplate'])->name('barcode.template.get');
+    Route::post('/api/barcode-template', [SettingController::class, 'saveBarcodeTemplate'])->name('barcode.template.save');
+    Route::post('/api/barcode-template/preview', [SettingController::class, 'renderBarcodeTemplatePreview'])->name('barcode.template.preview');
 
     Route::get('/charges', [ChargeController::class, 'index'])->name('charges.index');
     Route::post('/charges', [ChargeController::class, 'store'])->name('charges.store');

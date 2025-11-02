@@ -60,6 +60,7 @@ export default function Reload({ reloads, transactionType }) {
     const [reloadModalOpen, setReloadModalOpen] = useState(false)
     const [selectedReload, setSelectedReload] = useState(0)
     const [searchTerms, setSearchTerms] = useState({
+        search_query: '',
         start_date: '',
         end_date: '',
         store: 0,
@@ -88,13 +89,14 @@ export default function Reload({ reloads, transactionType }) {
     };
 
     useEffect(() => {
-        const total = dataReloads.data.reduce((acc, curr) => acc + parseFloat(curr.commission || 0), 0);
+        const reloadData = dataReloads?.data || [];
+        const total = reloadData.reduce((acc, curr) => acc + parseFloat(curr.commission || 0), 0);
         setTotalCommission(total);
     }, [dataReloads]);
 
     const handleRowClick = (reload, action) => {
         setSelectedReload(reload);
-        if (action == 'account_edit') {
+        if (action === 'account_edit') {
             setReloadModalOpen(true);
         }
     };
@@ -164,7 +166,7 @@ export default function Reload({ reloads, transactionType }) {
                 sx={{ display: "grid", gridTemplateColumns: "1fr", height: "calc(100vh - 200px)", }}
             >
                 <DataGrid
-                    rows={dataReloads?.data}
+                    rows={dataReloads?.data || []}
                     columns={columns(handleRowClick)}
                     slots={{ toolbar: GridToolbar }}
                     slotProps={{
@@ -177,37 +179,20 @@ export default function Reload({ reloads, transactionType }) {
             </Box>
             <Grid size={12} spacing={2} container justifyContent={'end'}>
                 <Chip size="large" label={`Total Commission: ${numeral(totalCommission).format('0,0.00')}`} color="primary" />
-                <TextField
-                    label="Per page"
-                    value={searchTerms.per_page}
-                    onChange={handleSearchChange}
-                    name="per_page"
-                    select
-                    size="small"
-                    sx={{ minWidth: '100px' }}
-                >
-                    <MenuItem value={100}>100</MenuItem>
-                    <MenuItem value={200}>200</MenuItem>
-                    <MenuItem value={300}>300</MenuItem>
-                    <MenuItem value={400}>400</MenuItem>
-                    <MenuItem value={500}>500</MenuItem>
-                    <MenuItem value={1000}>1000</MenuItem>
-                </TextField>
                 <CustomPagination
-                    dataLinks={reloads?.links}
+                    data={reloads || {}}
+                    searchTerms={searchTerms}
+                    setSearchTerms={setSearchTerms}
                     refreshTable={refreshReloads}
-                    dataLastPage={reloads?.last_page}
                 />
             </Grid>
 
-            {selectedReload ? (
-                <ReloadFormDialog
-                    open={reloadModalOpen}
-                    reloadData={selectedReload}
-                    refreshReloads={refreshReloads}
-                    setOpen={setReloadModalOpen}
-                />
-            ) : null}
+            <ReloadFormDialog
+                open={reloadModalOpen && !!selectedReload}
+                reloadData={selectedReload}
+                refreshReloads={refreshReloads}
+                setOpen={setReloadModalOpen}
+            />
         </AuthenticatedLayout>
     );
 }

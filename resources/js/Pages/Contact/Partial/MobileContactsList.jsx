@@ -40,22 +40,13 @@ const MobileContactsList = ({ contacts, handleContactEdit }) => {
                                                 </IconButton>
                                             </Tooltip>
                                         </Link>
-                                        <Link href={`/sales/?contact_id=${contact.id}`}>
+                                        <Link href={`/sales/?pending-sales-receipt=${contact.id}`}>
                                             <Tooltip title="PENDING RECEIPT">
                                                 <IconButton color="primary">
                                                     <ReceiptText size={20} />
                                                 </IconButton>
                                             </Tooltip>
                                         </Link>
-
-                                        <Tooltip title="INVOICE">
-                                            <IconButton
-                                                color="primary"
-                                                onClick={() => openDialog('catalog', contact.id)}
-                                            >
-                                                <ShoppingCart size={20} />
-                                            </IconButton>
-                                        </Tooltip>
                                     </>
                                 )}
                             </div>
@@ -74,12 +65,6 @@ const MobileContactsList = ({ contacts, handleContactEdit }) => {
                     </li>
                 ))}
             </ul>
-
-            <Catalog
-                open={dialog.open}
-                id={dialog.id}
-                onClose={closeDialog}
-            />
         </>
     );
 };

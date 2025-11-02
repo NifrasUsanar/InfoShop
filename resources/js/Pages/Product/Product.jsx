@@ -18,6 +18,7 @@ import FindReplaceIcon from "@mui/icons-material/FindReplace";
 import HistoryIcon from '@mui/icons-material/History';
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
+import { Barcode } from 'lucide-react';
 import BatchModal from "./Partials/BatchModal";
 import QuantityModal from "./Partials/QuantityModal";
 import CustomPagination from "@/Components/CustomPagination";
@@ -164,16 +165,28 @@ const productColumns = (handleProductEdit) => [
         headerName: "Action",
         align: "center",
         headerAlign: "center",
+        width: 200,
         renderCell: (params) => {
             return (
-                <>
+                <Box
+                    sx={{
+                        display: "flex",
+                        gap: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        flexWrap: "nowrap",
+                    }}
+                >
                     <Link href={`/product/${params.row.batch_id}/barcode`}>
                         <QrCode2Icon color="primary" />
                     </Link>
-                    <Link href={`/quantity/${params.row.stock_id}/log`} className="ml-4">
+                    <Link href={`/product/${params.row.batch_id}/barcode-v2`}>
+                        <Barcode size={24} stroke="#1976d2" />
+                    </Link>
+                    <Link href={`/quantity/${params.row.stock_id}/log`}>
                         <HistoryIcon color="primary" />
                     </Link>
-                </>
+                </Box>
             );
         },
     },

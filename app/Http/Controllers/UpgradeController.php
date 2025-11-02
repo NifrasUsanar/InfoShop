@@ -315,7 +315,7 @@ class UpgradeController extends Controller
             $zip->close();
 
             // Define the root folders that can be replaced (without removing the folders themselves)
-            $rootFolders = ['app', 'routes', 'resources', 'config','public','vendor'];
+            $rootFolders = ['app', 'routes', 'resources', 'config','public','vendor','bootstrap','lang','database'];
             foreach ($rootFolders as $folder) {
                 $source = $extractPath . '/' . $folder;
                 $destination = base_path($folder);

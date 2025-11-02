@@ -17,7 +17,7 @@ import PendingActionsIcon from '@mui/icons-material/PendingActions';
 
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
-// import MobileContactsList from './Partial/MobileContactsList';
+import MobileContactsList from './Partial/MobileContactsList';
 
 // import { syncPosProducts, getLocalPosProducts } from '@/localdb/pos_products';
 import { SalesProvider } from "@/Context/SalesContext";
@@ -264,11 +264,9 @@ export default function Contact({ contacts, type, stores }) {
                     </Box>
                 )}
 
-                {/* {isMobile && (
-                    <SalesProvider cartType={'sales_cart'}>
-                        <MobileContactsList contacts={dataContacts.data} handleContactEdit={handleRowClick} />
-                    </SalesProvider>
-                )} */}
+                {isMobile && (
+                    <MobileContactsList contacts={dataContacts.data} handleContactEdit={handleRowClick} />
+                )}
 
                 <Grid size={12} container justifyContent={"end"}>
                     <CustomPagination

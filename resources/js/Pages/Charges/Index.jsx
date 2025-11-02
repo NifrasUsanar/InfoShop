@@ -18,8 +18,9 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Swal from "sweetalert2";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ChargeDialog from "./Partials/ChargeDialog";
+import CustomPagination from "@/Components/CustomPagination";
 
 export default function ChargesIndex({
     charges,
@@ -27,10 +28,14 @@ export default function ChargesIndex({
     rateTypes,
     pageLabel,
 }) {
+    const [dataCharges, setDataCharges] = useState(charges);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [selectedChargeId, setSelectedChargeId] = useState(null);
     const [openChargeDialog, setOpenChargeDialog] = useState(false);
     const [chargeToEdit, setChargeToEdit] = useState(null);
+    const [searchTerms, setSearchTerms] = useState({
+        per_page: 100,
+    });
 
     const chargeColumns = [
         {
@@ -185,17 +190,28 @@ export default function ChargesIndex({
         });
     };
 
-    const processedCharges = charges.data.map((charge) => ({
+    useEffect(() => {
+        setDataCharges(charges);
+    }, [charges]);
+
+    const processedCharges = dataCharges?.data?.map((charge) => ({
         id: charge.id,
         ...charge,
-    }));
+    })) || [];
 
     return (
         <AuthenticatedLayout>
             <Head title="Charges & Taxes" />
 
-            <Box className="p-6">
-                <Box className="flex justify-end mb-6">
+            <Grid
+                container
+                spacing={2}
+                alignItems="center"
+                sx={{ width: "100%" }}
+                justifyContent={"end"}
+                size={12}
+            >
+                <Grid size={{ xs: 12, sm: "auto" }}>
                     <Button
                         variant="contained"
                         color="primary"
@@ -204,24 +220,47 @@ export default function ChargesIndex({
                     >
                         Add Charge
                     </Button>
-                </Box>
+                </Grid>
+            </Grid>
 
-                <Box className="bg-white rounded-lg shadow">
-                    <DataGrid
-                        rows={processedCharges}
-                        columns={chargeColumns}
-                        pageSize={10}
-                        disableSelectionOnClick
-                        autoHeight
-                        pageSizeOptions={[5, 10, 25, 50]}
-                        sx={{
-                            "& .MuiDataGrid-cell": {
-                                borderBottom: "1px solid #e0e0e0",
-                            },
-                        }}
-                    />
-                </Box>
+            <Box
+                className="py-6 w-full"
+                sx={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr",
+                    height: "calc(100vh - 200px)",
+                }}
+            >
+                <DataGrid
+                    rows={processedCharges}
+                    columns={chargeColumns}
+                    disableSelectionOnClick
+                    hideFooter
+                    sx={{
+                        "& .MuiDataGrid-cell": {
+                            borderBottom: "1px solid #e0e0e0",
+                        },
+                    }}
+                />
             </Box>
+
+            <Grid size={12} container justifyContent={"end"} spacing={2} alignItems={"center"}>
+                <CustomPagination
+                    refreshTable={(url) => {
+                        router.get(url, searchTerms, {
+                            preserveState: true,
+                            preserveScroll: true,
+                            only: ["charges"],
+                            onSuccess: (response) => {
+                                setDataCharges(response.props.charges);
+                            },
+                        });
+                    }}
+                    setSearchTerms={setSearchTerms}
+                    searchTerms={searchTerms}
+                    data={dataCharges}
+                ></CustomPagination>
+            </Grid>
 
             {/* Charge Dialog */}
             <ChargeDialog

@@ -563,4 +563,21 @@ class ProductController extends Controller
             'template' => $content,
         ]);
     }
+
+    public function barcodeV2($batch_id)
+    {
+        $batch = ProductBatch::with('product')->find($batch_id);
+
+        if (!$batch || !$batch->product) {
+            abort(404);
+        }
+
+        $product = $batch->product;
+        $product->selling_price = $batch->price;
+        $product->batch_number = $batch->batch_number;
+
+        return Inertia::render('Product/BarcodeV2', [
+            'product' => $product,
+        ]);
+    }
 }

@@ -25,6 +25,9 @@ const ProductsList = ({ products, handleProductEdit }) => {
                             <IconButton onClick={()=>router.visit(`/quantity/${product.stock_id}/log`)}>
                                 <History size={20} />
                             </IconButton>
+                            <IconButton onClick={()=>router.visit(`/product/${product.batch_id}/barcode-v2`)}>
+                                <Barcode size={20} />
+                            </IconButton>
                         </div>
                     </div>
                     <div className="mt-2 grid grid-cols-3 gap-4">

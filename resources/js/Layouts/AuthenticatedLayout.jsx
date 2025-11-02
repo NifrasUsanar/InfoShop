@@ -42,7 +42,7 @@ import BadgeIcon from "@mui/icons-material/Badge";
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import PermMediaIcon from '@mui/icons-material/PermMedia';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMoneyCheck, faFileInvoice, faBoxesStacked } from "@fortawesome/free-solid-svg-icons";
+import { faMoneyCheck, faFileInvoice, faBoxesStacked, faPercent } from "@fortawesome/free-solid-svg-icons";
 import infoshopLogo from "@/infoshop.png";
 const drawerWidth = 240;
 
@@ -255,8 +255,9 @@ function AuthenticatedLayout({ header, children, ...props }) {
                 {permissions.includes("charges") && (
                     <NavItem
                         href="/charges"
-                        icon={PaymentsIcon}
-                        label="Charges"
+                        icon={faPercent}
+                        icontype={'fa'}
+                        label="Charges/Tax"
                         open={open}
                         selected={isSelected("/charges")}
                     />

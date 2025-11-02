@@ -235,7 +235,7 @@ export default function DatabaseStructureTab() {
             ) : (
                 <>
                     {/* Tables Section */}
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                             <Database className="w-5 h-5 text-purple-600" />
                             Database Tables ({tables.length})
@@ -268,7 +268,7 @@ export default function DatabaseStructureTab() {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                                            <div className="flex items-center gap-3 flex-shrink-0 sm:ml-4">
                                                 <div className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-semibold">
                                                     <BarChart3 className="w-3 h-3" />
                                                     {table.rows} rows
@@ -290,38 +290,81 @@ export default function DatabaseStructureTab() {
                                                 </div>
 
                                                 {table.columnDetails && table.columnDetails.length > 0 ? (
-                                                    <div className="overflow-x-auto">
-                                                        <table className="w-full text-xs">
-                                                            <thead>
-                                                                <tr className="border-b border-gray-200 bg-white">
-                                                                    <th className="px-2 py-2 text-left text-gray-700 font-semibold">Column</th>
-                                                                    <th className="px-2 py-2 text-left text-gray-700 font-semibold">Type</th>
-                                                                    <th className="px-2 py-2 text-left text-gray-700 font-semibold">Null</th>
-                                                                    <th className="px-2 py-2 text-left text-gray-700 font-semibold">Key</th>
-                                                                    <th className="px-2 py-2 text-left text-gray-700 font-semibold">Default</th>
-                                                                    <th className="px-2 py-2 text-left text-gray-700 font-semibold">Extra</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {table.columnDetails.map((col, colIndex) => (
-                                                                    <tr key={colIndex} className="border-b border-gray-100 hover:bg-white">
-                                                                        <td className="px-2 py-2 text-gray-900 font-mono">{col.name}</td>
-                                                                        <td className="px-2 py-2 text-gray-600 font-mono text-xs">{col.type}</td>
-                                                                        <td className="px-2 py-2">
-                                                                            {col.null ? (
-                                                                                <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">YES</span>
-                                                                            ) : (
-                                                                                <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">NO</span>
-                                                                            )}
-                                                                        </td>
-                                                                        <td className="px-2 py-2 text-gray-600">{col.key || '-'}</td>
-                                                                        <td className="px-2 py-2 text-gray-600 font-mono text-xs">{col.default !== null ? col.default : '-'}</td>
-                                                                        <td className="px-2 py-2 text-gray-600 text-xs">{col.extra || '-'}</td>
+                                                    <>
+                                                        {/* Desktop Table View */}
+                                                        <div className="hidden md:block overflow-x-auto">
+                                                            <table className="w-full text-xs">
+                                                                <thead>
+                                                                    <tr className="border-b border-gray-200 bg-white">
+                                                                        <th className="px-2 py-2 text-left text-gray-700 font-semibold">Column</th>
+                                                                        <th className="px-2 py-2 text-left text-gray-700 font-semibold">Type</th>
+                                                                        <th className="px-2 py-2 text-left text-gray-700 font-semibold">Null</th>
+                                                                        <th className="px-2 py-2 text-left text-gray-700 font-semibold">Key</th>
+                                                                        <th className="px-2 py-2 text-left text-gray-700 font-semibold">Default</th>
+                                                                        <th className="px-2 py-2 text-left text-gray-700 font-semibold">Extra</th>
                                                                     </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {table.columnDetails.map((col, colIndex) => (
+                                                                        <tr key={colIndex} className="border-b border-gray-100 hover:bg-white">
+                                                                            <td className="px-2 py-2 text-gray-900 font-mono">{col.name}</td>
+                                                                            <td className="px-2 py-2 text-gray-600 font-mono text-xs">{col.type}</td>
+                                                                            <td className="px-2 py-2">
+                                                                                {col.null ? (
+                                                                                    <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">YES</span>
+                                                                                ) : (
+                                                                                    <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">NO</span>
+                                                                                )}
+                                                                            </td>
+                                                                            <td className="px-2 py-2 text-gray-600">{col.key || '-'}</td>
+                                                                            <td className="px-2 py-2 text-gray-600 font-mono text-xs">{col.default !== null ? col.default : '-'}</td>
+                                                                            <td className="px-2 py-2 text-gray-600 text-xs">{col.extra || '-'}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+
+                                                        {/* Mobile Card View */}
+                                                        <div className="md:hidden space-y-2">
+                                                            {table.columnDetails.map((col, colIndex) => (
+                                                                <div key={colIndex} className="bg-white border border-gray-200 rounded-lg p-3 text-xs">
+                                                                    <div className="mb-2">
+                                                                        <p className="font-semibold text-gray-900 break-words">{col.name}</p>
+                                                                        <p className="text-gray-600 font-mono text-xs mt-1">{col.type}</p>
+                                                                    </div>
+                                                                    <div className="space-y-1 border-t border-gray-200 pt-2">
+                                                                        <div className="flex justify-between items-center gap-2">
+                                                                            <span className="text-gray-600 font-semibold">Null:</span>
+                                                                            {col.null ? (
+                                                                                <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">YES</span>
+                                                                            ) : (
+                                                                                <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs">NO</span>
+                                                                            )}
+                                                                        </div>
+                                                                        {col.key && (
+                                                                            <div className="flex justify-between items-center gap-2">
+                                                                                <span className="text-gray-600 font-semibold">Key:</span>
+                                                                                <span className="text-gray-700">{col.key}</span>
+                                                                            </div>
+                                                                        )}
+                                                                        {col.default !== null && (
+                                                                            <div className="flex justify-between items-center gap-2">
+                                                                                <span className="text-gray-600 font-semibold">Default:</span>
+                                                                                <span className="text-gray-700 font-mono text-xs">{col.default}</span>
+                                                                            </div>
+                                                                        )}
+                                                                        {col.extra && (
+                                                                            <div className="flex justify-between items-center gap-2">
+                                                                                <span className="text-gray-600 font-semibold">Extra:</span>
+                                                                                <span className="text-gray-700 text-xs">{col.extra}</span>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </>
                                                 ) : (
                                                     <p className="text-gray-500 text-xs">No column details available</p>
                                                 )}
@@ -334,7 +377,7 @@ export default function DatabaseStructureTab() {
                     </div>
 
                     {/* Migrations Section */}
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                             <RefreshCw className="w-5 h-5 text-blue-600" />
                             Migrations
@@ -368,8 +411,8 @@ export default function DatabaseStructureTab() {
                                     </div>
                                 </div>
 
-                                {/* Migrations Table */}
-                                <div className="overflow-x-auto">
+                                {/* Desktop Migrations Table View */}
+                                <div className="hidden md:block overflow-x-auto">
                                     <table className="w-full text-sm">
                                         <thead>
                                             <tr className="border-b border-gray-200 bg-gray-50">
@@ -418,6 +461,53 @@ export default function DatabaseStructureTab() {
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+
+                                {/* Mobile Migrations Card View */}
+                                <div className="md:hidden space-y-2">
+                                    {migrations.map((migration, index) => (
+                                        <div key={index} className="bg-white border border-gray-200 rounded-lg p-3">
+                                            <div className="mb-2">
+                                                <p className="font-semibold text-gray-900 text-xs break-all">{migration.name}</p>
+                                            </div>
+                                            <div className="space-y-2 border-t border-gray-200 pt-2 text-xs">
+                                                <div className="flex justify-between items-center gap-2">
+                                                    <span className="text-gray-600 font-semibold">Status:</span>
+                                                    {migration.status === 'executed' ? (
+                                                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">
+                                                            ✓ Executed
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-semibold">
+                                                            ◐ Pending
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="flex justify-between items-center gap-2">
+                                                    <span className="text-gray-600 font-semibold">Batch:</span>
+                                                    {migration.batch ? (
+                                                        <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">
+                                                            #{migration.batch}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-400 text-xs">-</span>
+                                                    )}
+                                                </div>
+                                                <div className="flex justify-between items-center gap-2">
+                                                    <span className="text-gray-600 font-semibold">File:</span>
+                                                    {migration.inFileSystem ? (
+                                                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs font-semibold">
+                                                            ✓ Present
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-semibold">
+                                                            ✗ Missing
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 {/* Legend */}

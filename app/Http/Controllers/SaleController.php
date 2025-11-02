@@ -325,7 +325,14 @@ class SaleController extends Controller
             'sale_items.quantity',
             'sale_items.unit_price',
             'sale_items.discount',
+            'sale_items.flat_discount',
             'sale_items.free_quantity',
+            'sale_items.charge_id',
+            'sale_items.item_type',
+            'sale_items.description',
+            'sale_items.charge_type',
+            'sale_items.rate_value',
+            'sale_items.rate_type',
             DB::raw("$dateFormat as name"),
             'sale_items.sale_id', // Include sale_id for mapping
             DB::raw("CASE

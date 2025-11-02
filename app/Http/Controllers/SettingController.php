@@ -419,4 +419,136 @@ class SettingController extends Controller
         );
         return response()->json(['message' => 'Template updated successfully!'], 200);
     }
+
+    public function getBarcodeTemplate()
+    {
+        $template = Setting::where('meta_key', 'barcode_template')->first();
+        $settings = Setting::where('meta_key', 'barcode_settings')->first();
+
+        $templateContent = $template && $template->meta_value ? $template->meta_value : '';
+        $barcodeSettings = $settings && $settings->meta_value ? json_decode($settings->meta_value, true) : [
+            'format' => 'CODE128',
+            'width' => 2,
+            'height' => 35,
+            'fontSize' => 14,
+        ];
+
+        return response()->json([
+            'template' => $templateContent,
+            'barcode_settings' => $barcodeSettings,
+            'message' => 'Barcode template retrieved successfully!'
+        ], 200);
+    }
+
+    public function saveBarcodeTemplate(Request $request)
+    {
+        $request->validate([
+            'template' => 'required|string',
+            'barcode_settings' => 'required|array',
+            'barcode_settings.format' => 'required|string',
+            'barcode_settings.width' => 'required|numeric|min:0.5|max:10',
+            'barcode_settings.height' => 'required|numeric|min:10|max:200',
+            'barcode_settings.fontSize' => 'required|numeric|min:8|max:32',
+        ]);
+
+        $template = $request->input('template');
+        $barcodeSettings = $request->input('barcode_settings');
+
+        // Validate template content
+        $validation = $this->validateBarcodeTemplate($template);
+        if (!$validation['valid']) {
+            return response()->json([
+                'message' => 'Invalid template',
+                'errors' => $validation['errors']
+            ], 422);
+        }
+
+        Setting::updateOrCreate(
+            ['meta_key' => 'barcode_template'],
+            ['meta_value' => $template]
+        );
+
+        Setting::updateOrCreate(
+            ['meta_key' => 'barcode_settings'],
+            ['meta_value' => json_encode($barcodeSettings)]
+        );
+
+        return response()->json([
+            'message' => 'Barcode template updated successfully!',
+            'template' => $template,
+            'barcode_settings' => $barcodeSettings
+        ], 200);
+    }
+
+    private function validateBarcodeTemplate($template)
+    {
+        $errors = [];
+
+        // Check for script tags
+        if (preg_match('/<script\b[^>]*>(.*?)<\/script>/is', $template)) {
+            $errors[] = 'Template cannot contain <script> tags';
+        }
+
+        // Whitelist of allowed variables
+        $allowedVariables = [
+            'product_name',
+            'price',
+            'barcode_code',
+            'store_name',
+            'date',
+        ];
+
+        // Find all {{variable}} placeholders
+        preg_match_all('/\{\{(\w+)\}\}/', $template, $matches);
+        $usedVariables = $matches[1];
+
+        // Check if any used variable is not in the whitelist
+        $invalidVariables = array_diff($usedVariables, $allowedVariables);
+        if (!empty($invalidVariables)) {
+            $errors[] = 'Invalid template variables used: ' . implode(', ', $invalidVariables) . '. Allowed: ' . implode(', ', $allowedVariables);
+        }
+
+        return [
+            'valid' => empty($errors),
+            'errors' => $errors,
+            'allowed_variables' => $allowedVariables,
+        ];
+    }
+
+    public function renderBarcodeTemplatePreview(Request $request)
+    {
+        $request->validate([
+            'template' => 'required|string',
+            'sample_data' => 'required|array',
+            'barcode_settings' => 'nullable|array',
+        ]);
+
+        $template = $request->input('template');
+        $sampleData = $request->input('sample_data');
+
+        // Validate template
+        $validation = $this->validateBarcodeTemplate($template);
+        if (!$validation['valid']) {
+            return response()->json([
+                'message' => 'Invalid template',
+                'errors' => $validation['errors']
+            ], 422);
+        }
+
+        // Simple variable replacement with safety checks
+        $rendered = $template;
+        foreach ($sampleData as $key => $value) {
+            if (in_array($key, $validation['allowed_variables'])) {
+                $rendered = str_replace('{{' . $key . '}}', htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8'), $rendered);
+            }
+        }
+
+        // Replace any unused variables with empty strings
+        $rendered = preg_replace('/\{\{(\w+)\}\}/', '', $rendered);
+
+        return response()->json([
+            'rendered' => $rendered,
+            'message' => 'Preview rendered successfully!'
+        ], 200);
+    }
 }

@@ -30,6 +30,7 @@ import MailSetting from "./Partials/MailSetting";
 import TelegramSetting from "./Partials/TelegramSetting";
 import LoyaltyPointsSetting from "./Partials/LoyaltyPointsSetting";
 import CurrencySetting from "./Partials/CurrencySetting";
+import BarcodeTemplateEditor from "./Partials/BarcodeTemplateEditor";
 
 const VisuallyHiddenInput = styled("input")({
     clip: "rect(0 0 0 0)",
@@ -524,109 +525,111 @@ export default function Setting({ settings }) {
                     </form>
                 </TabPanel>
                 <TabPanel value={tabValue} index={'barcode'}>
-                    <form
-                        encType="multipart/form-data"
-                        onSubmit={handleSubmit}
-                        method="post"
+                    <Box
+                        sx={{
+                            justifyContent: "center",
+                            alignItems: "center",
+                            width: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                        }}
                     >
-                        <input type="hidden" name="setting_type" value={'barcode'} />
-                        <Box
-                            sx={{
-                                justifyContent: "center",
-                                alignItems: "center",
-                                width: "100%",
-                                display: "flex",
-                                flexDirection: "column",
-                            }}
+                        <Grid
+                            container
+                            width={{ xs: "100%", sm: "60%" }}
                         >
-                            <Grid
-                                container
-                                spacing={2}
-                                width={{ xs: "100%", sm: "60%" }}
+                            <form
+                                encType="multipart/form-data"
+                                onSubmit={handleSubmit}
+                                method="post"
+                                style={{ marginBottom: '2rem', width: '100%' }}
                             >
-                                <Grid size={12}>
-                                    <Paper elevation={3} sx={{ padding: 2, marginBottom: 2 }}>
-                                        <Grid
-                                            container
-                                            sx={{
-                                                display: "flex",
-                                                width: "100%",
-                                            }}
-                                        >
-                                            <Grid size={6}>
-                                                <FormControlLabel
-                                                    control={
-                                                        <Switch
-                                                            name="show_barcode_store"
-                                                            value={settingFormData.show_barcode_store}
-                                                            onChange={handleChange}
-                                                            checked={settingFormData.show_barcode_store === "on"}
-                                                        />
-                                                    }
-                                                    label="STORE NAME"
-                                                />
-                                            </Grid>
-                                            <Grid size={6}>
-                                                <FormControlLabel
-                                                    control={
-                                                        <Switch
-                                                            name="show_barcode_product_price"
-                                                            value={settingFormData.show_barcode_product_price}
-                                                            onChange={handleChange}
-                                                            checked={settingFormData.show_barcode_product_price === "on"}
-                                                        />
-                                                    }
-                                                    label="PRODUCT PRICE"
-                                                />
-                                            </Grid>
-                                            <Grid size={6}>
-                                                <FormControlLabel
-                                                    control={
-                                                        <Switch
-                                                            name="show_barcode_product_name"
-                                                            value={settingFormData.show_barcode_product_name}
-                                                            onChange={handleChange}
-                                                            checked={settingFormData.show_barcode_product_name === "on"}
-                                                        />
-                                                    }
-                                                    label="PRODUCT NAME"
-                                                />
-                                            </Grid>
-                                        </Grid>
-                                        <Grid spacing={2} container sx={{ mt: 2 }}>
-                                            {[...barcodeSettings.keys()].map((key) => (
-                                                <Grid size={3} key={key}>
-                                                    <TextField
-                                                        fullWidth
-                                                        variant="outlined"
-                                                        label={key.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
-                                                        name={key}
-                                                        value={barcodeSettings.get(key)}
-                                                        onChange={handleBarcodeFieldChange}
-                                                    />
-                                                </Grid>
-                                            ))}
-                                        </Grid>
-                                    </Paper>
-                                </Grid>
-                                <Grid
-                                    size={12}
-                                    justifyContent={"end"}
-                                    sx={{ display: "flex" }}
-                                >
-                                    <Button
-                                        type="submit"
-                                        variant="outlined"
-                                        size="large"
-                                        color="success"
-                                        fullWidth
+                                <input type="hidden" name="setting_type" value={'barcode'} />
+                                <Paper elevation={3} sx={{ padding: 2, marginBottom: 2 }}>
+                                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                        Barcode Display Options
+                                    </Typography>
+                                    <Grid
+                                        container
+                                        spacing={2}
+                                        sx={{
+                                            display: "flex",
+                                            width: "100%",
+                                        }}
                                     >
-                                        UPDATE
-                                    </Button>
-                                </Grid>
-                            </Grid>
-                        </Box>
-                    </form>
+                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        name="show_barcode_store"
+                                                        value={settingFormData.show_barcode_store}
+                                                        onChange={handleChange}
+                                                        checked={settingFormData.show_barcode_store === "on"}
+                                                    />
+                                                }
+                                                label="STORE NAME"
+                                            />
+                                        </Grid>
+                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        name="show_barcode_product_price"
+                                                        value={settingFormData.show_barcode_product_price}
+                                                        onChange={handleChange}
+                                                        checked={settingFormData.show_barcode_product_price === "on"}
+                                                    />
+                                                }
+                                                label="PRODUCT PRICE"
+                                            />
+                                        </Grid>
+                                        <Grid size={{ xs: 12, sm: 6 }}>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        name="show_barcode_product_name"
+                                                        value={settingFormData.show_barcode_product_name}
+                                                        onChange={handleChange}
+                                                        checked={settingFormData.show_barcode_product_name === "on"}
+                                                    />
+                                                }
+                                                label="PRODUCT NAME"
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                    <Grid spacing={2} container sx={{ mt: 2 }}>
+                                        {[...barcodeSettings.keys()].map((key) => (
+                                            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={key}>
+                                                <TextField
+                                                    fullWidth
+                                                    variant="outlined"
+                                                    label={key.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
+                                                    name={key}
+                                                    value={barcodeSettings.get(key)}
+                                                    onChange={handleBarcodeFieldChange}
+                                                    size="small"
+                                                />
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+                                        <Button
+                                            type="submit"
+                                            variant="outlined"
+                                            size="large"
+                                            color="success"
+                                        >
+                                            UPDATE OPTIONS
+                                        </Button>
+                                    </Box>
+                                </Paper>
+                            </form>
+
+                            <Box sx={{ width: '100%' }}>
+                                <BarcodeTemplateEditor settings={settings} />
+                            </Box>
+                        </Grid>
+                    </Box>
                 </TabPanel>
 
                 <TabPanel value={tabValue} index={'currency'}>
