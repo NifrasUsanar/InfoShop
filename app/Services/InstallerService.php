@@ -130,7 +130,9 @@ class InstallerService
     }
 
     /**
-     * Write environment file
+     * Write production-ready environment file (all at once)
+     * This combines database config, app settings, and production flags
+     * into a single .env write to avoid triggering artisan serve restarts
      */
     public function writeEnvironmentFile(array $data): bool
     {
@@ -145,9 +147,9 @@ class InstallerService
 
             $envContent = File::exists($envPath) ? File::get($envPath) : '';
 
-            // Database configuration
+            // ===== DATABASE CONFIGURATION =====
             $driver = $data['db_driver'] ?? 'mysql';
-            
+
             if ($driver === 'sqlite') {
                 $dbPath = $data['db_database'] ?? database_path('database.sqlite');
                 $envContent = $this->setEnvValue($envContent, 'DB_CONNECTION', 'sqlite');
@@ -160,27 +162,29 @@ class InstallerService
             } else {
                 $envContent = $this->setEnvValue($envContent, 'DB_CONNECTION', $driver);
                 $envContent = $this->setEnvValue($envContent, 'DB_HOST', $data['db_host']);
-                $envContent = $this->setEnvValue($envContent, 'DB_PORT', $data['db_port']);
+                $envContent = $this->setEnvValue($envContent, 'DB_PORT', $data['db_port'] ?? '3306');
                 $envContent = $this->setEnvValue($envContent, 'DB_DATABASE', $data['db_database']);
                 $envContent = $this->setEnvValue($envContent, 'DB_USERNAME', $data['db_username']);
-                $envContent = $this->setEnvValue($envContent, 'DB_PASSWORD', $data['db_password']);
-            }
-
-            // Application configuration
-            $envContent = $this->setEnvValue($envContent, 'APP_NAME', $data['app_name'] ?? 'InfoShop');
-            $envContent = $this->setEnvValue($envContent, 'APP_URL', $data['app_url'] ?? 'http://localhost');
-            // APP_ENV and APP_DEBUG will be set after migrations complete (see updateSessionDrivers)
-            $envContent = $this->setEnvValue($envContent, 'APP_TIMEZONE', $data['app_timezone'] ?? 'UTC');
-
-            // Database engine configuration (force InnoDB for MySQL)
-            if ($driver === 'mysql') {
+                $envContent = $this->setEnvValue($envContent, 'DB_PASSWORD', $data['db_password'] ?? '');
                 $envContent = $this->setEnvValue($envContent, 'DB_ENGINE', 'InnoDB');
             }
 
-            // Session configuration - use file during installation to avoid missing tables
-            $envContent = $this->setEnvValue($envContent, 'SESSION_DRIVER', 'file');
-            $envContent = $this->setEnvValue($envContent, 'CACHE_STORE', 'file');
+            // ===== APPLICATION CONFIGURATION =====
+            $envContent = $this->setEnvValue($envContent, 'APP_NAME', $data['app_name'] ?? 'InfoShop');
+            $envContent = $this->setEnvValue($envContent, 'APP_URL', $data['app_url'] ?? 'http://localhost');
+            $envContent = $this->setEnvValue($envContent, 'APP_TIMEZONE', $data['app_timezone'] ?? 'UTC');
 
+            // ===== PRODUCTION ENVIRONMENT SETTINGS =====
+            // Set to production immediately (no separate call later)
+            $envContent = $this->setEnvValue($envContent, 'APP_ENV', 'production');
+            $envContent = $this->setEnvValue($envContent, 'APP_DEBUG', 'false');
+
+            // ===== SESSION & CACHE CONFIGURATION =====
+            // Use database-backed sessions and cache for production
+            $envContent = $this->setEnvValue($envContent, 'SESSION_DRIVER', 'database');
+            $envContent = $this->setEnvValue($envContent, 'CACHE_STORE', 'database');
+
+            // Write ALL configuration at once
             File::put($envPath, $envContent);
 
             // Generate application key if not exists
@@ -191,32 +195,6 @@ class InstallerService
             return true;
         } catch (Exception $e) {
             throw new Exception('Failed to write environment file: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Set APP_ENV and APP_DEBUG to production immediately after migrations
-     */
-    private function setProductionEnv(): void
-    {
-        try {
-            $envPath = base_path('.env');
-            $envContent = File::get($envPath);
-
-            // Set production settings
-            $envContent = $this->setEnvValue($envContent, 'APP_ENV', 'production');
-            $envContent = $this->setEnvValue($envContent, 'APP_DEBUG', 'false');
-
-            // Switch to database-backed sessions and cache now that tables exist
-            $envContent = $this->setEnvValue($envContent, 'SESSION_DRIVER', 'database');
-            $envContent = $this->setEnvValue($envContent, 'CACHE_STORE', 'database');
-
-            File::put($envPath, $envContent);
-
-            // Clear config cache so new values are loaded
-            Artisan::call('config:clear', ['--no-interaction' => true]);
-        } catch (Exception $e) {
-            logger()->warning('Failed to set production environment: ' . $e->getMessage());
         }
     }
 
@@ -241,38 +219,6 @@ class InstallerService
         } catch (Exception $e) {
             // Non-critical error, log it but don't fail installation
             logger()->warning('Failed to finalize installation: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Prepare SQLite database file if using SQLite
-     */
-    private function prepareSQLiteDatabase(): void
-    {
-        try {
-            $connection = DB::connection();
-
-            // Check if using SQLite
-            if ($connection instanceof \Illuminate\Database\SQLiteConnection) {
-                $database = $connection->getDatabaseName();
-
-                // Create the database file if it doesn't exist
-                if (!file_exists($database)) {
-                    // Create directory if it doesn't exist
-                    $directory = dirname($database);
-                    if (!is_dir($directory)) {
-                        mkdir($directory, 0755, true);
-                    }
-
-                    // Create the database file
-                    touch($database);
-
-                    // Reconnect to use the new file
-                    DB::reconnect(config('database.default'));
-                }
-            }
-        } catch (Exception $e) {
-            logger()->warning('Failed to prepare SQLite database: ' . $e->getMessage());
         }
     }
 
@@ -308,18 +254,12 @@ class InstallerService
             // Clear config cache first so new .env values are loaded
             Artisan::call('config:clear', ['--no-interaction' => true]);
 
-            // For SQLite: ensure database file exists before running migrations
-            $this->prepareSQLiteDatabase();
-
             // Run migrations BEFORE transaction - migration can drop/create tables
             // Using --no-interaction to prevent hanging on user input
             Artisan::call('migrate:fresh', [
                 '--force' => true,
                 '--no-interaction' => true,
             ]);
-
-            // Write APP_ENV and APP_DEBUG immediately after migrations complete
-            $this->setProductionEnv();
 
             // Now start transaction for seeding operations
             DB::beginTransaction();

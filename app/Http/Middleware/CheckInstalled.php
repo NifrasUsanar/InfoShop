@@ -18,21 +18,27 @@ class CheckInstalled
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Check if installation file exists
-        if (!File::exists(storage_path('installed'))) {
-            return redirect()->route('installer.welcome');
-        }
-
-        // Check if users table exists (safety check for incomplete installation)
+        // First check if users table exists (primary indicator of a running system)
+        // This allows existing systems (installed before the installer was added) to work
         try {
-            if (!Schema::hasTable('users')) {
-                return redirect()->route('installer.welcome');
+            if (Schema::hasTable('users')) {
+                // System is set up - create installed file if missing (for new installs tracking)
+                if (!File::exists(storage_path('installed'))) {
+                    File::put(storage_path('installed'), date('Y-m-d H:i:s'));
+                }
+                return $next($request);
             }
         } catch (\Exception $e) {
-            // Database connection error, redirect to installer
-            return redirect()->route('installer.welcome');
+            // Database connection error - not yet configured
         }
 
-        return $next($request);
+        // If users table doesn't exist, check for installation file
+        // For systems that completed installation after this check was added
+        if (File::exists(storage_path('installed'))) {
+            return $next($request);
+        }
+
+        // No users table and no installation file = not installed, send to installer
+        return redirect()->route('installer.welcome');
     }
 }

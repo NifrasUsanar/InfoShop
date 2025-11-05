@@ -142,7 +142,6 @@ class InstallerController extends Controller
             // Application
             'app_name' => 'required|string|max:255',
             'app_url' => 'required|url',
-            'app_env' => 'required|in:local,production',
             'app_timezone' => 'required|string',
 
             // Store
@@ -175,7 +174,7 @@ class InstallerController extends Controller
         }
 
         try {
-            // Write environment file
+            // Write environment file (ALL production-ready settings at once)
             $this->installer->writeEnvironmentFile([
                 'db_driver' => $request->db_driver,
                 'db_host' => $request->db_host,
@@ -185,18 +184,21 @@ class InstallerController extends Controller
                 'db_password' => $request->db_password,
                 'app_name' => $request->app_name,
                 'app_url' => $request->app_url,
-                'app_env' => $request->app_env,
                 'app_timezone' => $request->app_timezone,
             ]);
         } catch (\Exception $e) {
+            logger()->error('Installation: Failed to write environment file', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return back()
                 ->with('error', 'Failed to write environment file: ' . $e->getMessage())
                 ->withInput();
         }
 
         try {
-            // Run installation
-            $this->installer->runInstallation([
+            // Run installation (migrations + seeding + data setup)
+            $result = $this->installer->runInstallation([
                 'store' => [
                     'name' => $request->store_name,
                     'address' => $request->store_address,
@@ -222,11 +224,18 @@ class InstallerController extends Controller
                 'demo_data' => $request->demo_data ?? false,
             ]);
 
-            // Clear sessionStorage on success
+            logger()->info('Installation completed successfully', [
+                'admin_email' => $result['admin_email'] ?? null,
+            ]);
+
             return redirect()
                 ->route('installer.complete')
                 ->with('success', 'Installation completed successfully!');
         } catch (\Exception $e) {
+            logger()->error('Installation: Failed during installation process', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return back()
                 ->with('error', 'Installation failed: ' . $e->getMessage())
                 ->withInput();
