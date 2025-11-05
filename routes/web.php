@@ -36,13 +36,12 @@ use App\Http\Controllers\DevDatabaseController;
 use App\Http\Controllers\ChargeController;
 use App\Http\Controllers\SyncController;
 
+// Installer routes (must be before auth routes)
+require __DIR__ . '/installer.php';
+
 Route::get('/', function () {
     return redirect('login');
-    // return Inertia::render('Welcome', [
-    //     'canLogin' => Route::has('login'),
-    //     'canRegister' => Route::has('register'),
-    // ]);
-});
+})->middleware('check.installed');
 
 Route::get('/editor', function () {
     return Inertia::render('BlockEditor/Editor');
@@ -70,7 +69,7 @@ Route::post('/api/sync', [SyncController::class, 'push']);
 // Store config endpoint
 Route::get('/api/stores/{storeId}', [SyncController::class, 'getStoreConfig']);
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'check.installed'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

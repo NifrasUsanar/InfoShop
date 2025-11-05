@@ -39,30 +39,39 @@ class HandleInertiaRequests extends Middleware
             $permissions = $role->permissions;
         }
 
-        $shopNameMeta = Setting::where('meta_key', 'shop_name')->first();
-        $currencySettingsMeta = Setting::where('meta_key', 'currency_settings')->first();
+        try {
+            $shopNameMeta = Setting::where('meta_key', 'shop_name')->first();
+            $currencySettingsMeta = Setting::where('meta_key', 'currency_settings')->first();
 
-        // Parse currency settings JSON or use defaults
-        $currencySettings = [];
-        if ($currencySettingsMeta) {
-            try {
-                $currencySettings = json_decode($currencySettingsMeta->meta_value, true) ?? [];
-            } catch (\Exception $e) {
-                $currencySettings = [];
+            // Parse currency settings JSON or use defaults
+            $currencySettings = [];
+            if ($currencySettingsMeta) {
+                try {
+                    $currencySettings = json_decode($currencySettingsMeta->meta_value, true) ?? [];
+                } catch (\Exception $e) {
+                    $currencySettings = [];
+                }
             }
+
+            $modules = Setting::getModules();
+            $shopName = $shopNameMeta->meta_value ?? 'InfoShop';
+        } catch (\Exception $e) {
+            // If settings table doesn't exist, use defaults
+            $currencySettings = [];
+            $modules = [];
+            $shopName = 'InfoShop';
         }
 
-        $modules = Setting::getModules();
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
             ],
             'settings'=>[
-                'shop_name'=>$shopNameMeta->meta_value,
+                'shop_name'=> $shopName ?? 'InfoShop',
                 'currency_settings'=>$currencySettings,
             ],
-            'modules'=>$modules,
+            'modules'=> $modules ?? [],
             'userPermissions'=>$permissions->pluck('name'),
         ];
     }

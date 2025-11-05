@@ -6,7 +6,6 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "froiden/laravel-installer": "11.0.0",
         "inertiajs/inertia-laravel": "2.0",
         "laravel-notification-channels/telegram": "^5.0",
         "laravel/framework": "^11.9",

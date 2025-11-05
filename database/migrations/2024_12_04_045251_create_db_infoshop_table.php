@@ -12,22 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('activity_log', function (Blueprint $table) {
-            $table->bigIncrements('id');
-            $table->string('log_name')->nullable()->index();
-            $table->text('description');
-            $table->string('subject_type')->nullable();
-            $table->string('event')->nullable();
-            $table->unsignedBigInteger('subject_id')->nullable();
-            $table->string('causer_type')->nullable();
-            $table->unsignedBigInteger('causer_id')->nullable();
-            $table->json('properties')->nullable();
-            $table->char('batch_uuid', 36)->nullable();
-            $table->timestamps();
-
-            $table->index(['causer_type', 'causer_id'], 'causer');
-            $table->index(['subject_type', 'subject_id'], 'subject');
-        });
+        // activity_log table is created by spatie/laravel-activitylog package
 
         Schema::create('attachments', function (Blueprint $table) {
             $table->bigIncrements('id');
@@ -866,6 +851,6 @@ return new class extends Migration
 
         Schema::dropIfExists('attachments');
 
-        Schema::dropIfExists('activity_log');
+        // activity_log table is dropped by spatie/laravel-activitylog package
     }
 };

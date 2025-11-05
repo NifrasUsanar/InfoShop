@@ -16,9 +16,15 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // Register middleware aliases
+        $middleware->alias([
+            'check.installed' => \App\Http\Middleware\CheckInstalled::class,
+        ]);
+
         // Exclude API routes from CSRF (offline-first sync)
         $middleware->validateCsrfTokens(except: [
             '/api/*',
+            '/install/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

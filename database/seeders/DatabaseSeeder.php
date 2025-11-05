@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
         Store::create([
             'name' => 'INFO SHOP',
-            'address'=>'Main Street, Oddamavadi',
+            'address'=>'Your business address',
             'contact_number'=>'00000001',
             'sale_prefix'=>'IS',
             'current_sale_number'=>0,
@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             'sales',
             'customers',
             'vendors',
+            'charges',
             'collections',
             'expenses',
             'quotations',
@@ -64,6 +65,7 @@ class DatabaseSeeder extends Seeder
             'sales',
             'customers',
             'vendors',
+            'charges',
             'collections',
             'expenses',
             'quotations',
@@ -92,7 +94,7 @@ class DatabaseSeeder extends Seeder
             'user_role'=>'super-admin',
             'email' => 'master@infomax.lk',
             'store_id' => 1,
-            'password' => Hash::make('8236'),
+            'password' => Hash::make('superadmin'),
         ]);
         $superAdmin->assignRole($superAdminRole);
 
@@ -102,7 +104,7 @@ class DatabaseSeeder extends Seeder
             'user_role'=>'admin',
             'email' => 'admin@infomax.lk',
             'store_id' => 1,
-            'password' => Hash::make('8236'),
+            'password' => Hash::make('admin'),
         ]);
         $admin->assignRole($adminRole);
 
