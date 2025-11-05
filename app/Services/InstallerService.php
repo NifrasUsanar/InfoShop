@@ -279,11 +279,6 @@ class InstallerService
             // Seed default settings
             $this->seedDefaultSettings($data['store']['name'], $data['currency']);
 
-            // Seed demo data if requested
-            if (!empty($data['demo_data'])) {
-                $this->seedDemoData();
-            }
-
             // Mark installation as complete
             File::put(storage_path('installed'), date('Y-m-d H:i:s'));
 
@@ -388,6 +383,17 @@ class InstallerService
     {
         $defaults = config('installer.default_settings');
 
+        $currencySettings = [
+            'currency_symbol' => $currency['currency_symbol'],
+            'currency_code' => $currency['currency_code'],
+            'symbol_position' => $currency['symbol_position'],
+            'decimal_separator' => $currency['decimal_separator'],
+            'thousands_separator' => $currency['thousands_separator'],
+            'decimal_places' => $currency['decimal_places'],
+            'negative_format' => $currency['negative_format'],
+            'show_currency_code' => $currency['show_currency_code'],
+        ];
+
         $settings = [
             ['meta_key' => 'shop_name', 'meta_value' => $shopName],
             ['meta_key' => 'shop_logo', 'meta_value' => $defaults['shop_logo']],
@@ -402,40 +408,14 @@ class InstallerService
             ['meta_key' => 'modules', 'meta_value' => $defaults['modules']],
             ['meta_key' => 'misc_settings', 'meta_value' => json_encode($defaults['misc_settings'])],
             ['meta_key' => 'barcode_settings', 'meta_value' => json_encode($defaults['barcode_settings'])],
-            ['meta_key' => 'currency_symbol', 'meta_value' => $currency['currency_symbol']],
-            ['meta_key' => 'currency_code', 'meta_value' => $currency['currency_code']],
-            ['meta_key' => 'symbol_position', 'meta_value' => $currency['symbol_position']],
-            ['meta_key' => 'decimal_separator', 'meta_value' => $currency['decimal_separator']],
-            ['meta_key' => 'thousands_separator', 'meta_value' => $currency['thousands_separator']],
-            ['meta_key' => 'decimal_places', 'meta_value' => $currency['decimal_places']],
-            ['meta_key' => 'negative_format', 'meta_value' => $currency['negative_format']],
-            ['meta_key' => 'show_currency_code', 'meta_value' => $currency['show_currency_code']],
+            ['meta_key' => 'currency_settings', 'meta_value' => json_encode($currencySettings)],
         ];
 
         // Get barcode template from view
-        $barcodeTemplate = File::get(resource_path('views/templates/barcode-template.html'));
+        $barcodeTemplate = File::get(resource_path('views/templates/barcode-template-simple.html'));
         $settings[] = ['meta_key' => 'barcode_template', 'meta_value' => $barcodeTemplate];
 
         Setting::insert($settings);
-    }
-
-    /**
-     * Seed demo data
-     */
-    private function seedDemoData(): void
-    {
-        try {
-            // Add demo contacts, products, etc.
-            // This is optional - you can call existing seeders or add custom demo data
-            Artisan::call('db:seed', [
-                '--class' => 'ProductSeeder',
-                '--force' => true,
-                '--no-interaction' => true,
-            ]);
-        } catch (Exception $e) {
-            // Demo data is optional, don't fail installation if seeding fails
-            logger()->warning('Failed to seed demo data: ' . $e->getMessage());
-        }
     }
 
     /**

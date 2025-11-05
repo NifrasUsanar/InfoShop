@@ -62,14 +62,15 @@ Route::post('/api/application-update-v2', [UpgradeController::class, 'applicatio
 // GET /api/sync?table=products - Fetch data
 // POST /api/sync?table=sales - Push data
 // GET /api/sync/health - Health check
-Route::get('/api/sync/health', [SyncController::class, 'healthCheck']);
-Route::get('/api/sync', [SyncController::class, 'fetch']);
-Route::post('/api/sync', [SyncController::class, 'push']);
+
+// Route::get('/api/sync/health', [SyncController::class, 'healthCheck']);
+// Route::get('/api/sync', [SyncController::class, 'fetch']);
+// Route::post('/api/sync', [SyncController::class, 'push']);
 
 // Store config endpoint
-Route::get('/api/stores/{storeId}', [SyncController::class, 'getStoreConfig']);
+// Route::get('/api/stores/{storeId}', [SyncController::class, 'getStoreConfig']);
 
-Route::middleware(['auth', 'check.installed'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

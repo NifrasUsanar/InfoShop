@@ -5,74 +5,66 @@
         align-items: center;
         justify-content: center;
         flex-direction: column;
-        padding: 10px;
-        max-width: 400px;
+        width: 40mm;
     }
 
     .store-name {
         font-weight: bold;
+        z-index: 20;
+        font-size: 0.75rem;
+        margin: 3px 0;
+    }
+
+    .product-price {
+        font-weight: bold;
+        font-size: 0.8rem;
+        margin-top: -3px;
+        margin-bottom: -5px;
     }
 
     .barcode {
         display: block;
+        margin-top: -10px;
+        width: 100%;
     }
 
     .product-name {
-        font-weight: bolder;
+        font-weight: bold;
+        margin-top: -4px;
+        font-size: 0.7rem;
     }
 
-    .barcode-image img {
+    .wrapper {
         width: 100%;
-        height: 130px;
-        object-fit: contain;
-    }
-
-    .barcode-content {
         display: flex;
-        flex-direction: row;
         align-items: center;
+        justify-content: center;
     }
 
-    .barcode-description {
-        border: solid 2px;
-        margin-top: -10px;
-        padding: 0.6em;
+    svg#barcode-svg {
         width: 100%;
-    }
-
-    .barcode-svg-container {
-        width: 100%;
-        text-align: center;
     }
 
     .barcode-code {
+        font-size: 0.65rem;
         font-weight: bold;
-        font-size: 0.85rem;
-        margin-top: 5px;
+        margin: 2px 0;
+    }
+
+    .divider {
+        border: none;
+        border-top: 1px solid black;
+        margin: 2px 0;
+        width: 100%;
     }
 </style>
-
-<div class="barcode-container">
-    <div class="barcode-content">
-        <div class="barcode-image">
-            <div class="store-name">{{store_name}}</div>
+<div class="wrapper">
+    <div class="barcode-container">
+        <p class="store-name">{{store_name}}</p>
+        <div class="barcode" style="width: 100%;"> <svg alt="Barcode" id="barcode-svg" style="width: 100%;"></svg>
         </div>
-        <div class="barcode">
-            <div class="barcode-svg-container">
-                <svg id="barcode-svg"></svg>
-            </div>
-            <div class="barcode-code">{{barcode_code}}</div>
-        </div>
-    </div>
-    <div class="barcode-description">
-        <p class="product-name" style="font-size: 1.2rem; font-weight: bold; margin: 5px 0;">
-            {{product_name}}
-        </p>
-        <p class="product-price" style="font-size: 1.4rem; font-weight: bolder; margin: 10px 0;">
-            <b>{{price}}</b>
-        </p>
-        <p class="barcode-date" style="font-size: 0.75rem; color: #666; margin: 5px 0;">
-            {{date}}
-        </p>
+        <p class="product-name">{{product_name}}</p>
+        <hr class="divider" />
+        <p class="product-price">{{price}}</p>
     </div>
 </div>

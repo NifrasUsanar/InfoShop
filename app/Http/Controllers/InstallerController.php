@@ -221,7 +221,6 @@ class InstallerController extends Controller
                     'email' => $request->admin_email,
                     'password' => $request->admin_password,
                 ],
-                'demo_data' => $request->demo_data ?? false,
             ]);
 
             logger()->info('Installation completed successfully', [

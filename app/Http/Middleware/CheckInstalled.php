@@ -18,9 +18,16 @@ class CheckInstalled
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // First check if users table exists (primary indicator of a running system)
-        // This allows existing systems (installed before the installer was added) to work
+        // Skip check for installer routes (already public)
+        if ($request->routeIs('installer.*')) {
+            return $next($request);
+        }
+
+        // Try to check if system is installed
         try {
+            // Test database connection first
+            DB::connection()->getPdo();
+            // Database connection successful - check if users table exists
             if (Schema::hasTable('users')) {
                 // System is set up - create installed file if missing (for new installs tracking)
                 if (!File::exists(storage_path('installed'))) {
@@ -28,17 +35,31 @@ class CheckInstalled
                 }
                 return $next($request);
             }
+
+            // Database exists but users table doesn't - needs installation
+            // Check if installation file was created (for safety check)
+            if (File::exists(storage_path('installed'))) {
+                // File says installed but users table missing - database corrupted/reset
+                // Log this unusual state but allow access (admins might be fixing it)
+                logger()->warning('Installation file exists but users table missing. Database may be corrupted or reset.');
+                return $next($request);
+            }
+
+            // Not installed - redirect to installer
+            return redirect()->route('installer.welcome');
+        } catch (\PDOException $e) {
+            // Database connection failed
+            logger()->error('Database connection failed during installation check', [
+                'message' => $e->getMessage(),
+            ]);
+            return redirect()->route('installer.welcome');
         } catch (\Exception $e) {
-            // Database connection error - not yet configured
+            // Other errors (schema check, etc)
+            logger()->error('Error checking installation status', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return redirect()->route('installer.welcome');
         }
-
-        // If users table doesn't exist, check for installation file
-        // For systems that completed installation after this check was added
-        if (File::exists(storage_path('installed'))) {
-            return $next($request);
-        }
-
-        // No users table and no installation file = not installed, send to installer
-        return redirect()->route('installer.welcome');
     }
 }

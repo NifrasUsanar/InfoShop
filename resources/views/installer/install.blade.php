@@ -26,13 +26,6 @@
             </div>
         </div>
 
-        <div class="flex items-center">
-            <input type="checkbox" name="demo_data" id="demo_data" class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-            <label for="demo_data" class="ml-3 block text-sm font-medium text-gray-700">
-                Install demo data (sample products and contacts)
-            </label>
-        </div>
-
         <!-- Hidden fields populated from sessionStorage -->
         <input type="hidden" name="db_driver" id="db_driver">
         <input type="hidden" name="db_host" id="db_host">
