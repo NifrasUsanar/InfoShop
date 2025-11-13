@@ -16,7 +16,8 @@ export default function BatchModal({
     selectedBatch,
     refreshProducts,
     selectedProduct,
-    contacts
+    contacts,
+    initialIsNew = false
 }) {
 
     const initialFormState = {
@@ -32,31 +33,47 @@ export default function BatchModal({
         discount_percentage: 0,
     }
 
-    const [isNew, setIsNew] = useState(false)
+    const [isNew, setIsNew] = useState(initialIsNew)
     const [formState, setFormState] = useState(initialFormState);
     const [loading, setLoading] = useState(false)
 
     const handleClose = () => {
         setIsNew(false)
-        updateFormStateFromBatch(selectedBatch)
+        if (selectedBatch) {
+            updateFormStateFromBatch(selectedBatch)
+        }
         setBatchModalOpen(false)
     };
 
-    const handleAddToCartSubmit = async (event) => {
-        event.preventDefault();
+    const handleBatchSubmit = async (event) => {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
         if (loading) return;
         setLoading(true);
 
-        const formData = new FormData(event.currentTarget);
-        const formJson = Object.fromEntries(formData.entries());
-        formJson.new_batch = formState.batch_number;
-        formJson.id = selectedProduct.id
+        const formJson = new FormData();
+        formJson.append('batch_number', formState.batch_number);
+        formJson.append('quantity', formState.quantity);
+        formJson.append('cost', formState.cost);
+        formJson.append('price', formState.price);
+        formJson.append('expiry_date', formState.expiry_date || '');
+        formJson.append('is_active', formState.is_active ? 1 : 0);
+        formJson.append('is_featured', formState.is_featured ? 1 : 0);
+        if (formState.contact_id) {
+            formJson.append('contact_id', formState.contact_id);
+        }
+        formJson.append('discount', formState.discount);
+        formJson.append('discount_percentage', formState.discount_percentage);
+        formJson.append('new_batch', formState.batch_number);
+        formJson.append('id', selectedProduct.id);
 
         let url = '/storebatch';
         if (!isNew) url = '/productbatch/' + formState.batch_id
 
         axios
-            .post(url, formJson)
+            .post(url, Object.fromEntries(formJson))
             .then((resp) => {
                 Swal.fire({
                     title: "Success!",
@@ -66,7 +83,10 @@ export default function BatchModal({
                     timer: 2000,
                     timerProgressBar: true,
                 });
-                refreshProducts()
+                // Call refresh callback with updated batch data
+                if (refreshProducts) {
+                    refreshProducts(resp.data.batch);
+                }
                 handleClose()
             })
             .catch((error) => {
@@ -87,7 +107,7 @@ export default function BatchModal({
     const updateFormStateFromBatch = (batch) => {
         setFormState((prevState) => ({
             ...prevState,
-            batch_id: batch.batch_id,
+            batch_id: batch.id || batch.batch_id,
             cost: batch.cost,
             price: batch.price,
             batch_number: batch.batch_number,
@@ -100,15 +120,20 @@ export default function BatchModal({
         }));
     };
 
-    // Update selectedBatch when products change
+    // Update selectedBatch when products change or modal opens
     useEffect(() => {
 
-        if (selectedBatch) {
-            updateFormStateFromBatch(selectedBatch); // Reuse the function to update state
-            setIsNew(false);
+        if (batchModalOpen) {
+            if (selectedBatch) {
+                updateFormStateFromBatch(selectedBatch); // Reuse the function to update state
+                setIsNew(false);
+            } else if (initialIsNew) {
+                setIsNew(true);
+                setFormState(initialFormState);
+            }
         }
 
-    }, [selectedBatch]);
+    }, [batchModalOpen, selectedBatch, initialIsNew]);
 
     // Handle form input changes
     const handleInputChange = (e) => {
@@ -151,10 +176,6 @@ export default function BatchModal({
                 open={batchModalOpen}
                 onClose={handleClose}
                 aria-labelledby="alert-dialog-title"
-                PaperProps={{
-                    component: "form",
-                    onSubmit: handleAddToCartSubmit,
-                }}
             >
                 <DialogTitle
                     id="alert-dialog-title"
@@ -394,7 +415,8 @@ export default function BatchModal({
                         variant="contained"
                         fullWidth
                         sx={{ paddingY: "10px", fontSize: "1.2rem" }}
-                        type="submit"
+                        type="button"
+                        onClick={handleBatchSubmit}
                         disabled={loading}
                     >
                         {isNew ? "SAVE BATCH" : "UPDATE BATCH"}

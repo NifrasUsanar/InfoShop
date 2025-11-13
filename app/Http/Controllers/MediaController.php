@@ -43,8 +43,8 @@ class MediaController extends Controller
         // $images = getAllFilesAsUrls($basePath);
 
         $attachments = Attachment::where('attachment_type', 'image')->get()->map(function ($attachment) {
-            // Concatenate the storage URL for the image path
-            $attachment->path = asset('storage/' . $attachment->path); // Assuming 'path' is where the file is stored
+            // Use Storage::url() to get proper storage URL with symlink support
+            $attachment->path = Storage::url($attachment->path);
 
             // Convert size from bytes to KB
             $attachment->size = round($attachment->size / 1024, 2) . 'KB'; // Converts bytes to KB and rounds to 2 decimal places

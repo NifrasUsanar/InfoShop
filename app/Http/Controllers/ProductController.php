@@ -10,6 +10,9 @@ use App\Models\Contact;
 use App\Models\Product;
 use App\Models\ProductBatch;
 use App\Models\ProductStock;
+use App\Models\SaleItem;
+use App\Models\PurchaseItem;
+use App\Models\QuantityAdjustment;
 use App\Models\Store;
 use App\Models\Setting;
 use Illuminate\Support\Facades\File;
@@ -23,16 +26,13 @@ class ProductController extends Controller
 {
     public function getProducts($filters)
     {
-        $imageUrl = 'storage/';
-        if (app()->environment('production')) $imageUrl = 'public/storage/';
-
         $query = ProductBatch::query();
         $query->select(
             'products.id',
             'product_stocks.id as stock_id',
             'product_batches.is_featured',
             'product_batches.id AS batch_id',
-            DB::raw("'{$imageUrl}' || products.image_url AS image_url"),
+            'products.image_url',
             'products.name',
             'products.barcode',
             DB::raw("COALESCE(products.sku, 'N/A') AS sku"),
@@ -90,6 +90,15 @@ class ProductController extends Controller
         $query->orderBy('products.id', 'desc');
         $results = $query->paginate($perPage);
         $results->appends($filters);
+
+        // Convert image_url to proper storage URLs
+        $results->getCollection()->transform(function ($item) {
+            if (!empty($item->image_url)) {
+                $item->image_url = Storage::url($item->image_url);
+            }
+            return $item;
+        });
+
         return $results;
     }
 
@@ -140,9 +149,6 @@ class ProductController extends Controller
 
     public function find($id)
     {
-        $imageUrl = 'storage/';
-        if (app()->environment('production')) $imageUrl = 'public/storage/';
-
         $miscSettings = Setting::getMiscSettings();
         $collection = Collection::select('id', 'name', 'collection_type')->get();
         $product = Product::findOrFail($id);
@@ -155,8 +161,17 @@ class ProductController extends Controller
 
         if (!empty($product->image_url)) {
             // If the image URL exists and is not empty
-            $product->image_url = asset($imageUrl . $product->image_url);
+            $product->image_url = Storage::url($product->image_url);
         }
+
+        // Load batches for this product
+        $batches = ProductBatch::where('product_id', $id)
+            ->select('id', 'product_id', 'batch_number', 'cost', 'price', 'discount', 'discount_percentage', 'expiry_date', 'is_active', 'is_featured', 'contact_id')
+            ->with('contact:id,name')
+            ->get();
+
+        $product->batches = $batches;
+
         // Render the 'Product/ProductForm' component for adding a new product
         return Inertia::render('Product/ProductForm', [
             'collection' => $collection, // Example if you have categories
@@ -234,7 +249,7 @@ class ProductController extends Controller
         $productBatch = ProductBatch::create([
             'product_id' => $product->id,
             'batch_number' => $request->batch_number ?: 'DEFAULT',
-            'expiry_date' => Carbon::parse($request->expiry_date)->format('Y-m-d'),
+            'expiry_date' => $request->expiry_date ? Carbon::parse($request->expiry_date)->format('Y-m-d') : null,
             'cost' => $request->cost,
             'price' => $request->price,
             'contact_id' => $request->contact_id,
@@ -275,10 +290,26 @@ class ProductController extends Controller
             // Find the product by ID, or fail if it doesn't exist
             $product = Product::findOrFail($id);
 
-            // Handle the image upload
+            // Handle image deletion or upload
             $imageUrl = $product->image_url; // Retain the current image URL
             $attachment = null;
-            if ($request->hasFile('featured_image')) {
+
+            // Check if user wants to delete the image
+            if ($request->delete_image == 1) {
+                // Delete the current image
+                if ($product->image_url && Storage::disk('public')->exists($product->image_url)) {
+                    Storage::disk('public')->delete($product->image_url);
+                }
+                // Delete the old attachment record
+                if ($product->attachment_id) {
+                    $oldAttachment = Attachment::find($product->attachment_id);
+                    if ($oldAttachment) {
+                        $oldAttachment->delete();
+                    }
+                }
+                $imageUrl = null; // Set image URL to null
+            } elseif ($request->hasFile('featured_image')) {
+                // Handle new image upload
                 $folderPath = 'uploads/' . date('Y') . '/' . date('m');
                 $imageUrl = $request->file('featured_image')->store($folderPath, 'public'); // Store new image and replace the old one
 
@@ -317,7 +348,7 @@ class ProductController extends Controller
                 'sku' => $request->sku,
                 'barcode' => $request->barcode,
                 'image_url' => $imageUrl, // Update the image URL if a new image was uploaded
-                'attachment_id' => $attachment ? $attachment->id : $product->attachment_id,
+                'attachment_id' => $attachment ? $attachment->id : ($request->delete_image == 1 ? null : $product->attachment_id),
                 'unit' => $request->unit,
                 'alert_quantity' => $request->alert_quantity ?? 5, // Use default alert_quantity if null
                 'is_stock_managed' => $request->is_stock_managed,
@@ -343,15 +374,12 @@ class ProductController extends Controller
 
     public function searchProduct(Request $request)
     {
-        $imageUrl = 'storage/';
-        if (app()->environment('production')) $imageUrl = 'public/storage/';
-
         $search_query = $request->input('search_query');
         $is_purchase = $request->input('is_purchase', 0);
 
         $products = Product::select(
             'products.id',
-            DB::raw("CONCAT('{$imageUrl}', products.image_url) AS image_url"),
+            'products.image_url',
             'products.name',
             'products.barcode',
             // DB::raw("COALESCE(products.sku, 'N/A') AS sku"), //if we comment it, it will not generate on front end
@@ -405,6 +433,14 @@ class ProductController extends Controller
             )
             ->limit(10)->get();
 
+        // Convert image_url to proper storage URLs
+        $products = $products->map(function ($item) {
+            if (!empty($item->image_url)) {
+                $item->image_url = Storage::url($item->image_url);
+            }
+            return $item;
+        });
+
         return response()->json([
             'products' => $products,
         ]);
@@ -412,40 +448,48 @@ class ProductController extends Controller
 
     public function storeNewBatch(Request $request)
     {
+        // Support both 'new_batch' (legacy) and 'batch_number' (new) field names
+        $batchNumber = $request->input('batch_number') ?? $request->input('new_batch');
+
         // Validate the incoming request data
         $validatedData = $request->validate(
             [
                 'id' => 'required|exists:products,id', // Ensure product_id exists in products table
-                'new_batch' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    'unique:product_batches,batch_number,NULL,id,product_id,' . $request->id,
-                ],
                 'cost' => 'required|numeric|min:0',
                 'price' => 'required|numeric|min:0',
                 'discount' => 'nullable|numeric|min:0',
                 'discount_percentage' => 'nullable|numeric|min:0|max:100',
-            ],
-            [
-                // Custom error message for unique validation
-                'new_batch.unique' => 'The batch number is already in use for this product.',
             ]
         );
 
+        // Validate batch_number uniqueness separately
+        $batchExists = ProductBatch::where('product_id', $validatedData['id'])
+            ->where('batch_number', $batchNumber)
+            ->exists();
+
+        if ($batchExists) {
+            return response()->json([
+                'message' => 'The batch number is already in use for this product.',
+            ], 422);
+        }
+
         $batch = ProductBatch::create([
-            'product_id' => $validatedData['id'], // Map 'id' to 'product_id'
-            'batch_number' => $validatedData['new_batch'], // Map 'new_batch' to 'batch_number'
+            'product_id' => $validatedData['id'],
+            'batch_number' => $batchNumber,
             'cost' => $validatedData['cost'],
             'price' => $validatedData['price'],
+            'expiry_date' => $request->expiry_date ? Carbon::parse($request->expiry_date)->format('Y-m-d') : null,
+            'is_active' => $request->is_active ?? 1,
+            'is_featured' => $request->is_featured ?? 0,
             'contact_id' => $request->contact_id,
             'discount' => $validatedData['discount'],
             'discount_percentage' => $validatedData['discount_percentage'],
         ]);
 
         return response()->json([
-            'message' => 'Batch is created',
+            'message' => 'Batch created successfully',
             'batch_id' => $batch->id,
+            'batch' => $batch,
         ]);
     }
 
@@ -504,21 +548,76 @@ class ProductController extends Controller
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $batch->update([
-            'batch_number' => $validatedData['batch_number'], // Map 'new_batch' to 'batch_number'
+        $updateData = [
+            'batch_number' => $validatedData['batch_number'],
             'cost' => $validatedData['cost'],
             'price' => $validatedData['price'],
-            'expiry_date' => Carbon::parse($request->expiry_date)->format('Y-m-d'),
             'is_active' => $request->is_active ?? 0,
             'is_featured' => $request->is_featured ?? 0,
             'contact_id' => $request->contact_id,
             'discount' => $validatedData['discount'],
             'discount_percentage' => $validatedData['discount_percentage'],
-        ]);
+            'expiry_date' => $request->expiry_date ? Carbon::parse($request->expiry_date)->format('Y-m-d') : null,
+        ];
+
+        $batch->update($updateData);
 
         return response()->json([
             'message' => 'Batch updated successfully!',
             'batch' => $batch,
+        ], 200);
+    }
+
+    public function toggleFeatured(Request $request, $batch_id)
+    {
+        $batch = ProductBatch::findOrFail($batch_id);
+
+        $batch->update([
+            'is_featured' => !$batch->is_featured,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'is_featured' => (bool) $batch->is_featured,
+            'message' => $batch->is_featured ? 'Product marked as featured' : 'Product removed from featured',
+        ], 200);
+    }
+
+    public function deleteBatch($batch_id)
+    {
+        $batch = ProductBatch::findOrFail($batch_id);
+
+        // Check if this is the only batch for the product
+        $batchCount = ProductBatch::where('product_id', $batch->product_id)->count();
+
+        if ($batchCount <= 1) {
+            return response()->json([
+                'message' => 'Cannot delete the last batch for a product. A product must have at least one batch.',
+            ], 422);
+        }
+
+        // Check if batch is used in other tables
+        $saleItemCount = SaleItem::where('batch_id', $batch_id)->count();
+        $purchaseItemCount = PurchaseItem::where('batch_id', $batch_id)->count();
+        $quantityAdjustmentCount = QuantityAdjustment::where('batch_id', $batch_id)->count();
+        $productStockCount = ProductStock::where('batch_id', $batch_id)->count();
+
+        if ($saleItemCount > 0 || $purchaseItemCount > 0 || $quantityAdjustmentCount > 0 || $productStockCount > 0) {
+            return response()->json([
+                'message' => 'Cannot delete this batch. It is already in use in sales, purchases, stock adjustments, or inventory records.',
+                'details' => [
+                    'sales' => $saleItemCount,
+                    'purchases' => $purchaseItemCount,
+                    'adjustments' => $quantityAdjustmentCount,
+                    'stock_records' => $productStockCount,
+                ]
+            ], 422);
+        }
+
+        $batch->delete();
+
+        return response()->json([
+            'message' => 'Batch deleted successfully',
         ], 200);
     }
 
@@ -578,6 +677,18 @@ class ProductController extends Controller
 
         return Inertia::render('Product/BarcodeV2', [
             'product' => $product,
+        ]);
+    }
+
+    public function getBatches($product_id)
+    {
+        $batches = ProductBatch::where('product_id', $product_id)
+            ->select('id', 'product_id', 'batch_number', 'cost', 'price', 'discount', 'discount_percentage', 'expiry_date', 'is_active', 'is_featured', 'contact_id')
+            ->with('contact:id,name')
+            ->get();
+
+        return response()->json([
+            'batches' => $batches,
         ]);
     }
 }

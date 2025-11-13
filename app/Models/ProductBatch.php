@@ -31,6 +31,11 @@ class ProductBatch extends Model
         return $this->belongsTo(Product::class, 'product_id');
     }
 
+    public function contact()
+    {
+        return $this->belongsTo(Contact::class, 'contact_id');
+    }
+
     public function stocks()
     {
         return $this->hasMany(ProductStock::class, 'batch_id');

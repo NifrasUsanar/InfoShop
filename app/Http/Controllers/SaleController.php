@@ -228,13 +228,28 @@ class SaleController extends Controller
             $filters['end_date'] = date('Y-m-d');
         }
 
-        $soldItems = SaleItem::with('product')->select('product_id', DB::raw('sum(quantity) as total_quantity'))
-            ->groupBy('product_id');
+        $soldItems = SaleItem::select(
+            'sale_items.product_id',
+            'products.name',
+            DB::raw('sum(sale_items.quantity) as total_quantity')
+        )
+        ->where('sale_items.item_type', 'product')
+        ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+        ->join('products', 'sale_items.product_id', '=', 'products.id')
+        ->groupBy('sale_items.product_id', 'products.name');
 
         if (!empty($filters['start_date']) && !empty($filters['end_date'])) {
-            $soldItems = $soldItems->whereBetween('sale_date', [$filters['start_date'], $filters['end_date']]);
+            $soldItems = $soldItems->whereBetween('sales.sale_date', [$filters['start_date'], $filters['end_date']]);
         }
-        $soldItems = $soldItems->get();
+        $soldItems = $soldItems->get()->map(function ($item) {
+            return [
+                'product_id' => $item->product_id,
+                'total_quantity' => $item->total_quantity,
+                'product' => [
+                    'name' => $item->name,
+                ],
+            ];
+        });
         return Inertia::render('SoldItem/SoldItemSummary', [
             'sold_items' => $soldItems,
             'pageLabel' => 'Sold Items',

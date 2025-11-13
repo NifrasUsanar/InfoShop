@@ -18,6 +18,7 @@ use App\Models\Setting;
 use App\Notifications\SaleCreated;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -30,14 +31,12 @@ class POSController extends Controller
 {
     public function getProducts($filters = [])
     {
-        $imageUrl = '/storage/';
-        if (app()->environment('production')) $imageUrl = 'public/storage/';
         $allProducts = $filters['all_products'] ?? false;
 
         $query = Product::query();
         $query->select(
             'products.id',
-            DB::raw("CONCAT('{$imageUrl}', products.image_url) AS image_url"),
+            'products.image_url',
             'products.name',
             'products.is_stock_managed',
             DB::raw("COALESCE(pb.batch_number, 'N/A') AS batch_number"),
@@ -87,6 +86,14 @@ class POSController extends Controller
         }
 
         $products = $productsQuery->get();
+
+        // Convert image_url to proper storage URLs
+        $products = $products->map(function ($item) {
+            if (!empty($item->image_url)) {
+                $item->image_url = Storage::url($item->image_url);
+            }
+            return $item;
+        });
 
         return $products;
     }
@@ -203,9 +210,6 @@ class POSController extends Controller
 
     public function returnIndex(Request $request, $sale_id)
     {
-        $imageUrl = '/storage/';
-        if (app()->environment('production')) $imageUrl = 'public/storage/';
-
         $sale = Sale::find($sale_id);
         $contacts = Contact::select('id', 'name', 'balance')->where('id', $sale->contact_id)->get();
         $currentStore = Store::find($sale->store_id);
@@ -220,7 +224,7 @@ class POSController extends Controller
 
         $products = Product::select(
             'products.id',
-            DB::raw("CONCAT('{$imageUrl}', products.image_url) AS image_url"),
+            'products.image_url',
             'products.name',
             'si.discount',
             'products.is_stock_managed',
@@ -258,6 +262,14 @@ class POSController extends Controller
                 'products.meta_data'
             )
             ->get();
+
+        // Convert image_url to proper storage URLs
+        $products = $products->map(function ($item) {
+            if (!empty($item->image_url)) {
+                $item->image_url = Storage::url($item->image_url);
+            }
+            return $item;
+        });
 
         // Get original charges from sale_items
         $defaultCharges = SaleItem::where('sale_id', $sale_id)

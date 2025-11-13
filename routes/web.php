@@ -98,9 +98,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/storebatch', [ProductController::class, 'storeNewBatch'])->name('products.newbatch');
     Route::post('/checkBatch', [ProductController::class, 'checkBatch'])->name('products.checkbatch');
     Route::post('/productbatch/{id}', [ProductController::class, 'updateBatch'])->name('products.updatebatch');
+    Route::post('/productbatch/{batch_id}/toggle-featured', [ProductController::class, 'toggleFeatured'])->name('products.toggle-featured');
+    Route::delete('/productbatch/{batch_id}', [ProductController::class, 'deleteBatch'])->name('products.delete-batch');
     Route::get('/getproducts/{store_id}', [ProductController::class, 'getProductsResponse'])->name('products.getproducts');
     Route::get('/product/{batch_id}/barcode', [ProductController::class, 'getBarcode'])->name('products.barcode');
     Route::get('/product/{batch_id}/barcode-v2', [ProductController::class, 'barcodeV2'])->name('products.barcode-v2');
+    Route::get('/api/products/{product_id}/batches', [ProductController::class, 'getBatches'])->name('products.getBatches');
 
     Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
     Route::get('/pos/{sale_id}/return', [POSController::class, 'returnIndex'])->name('pos.return');

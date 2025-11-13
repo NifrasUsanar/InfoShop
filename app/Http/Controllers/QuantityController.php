@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\QuantityAdjustment;
 use App\Models\ProductStock;
+use App\Models\SaleItem;
 
 use Illuminate\Support\Facades\DB;
 
@@ -77,14 +78,48 @@ class QuantityController extends Controller
     }
     public function getAdjustmentsLog($stock_id)
     {
-        $adjustments = QuantityAdjustment::where('stock_id', $stock_id)
+        // Get the ProductStock to find batch_id
+        $productStock = ProductStock::findOrFail($stock_id);
+        $batchId = $productStock->batch_id;
+
+        // Fetch manual quantity adjustments
+        $manualAdjustments = QuantityAdjustment::where('stock_id', $stock_id)
             ->join('product_stocks', 'quantity_adjustments.stock_id', '=', 'product_stocks.id')
             ->join('products', 'product_stocks.product_id', '=', 'products.id')
-            ->select('quantity_adjustments.*', 'products.name')
-            ->orderBy('quantity_adjustments.created_at', 'desc')
+            ->select(
+                'quantity_adjustments.id',
+                'quantity_adjustments.created_at',
+                'products.name',
+                'quantity_adjustments.previous_quantity',
+                'quantity_adjustments.adjusted_quantity',
+                'quantity_adjustments.reason',
+                DB::raw("'adjustment' as type")
+            )
             ->get();
+
+        // Fetch sales (deductions from sale_items)
+        $sales = SaleItem::where('batch_id', $batchId)
+            ->where('item_type', '!=', 'charge')
+            ->join('products', 'sale_items.product_id', '=', 'products.id')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->select(
+                'sale_items.id',
+                'sale_items.created_at',
+                'products.name',
+                DB::raw('0 as previous_quantity'),
+                DB::raw("CAST(-sale_items.quantity AS DECIMAL(10,2)) as adjusted_quantity"),
+                DB::raw("CONCAT('Sale #', sales.invoice_number) as reason"),
+                DB::raw("'sale' as type")
+            )
+            ->get();
+
+        // Combine both collections
+        $allAdjustments = $manualAdjustments->concat($sales)
+            ->sortByDesc('created_at')
+            ->values();
+
         return Inertia::render('Product/QuantityAdjustmentsLog', [
-            'adjustments' => $adjustments,
+            'adjustments' => $allAdjustments,
             'pageLabel' => 'Quantity Adjustments Log',
         ]);
     }

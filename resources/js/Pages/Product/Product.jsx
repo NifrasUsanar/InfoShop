@@ -10,6 +10,8 @@ import {
     MenuItem,
     TextField,
     Chip,
+    CircularProgress,
+    IconButton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import QrCode2Icon from "@mui/icons-material/QrCode2";
@@ -26,12 +28,14 @@ import { useState } from "react";
 import numeral from "numeral";
 import { useEffect } from "react";
 import Select2 from "react-select";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import ProductsList from "./Partials/ProductsList";
 
-const productColumns = (handleProductEdit) => [
+const productColumns = (handleProductEdit, onToggleFeatured, loadingBatchId) => [
     {
         field: "image_url",
         headerName: "Image",
@@ -195,29 +199,22 @@ const productColumns = (handleProductEdit) => [
         headerName: "Featured",
         headerAlign: "center",
         renderCell: (params) => {
-            if (params.value === 1) {
-                return (
-                    <Box
-                        display="flex"
-                        justifyContent="center"
-                        alignItems="center"
-                        style={{ height: "100%" }}
-                    >
+            const isLoading = loadingBatchId === params.row.batch_id;
+            return (
+                <IconButton
+                    size="small"
+                    disabled={isLoading}
+                    onClick={() => !isLoading && onToggleFeatured(params.row.batch_id, params.value === 1)}
+                >
+                    {isLoading ? (
+                        <CircularProgress size={24} />
+                    ) : params.value === 1 ? (
                         <StarIcon color="primary" />
-                    </Box>
-                );
-            } else {
-                return (
-                    <Box
-                        display="flex"
-                        justifyContent="center"
-                        alignItems="center"
-                        style={{ height: "100%" }}
-                    >
+                    ) : (
                         <StarBorderIcon color="primary" />
-                    </Box>
-                );
-            }
+                    )}
+                </IconButton>
+            );
         },
     },
 ];
@@ -228,10 +225,12 @@ export default function Product({ products, stores, contacts }) {
     const auth = usePage().props.auth.user;
     const [batchModalOpen, setBatchModalOpen] = useState(false);
     const [quantityModalOpen, setQuantityModalOpen] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState(false);
+    const [selectedBatch, setSelectedBatch] = useState(null);
+    const [selectedProductObj, setSelectedProductObj] = useState(null);
     const [dataProducts, setDataProducts] = useState(products);
     const [dataContacts, setContacts] = useState(contacts);
     const [totalValuation, setTotalValuation] = useState(0);
+    const [loadingBatchId, setLoadingBatchId] = useState(null);
 
     const [filterOpen, setFilterOpen] = useState(false);
 
@@ -247,13 +246,62 @@ export default function Product({ products, stores, contacts }) {
         };
     });
 
-    const handleProductEdit = (product, type) => {
-        setSelectedProduct(product);
-        type === "batch" && setBatchModalOpen(true);
-        type === "qty" && setQuantityModalOpen(true);
+    const handleProductEdit = (batchRow, type) => {
+        if (type === "batch") {
+            // Find the parent product object from the flattened batch row
+            const parentProduct = dataProducts.data.find(p => p.id === batchRow.id);
+            setSelectedBatch(batchRow);
+            setSelectedProductObj(parentProduct);
+            setBatchModalOpen(true);
+        } else if (type === "qty") {
+            setSelectedBatch(batchRow);
+            setQuantityModalOpen(true);
+        }
     };
 
-    const refreshProducts = (url = window.location.pathname) => {
+    const onToggleFeatured = async (batchId, currentIsFeatured) => {
+        setLoadingBatchId(batchId);
+        try {
+            const response = await axios.post(`/productbatch/${batchId}/toggle-featured`);
+
+            if (response.data.success) {
+                setDataProducts((prevData) => ({
+                    ...prevData,
+                    data: prevData.data.map((product) =>
+                        product.batch_id === batchId
+                            ? { ...product, is_featured: response.data.is_featured ? 1 : 0 }
+                            : product
+                    ),
+                }));
+
+                Swal.fire({
+                    icon: 'success',
+                    title: response.data.message,
+                    position: 'bottom',
+                    toast: true,
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: error.response?.data?.message || 'Failed to toggle featured status',
+                position: 'bottom',
+                toast: true,
+                timer: 1500,
+                showConfirmButton: false,
+            });
+        } finally {
+            setLoadingBatchId(null);
+        }
+    };
+
+    const refreshProducts = (urlOrBatch = window.location.pathname) => {
+        // Handle both URL string and batch object parameters
+        // If a batch object is passed (from BatchModal), use default URL
+        const url = typeof urlOrBatch === 'string' ? urlOrBatch : window.location.pathname;
+
         const options = {
             preserveState: true, // Preserves the current component's state
             preserveScroll: true, // Preserves the current scroll position
@@ -450,7 +498,7 @@ export default function Product({ products, stores, contacts }) {
                     >
                         <DataGrid
                             rows={dataProducts.data}
-                            columns={productColumns(handleProductEdit)}
+                            columns={productColumns(handleProductEdit, onToggleFeatured, loadingBatchId)}
                             getRowId={(row) =>
                                 row.id + row.batch_number + row.store_id
                             }
@@ -507,17 +555,16 @@ export default function Product({ products, stores, contacts }) {
             <BatchModal
                 batchModalOpen={batchModalOpen}
                 setBatchModalOpen={setBatchModalOpen}
-                selectedBatch={selectedProduct}
-                products={dataProducts.data}
-                setProducts={setDataProducts}
-                refreshProducts={refreshProducts}
-                selectedProduct={selectedProduct}
+                selectedBatch={selectedBatch}
+                selectedProduct={selectedProductObj}
                 contacts={dataContacts}
+                refreshProducts={refreshProducts}
+                initialIsNew={!selectedBatch}
             />
             <QuantityModal
                 modalOpen={quantityModalOpen}
                 setModalOpen={setQuantityModalOpen}
-                selectedStock={selectedProduct}
+                selectedStock={selectedBatch}
                 products={dataProducts.data}
                 setProducts={setDataProducts}
                 refreshProducts={refreshProducts}
