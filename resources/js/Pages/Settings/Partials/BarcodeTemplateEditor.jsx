@@ -97,10 +97,15 @@ const BarcodeTemplateEditor = ({ settings }) => {
         }
 
         try {
-            const response = await axios.post('/api/barcode-template/preview', {
-                template: template,
-                sample_data: sampleData,
-                barcode_settings: barcodeSettings,
+            const formData = new FormData();
+            formData.append('template', btoa(template)); // Base64 encode template
+            formData.append('sample_data', JSON.stringify(sampleData));
+            formData.append('barcode_settings', JSON.stringify(barcodeSettings));
+
+            const response = await axios.post('/api/barcode-template/preview', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
             });
             setPreviewHtml(response.data.rendered);
             setValidationErrors([]);
@@ -139,9 +144,14 @@ const BarcodeTemplateEditor = ({ settings }) => {
 
         try {
             setSaving(true);
-            await axios.post('/api/barcode-template', {
-                template: template,
-                barcode_settings: barcodeSettings,
+            const formData = new FormData();
+            formData.append('template', btoa(template)); // Base64 encode template
+            formData.append('barcode_settings', JSON.stringify(barcodeSettings));
+
+            await axios.post('/api/barcode-template', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
             });
 
             Swal.fire({

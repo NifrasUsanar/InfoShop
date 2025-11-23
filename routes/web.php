@@ -58,14 +58,10 @@ Route::post('/api/application-update', [UpgradeController::class, 'applicationUp
 Route::post('/api/application-update-v2', [UpgradeController::class, 'applicationUpdateV2']);
 
 
-// Unified Sync API endpoints for offline-first InfoPOS app
-// GET /api/sync?table=products - Fetch data
-// POST /api/sync?table=sales - Push data
-// GET /api/sync/health - Health check
+// Unified Sync API endpoints for offline-first InfoPOS app are now defined in routes/api.php
 
-// Route::get('/api/sync/health', [SyncController::class, 'healthCheck']);
-// Route::get('/api/sync', [SyncController::class, 'fetch']);
-// Route::post('/api/sync', [SyncController::class, 'push']);
+// Mobile Sales API - For hybrid loading (Firebase + Laravel)
+Route::post('/api/sales/exclude', [SaleController::class, 'getSalesExcluding'])->name('sales.exclude');
 
 // Store config endpoint
 // Route::get('/api/stores/{storeId}', [SyncController::class, 'getStoreConfig']);

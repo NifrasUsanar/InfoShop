@@ -147,15 +147,15 @@ class SyncController extends Controller
                 'price' => (float) ($product->price ?? 0),
                 'discount' => (float) ($product->discount ?? 0),
                 'discount_percentage' => (float) ($product->discount_percentage ?? 0),
-                'stock_quantity' => (float) $product->stock_quantity,
+                'quantity' => (float) $product->stock_quantity,
                 'created_at' => $product->created_at instanceof Carbon
-                    ? $product->created_at->toIso8601String()
-                    : Carbon::parse($product->created_at)->toIso8601String(),
+                    ? (int) ($product->created_at->getTimestamp() * 1000)
+                    : (int) (Carbon::parse($product->created_at)->getTimestamp() * 1000),
                 'updated_at' => isset($product->last_modified)
-                    ? Carbon::parse($product->last_modified)->toIso8601String()
+                    ? (int) (Carbon::parse($product->last_modified)->getTimestamp() * 1000)
                     : ($product->updated_at instanceof Carbon
-                        ? $product->updated_at->toIso8601String()
-                        : Carbon::parse($product->updated_at)->toIso8601String()),
+                        ? (int) ($product->updated_at->getTimestamp() * 1000)
+                        : (int) (Carbon::parse($product->updated_at)->getTimestamp() * 1000)),
             ];
         });
 
@@ -163,7 +163,7 @@ class SyncController extends Controller
             'status' => 'success',
             'data' => $products,
             'count' => $products->count(),
-            'timestamp' => now()->toIso8601String(),
+            'timestamp' => (int) (now()->getTimestamp() * 1000),
         ]);
     }
 
@@ -183,20 +183,20 @@ class SyncController extends Controller
 
         $contacts = $query->get()->map(function ($contact) use ($storeId) {
             return [
-                'id' => $contact->id,
-                'store_id' => (string) $storeId, // Use store_id from request
+                'id' => (string) $contact->id,
+                'store_id' => (string) $storeId,
                 'name' => $contact->name,
                 'email' => $contact->email,
                 'phone' => $contact->phone,
-                'contact_type' => $contact->contact_type ?? $contact->type, // Handle both column names
+                'type' => $contact->type ?? 'customer',
                 'address' => $contact->address,
                 'balance' => (float) ($contact->balance ?? 0),
                 'created_at' => $contact->created_at instanceof Carbon
-                    ? $contact->created_at->toIso8601String()
-                    : Carbon::parse($contact->created_at)->toIso8601String(),
+                    ? (int) ($contact->created_at->getTimestamp() * 1000)
+                    : (int) (Carbon::parse($contact->created_at)->getTimestamp() * 1000),
                 'updated_at' => $contact->updated_at instanceof Carbon
-                    ? $contact->updated_at->toIso8601String()
-                    : Carbon::parse($contact->updated_at)->toIso8601String(),
+                    ? (int) ($contact->updated_at->getTimestamp() * 1000)
+                    : (int) (Carbon::parse($contact->updated_at)->getTimestamp() * 1000),
             ];
         });
 
@@ -204,7 +204,7 @@ class SyncController extends Controller
             'status' => 'success',
             'data' => $contacts,
             'count' => $contacts->count(),
-            'timestamp' => now()->toIso8601String(),
+            'timestamp' => (int) (now()->getTimestamp() * 1000),
         ]);
     }
 
@@ -234,11 +234,11 @@ class SyncController extends Controller
                 'is_active' => (bool) $charge->is_active,
                 'is_default' => (bool) $charge->is_default,
                 'created_at' => $charge->created_at instanceof Carbon
-                    ? $charge->created_at->toIso8601String()
-                    : Carbon::parse($charge->created_at)->toIso8601String(),
+                    ? (int) ($charge->created_at->getTimestamp() * 1000)
+                    : (int) (Carbon::parse($charge->created_at)->getTimestamp() * 1000),
                 'updated_at' => $charge->updated_at instanceof Carbon
-                    ? $charge->updated_at->toIso8601String()
-                    : Carbon::parse($charge->updated_at)->toIso8601String(),
+                    ? (int) ($charge->updated_at->getTimestamp() * 1000)
+                    : (int) (Carbon::parse($charge->updated_at)->getTimestamp() * 1000),
             ];
         });
 
@@ -246,7 +246,7 @@ class SyncController extends Controller
             'status' => 'success',
             'data' => $charges,
             'count' => $charges->count(),
-            'timestamp' => now()->toIso8601String(),
+            'timestamp' => (int) (now()->getTimestamp() * 1000),
         ]);
     }
 
@@ -283,7 +283,9 @@ class SyncController extends Controller
                 'status' => $sale->status,
                 'payment_status' => $sale->payment_status,
                 'note' => $sale->note,
-                'sale_date' => $sale->sale_date,
+                'sale_date' => $sale->sale_date instanceof Carbon
+                    ? (int) ($sale->sale_date->getTimestamp() * 1000)
+                    : (int) (Carbon::parse($sale->sale_date)->getTimestamp() * 1000),
                 'sale_time' => $sale->sale_time,
                 'total_charge_amount' => (float) ($sale->total_charge_amount ?? 0),
                 'items' => $sale->items->map(function ($item) {
@@ -313,26 +315,28 @@ class SyncController extends Controller
                         'sales_id' => $txn->sales_id,
                         'store_id' => (string) $txn->store_id,
                         'contact_id' => $txn->contact_id,
-                        'transaction_date' => $txn->transaction_date,
+                        'transaction_date' => $txn->transaction_date instanceof Carbon
+                            ? (int) ($txn->transaction_date->getTimestamp() * 1000)
+                            : (int) (Carbon::parse($txn->transaction_date)->getTimestamp() * 1000),
                         'amount' => (float) $txn->amount,
                         'payment_method' => $txn->payment_method,
                         'transaction_type' => $txn->transaction_type,
                         'note' => $txn->note,
                         'parent_id' => $txn->parent_id,
                         'created_at' => $txn->created_at instanceof Carbon
-                            ? $txn->created_at->toIso8601String()
-                            : Carbon::parse($txn->created_at)->toIso8601String(),
+                            ? (int) ($txn->created_at->getTimestamp() * 1000)
+                            : (int) (Carbon::parse($txn->created_at)->getTimestamp() * 1000),
                         'updated_at' => $txn->updated_at instanceof Carbon
-                            ? $txn->updated_at->toIso8601String()
-                            : Carbon::parse($txn->updated_at)->toIso8601String(),
+                            ? (int) ($txn->updated_at->getTimestamp() * 1000)
+                            : (int) (Carbon::parse($txn->updated_at)->getTimestamp() * 1000),
                     ];
                 })->toArray(),
                 'created_at' => $sale->created_at instanceof Carbon
-                    ? $sale->created_at->toIso8601String()
-                    : Carbon::parse($sale->created_at)->toIso8601String(),
+                    ? (int) ($sale->created_at->getTimestamp() * 1000)
+                    : (int) (Carbon::parse($sale->created_at)->getTimestamp() * 1000),
                 'updated_at' => $sale->updated_at instanceof Carbon
-                    ? $sale->updated_at->toIso8601String()
-                    : Carbon::parse($sale->updated_at)->toIso8601String(),
+                    ? (int) ($sale->updated_at->getTimestamp() * 1000)
+                    : (int) (Carbon::parse($sale->updated_at)->getTimestamp() * 1000),
             ];
         });
 
@@ -340,7 +344,7 @@ class SyncController extends Controller
             'status' => 'success',
             'data' => $sales,
             'count' => $sales->count(),
-            'timestamp' => now()->toIso8601String(),
+            'timestamp' => (int) (now()->getTimestamp() * 1000),
         ]);
     }
 
@@ -464,7 +468,7 @@ class SyncController extends Controller
                         'email' => $contactData['email'] ?? null,
                         'phone' => $contactData['phone'] ?? null,
                         'address' => $contactData['address'] ?? null,
-                        'contact_type' => $contactData['contact_type'] ?? 'customer',
+                        'type' => $contactData['type'] ?? 'customer',
                     ]
                 );
                 $synced++;

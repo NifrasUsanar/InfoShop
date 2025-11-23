@@ -704,4 +704,83 @@ class SaleController extends Controller
 
         return $text;
     }
+
+    /**
+     * Get sales excluding the provided invoice numbers
+     * Used by mobile app (infopos) to fetch sales for hybrid loading
+     * Deduplicates Firebase records by excluding their invoice numbers
+     * Supports pagination for efficient data loading
+     */
+    public function getSalesExcluding(Request $request)
+    {
+        try {
+            $request->validate([
+                'excludeInvoiceNumbers' => 'required|array',
+                'store_id' => 'required|integer',
+                'page' => 'integer|min:1',
+                'per_page' => 'integer|min:1|max:500',
+            ]);
+
+            $excludeInvoiceNumbers = $request->input('excludeInvoiceNumbers', []);
+            $storeId = $request->input('store_id');
+            $page = $request->input('page', 1);
+            $perPage = $request->input('per_page', 100);
+
+            // Verify store exists
+            $store = \App\Models\Store::find($storeId);
+            if (!$store) {
+                return response()->json([
+                    'error' => 'Store not found',
+                ], 404);
+            }
+
+            $query = Sale::where('store_id', $storeId)
+                ->whereNotNull('invoice_number')
+                ->orderBy('created_at', 'desc');
+
+            // Only exclude if we have invoice numbers to exclude
+            if (!empty($excludeInvoiceNumbers)) {
+                $query->whereNotIn('invoice_number', $excludeInvoiceNumbers);
+            }
+
+            $sales = $query->select([
+                'id',
+                'invoice_number',
+                'contact_id',
+                'sale_date',
+                'sale_time',
+                'total_amount',
+                'discount',
+                'total_charge_amount',
+                'amount_received',
+                'profit_amount',
+                'status',
+                'payment_status',
+                'created_at',
+                'note',
+            ])
+            ->paginate($perPage, ['*'], 'page', $page);
+
+            return response()->json([
+                'data' => $sales->items(),
+                'pagination' => [
+                    'current_page' => $sales->currentPage(),
+                    'per_page' => $sales->perPage(),
+                    'total' => $sales->total(),
+                    'last_page' => $sales->lastPage(),
+                    'has_more' => $sales->hasMorePages(),
+                ],
+            ], 200);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'messages' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to fetch sales',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

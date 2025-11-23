@@ -444,15 +444,30 @@ class SettingController extends Controller
     {
         $request->validate([
             'template' => 'required|string',
-            'barcode_settings' => 'required|array',
-            'barcode_settings.format' => 'required|string',
-            'barcode_settings.width' => 'required|numeric|min:0.5|max:10',
-            'barcode_settings.height' => 'required|numeric|min:10|max:200',
-            'barcode_settings.fontSize' => 'required|numeric|min:8|max:32',
+            'barcode_settings' => 'required|string',
         ]);
 
-        $template = $request->input('template');
-        $barcodeSettings = $request->input('barcode_settings');
+        $templateBase64 = $request->input('template');
+        $barcodeSettingsJson = $request->input('barcode_settings');
+
+        // Decode Base64 template
+        $template = base64_decode($templateBase64, true);
+        if ($template === false) {
+            return response()->json([
+                'message' => 'Invalid template encoding',
+                'errors' => ['template must be valid Base64']
+            ], 422);
+        }
+
+        // Parse JSON string from FormData
+        $barcodeSettings = json_decode($barcodeSettingsJson, true);
+
+        if (!is_array($barcodeSettings)) {
+            return response()->json([
+                'message' => 'Invalid barcode settings format',
+                'errors' => ['barcode_settings must be valid JSON']
+            ], 422);
+        }
 
         // Validate template content
         $validation = $this->validateBarcodeTemplate($template);
@@ -519,12 +534,30 @@ class SettingController extends Controller
     {
         $request->validate([
             'template' => 'required|string',
-            'sample_data' => 'required|array',
-            'barcode_settings' => 'nullable|array',
+            'sample_data' => 'required|string',
         ]);
 
-        $template = $request->input('template');
-        $sampleData = $request->input('sample_data');
+        $templateBase64 = $request->input('template');
+        $sampleDataJson = $request->input('sample_data');
+
+        // Decode Base64 template
+        $template = base64_decode($templateBase64, true);
+        if ($template === false) {
+            return response()->json([
+                'message' => 'Invalid template encoding',
+                'errors' => ['template must be valid Base64']
+            ], 422);
+        }
+
+        // Parse JSON string from FormData
+        $sampleData = is_string($sampleDataJson) ? json_decode($sampleDataJson, true) : $sampleDataJson;
+
+        if (!is_array($sampleData)) {
+            return response()->json([
+                'message' => 'Invalid sample data',
+                'errors' => ['sample_data must be a valid array']
+            ], 422);
+        }
 
         // Validate template
         $validation = $this->validateBarcodeTemplate($template);

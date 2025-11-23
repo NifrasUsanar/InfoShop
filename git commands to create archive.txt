@@ -10,3 +10,6 @@ git archive -o update.zip HEAD $(git diff --name-only abc123^ abc123)
 
 cd modules/infoshop
 
+
+
+git archive -o update.zip HEAD -- app routes resources config database public

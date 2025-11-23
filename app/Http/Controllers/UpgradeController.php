@@ -518,7 +518,7 @@ class UpgradeController extends Controller
         }
 
         // Check write permissions on critical folders
-        $criticalFolders = ['app', 'config', 'database', 'public', 'resources', 'routes', 'storage'];
+        $criticalFolders = ['app', 'bootstrap', 'config', 'database', 'public', 'resources', 'routes', 'storage'];
         foreach ($criticalFolders as $folder) {
             $path = base_path($folder);
             if (!is_writable($path)) {
@@ -548,7 +548,7 @@ class UpgradeController extends Controller
     private function validateFolderStructure($extractPath)
     {
         // Required folders that MUST exist
-        $requiredFolders = ['app', 'routes', 'resources', 'config', 'database', 'lang'];
+        $requiredFolders = ['app', 'bootstrap', 'routes', 'resources', 'config', 'database'];
 
         // Optional folders that CAN be missing
         $optionalFolders = ['vendor', 'public'];
@@ -579,7 +579,7 @@ class UpgradeController extends Controller
     private function copyFoldersToProduction($extractPath)
     {
         // Required folders - these MUST be copied
-        $requiredFolders = ['app', 'routes', 'resources', 'config', 'database', 'lang'];
+        $requiredFolders = ['app', 'bootstrap', 'routes', 'resources', 'config', 'database'];
 
         // Optional folders - copy only if they exist
         $optionalFolders = ['vendor', 'public'];
@@ -650,11 +650,11 @@ class UpgradeController extends Controller
         // Backup all required and optional folders that might be updated
         $foldersToBackup = [
             'app',
+            'bootstrap',
             'routes',
             'resources',
             'config',
             'database',
-            'lang',
             'public'
         ];
 
@@ -685,11 +685,11 @@ class UpgradeController extends Controller
             // Restore all folders that were backed up
             $foldersToRestore = [
                 'app',
+                'bootstrap',
                 'routes',
                 'resources',
                 'config',
                 'database',
-                'lang',
                 'public'
             ];
 
