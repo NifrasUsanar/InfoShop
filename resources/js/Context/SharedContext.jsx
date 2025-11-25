@@ -12,6 +12,7 @@ export const SharedProvider = ({ children }) => {
     const [selectedCartItem, setSelectedCartItem] = useState(null)
     const [selectedLabel, setSelectedLabel] = useState('');
     const [saleDate, setSaleDate] = useState(dayjs().format('YYYY-MM-DD'));
+    const [saleTime, setSaleTime] = useState(dayjs().format('HH:mm')); // 24-hour format for storage
 
     return (
         <SharedContext.Provider
@@ -27,7 +28,9 @@ export const SharedProvider = ({ children }) => {
                 selectedLabel,
                 setSelectedLabel,
                 saleDate,
-                setSaleDate
+                setSaleDate,
+                saleTime,
+                setSaleTime
             }}
         >
             {children}

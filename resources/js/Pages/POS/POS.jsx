@@ -9,11 +9,13 @@ import {
     IconButton,
     Toolbar,
     Typography,
-     Grid,
+    Grid,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import HomeIcon from "@mui/icons-material/Home";
+import { Button } from "@mui/material";
 
 import ProductItem from "./Partial/ProductItem";
 import CartItems from "./Partial/CartItem";
@@ -26,6 +28,7 @@ import { SalesProvider } from "@/Context/SalesContext";
 import CartItemsTop from "./Partial/CartItemsTop";
 import POSBottomBar from "./Partial/POSBottomBar";
 import SaleTemplateItem from "./SaleTemplate/SaleTemplateItems";
+import CollectionItem from "./Partial/CollectionItem";
 import Swal from "sweetalert2";
 
 const drawerWidth = 530;
@@ -41,19 +44,21 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 
 const DrawerFooter = styled("div")(({ theme }) => ({
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    padding: theme.spacing(0, 1),
-    // necessary for content to be below app bar
-    ...theme.mixins.toolbar,
+    padding: 0,
     zIndex: "999",
 }));
 
-function POS({ products, customers, return_sale, categories, edit_sale, sale_data, default_charges }) {
+function POS({ products, customers, return_sale, categories, edit_sale, sale_data, default_charges, all_collections }) {
     const cartType = edit_sale ? 'sale_edit_cart' : (return_sale ? 'sales_return_cart' : 'sales_cart');
     const [mobileOpen, setMobileOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [dataProducts, setDataProducts] = useState(products);
     const [templates, setTemplates] = useState([]);
+    const [viewMode, setViewMode] = useState('products'); // 'products' or 'collections'
+    const [selectedCollection, setSelectedCollection] = useState(null);
+    const [tabValue, setTabValue] = useState(0);
 
     const handleDrawerClose = () => {
         setIsClosing(true);
@@ -105,33 +110,104 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
     //     console.log(e.key);
     // }
 
+    const handleCollectionClick = async (collection) => {
+        try {
+            // Use the generic collection_id filter which works for all types (category, tag, brand)
+            // via the collection_product pivot table
+            const payload = { collection_id: collection.id };
+
+            const response = await axios.post(`/pos/filter`, payload);
+            setDataProducts(response.data);
+            setTemplates([]);
+            setSelectedCollection(collection);
+            setViewMode('products');
+        } catch (error) {
+            console.error("Error fetching products for collection:", error);
+        }
+    };
+
+    const handleBackToCollections = () => {
+        // If we are in Featured tab (0), "Back" means clearing selection to show all collections again
+        // If we were in "Collections" view mode (legacy), it switches back
+        // But with new design, we just clear selection
+        setSelectedCollection(null);
+
+        // If we are in Featured tab, we reload featured products? 
+        // Or we just clear the filter? 
+        // When we clicked a collection, we fetched filtered products.
+        // To go back, if we are in Tab 0, we should probably restore Featured products.
+        // But we don't have them cached easily unless we reload or keep them.
+        // For simplicity, if we are in Tab 0, we can trigger a reload of featured items 
+        // or just rely on the fact that we render collections below.
+
+        // Actually, if we are in Tab 0, we want to see Featured Items + Collections.
+        // So we need to reset dataProducts to Featured Items.
+        // We can pass a callback to POSBottomBar to reset? Or just reload here.
+        // Since we lifted state, maybe we can just reset here if we had the fetch logic.
+        // But fetch logic is in POSBottomBar. 
+        // Let's just clear selection for now, but we need to restore products.
+        // A simple way is to reload the page or re-fetch featured.
+
+        if (tabValue === 0) {
+            // We need to restore featured products. 
+            // Since we don't have the fetch logic here, we might need to rely on the user clicking "Featured" tab again?
+            // Or better, we can just reload the window location to reset? No that's slow.
+            // Let's use the initial `products` prop if it hasn't changed?
+            setDataProducts(products);
+        }
+
+        setViewMode('products');
+    };
+
+    const handleViewModeChange = (mode) => {
+        setViewMode(mode);
+        // If switching view mode via bottom bar (tabs), clear selected collection
+        if (mode === 'products' || mode === 'collections') {
+            setSelectedCollection(null);
+        }
+    };
+
     const drawer = (
         <>
-            <form
+            <Box
+                component="form"
                 action="/pos"
                 method="post"
-                className="p-2 h-[calc(100vh-80px)]"
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    p: 2,
+                    pb: 0
+                }}
             >
-                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                    <CartItemsTop customers={customers} />
-                </Box>
-                <Divider />
+                {/* Top Group: CartItemsTop + Items + Summary */}
                 <Box
-                    className="flex flex-col overflow-auto h-full"
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        flex: 1,
+                        minHeight: 0
+                    }}
                 >
-                    <Box className="flex-grow">
+                    <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        <CartItemsTop customers={customers} />
+                    </Box>
+                    <Divider />
+                    <Box sx={{ flex: 1, overflow: 'auto', pr: 1 }}>
                         {/* Cart Items - List of all items */}
                         <CartItems />
                         {/* Cart Summary - Total and discount area */}
                         <CartSummary />
                     </Box>
-                    <DrawerFooter>
-                        {/* Cart footer - Buttons */}
-                        <CartFooter />
-                    </DrawerFooter>
                 </Box>
 
-            </form>
+                {/* Bottom Group: Footer Buttons */}
+                <DrawerFooter sx={{ flexShrink: 0, mt: 2 }}>
+                    {/* Cart footer - Buttons */}
+                    <CartFooter />
+                </DrawerFooter>
+            </Box>
         </>
     );
 
@@ -198,19 +274,72 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                     {/* Product items area  */}
                     <Grid container spacing={1} sx={{ mb: 8 }}>
                         <SaleTemplateItem templates={templates} setTemplates={setTemplates} />
-                        {dataProducts?.map((product) => (
-                            <Grid
-                                key={product.id + product.batch_number}
-                                size={{ xs: 6, sm: 6, md: 2 }}
-                                sx={{ cursor: "pointer", }}
-                            >
-                                <ProductItem product={product}></ProductItem>
+
+                        {/* Back to Collections Button */}
+                        {viewMode === 'products' && selectedCollection && (
+                            <Grid size={12} sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                                <Button
+                                    startIcon={<ArrowBackIcon />}
+                                    onClick={handleBackToCollections}
+                                    variant="outlined"
+                                    size="small"
+                                >
+                                    Back to Collections
+                                </Button>
+                                <Typography variant="subtitle1" component="span" sx={{ ml: 2, fontWeight: 'bold' }}>
+                                    {selectedCollection.name}
+                                </Typography>
                             </Grid>
-                        ))}
+                        )}
+
+                        {viewMode === 'products' && (
+                            dataProducts?.map((product) => (
+                                <Grid
+                                    key={product.id + product.batch_number}
+                                    size={{ xs: 6, sm: 6, md: 2 }}
+                                    sx={{ cursor: "pointer", }}
+                                >
+                                    <ProductItem product={product}></ProductItem>
+                                </Grid>
+                            ))
+                        )}
+
+                        {/* Collections Grid - Displayed below featured items (Tab 0) when no specific collection is selected */}
+                        {tabValue === 0 && !selectedCollection && (
+                            <>
+                                <Grid size={12} sx={{ mt: 4, mb: 2 }}>
+                                    <Divider textAlign="left">
+                                        <Typography variant="h6" color="text.secondary">
+                                            Collections
+                                        </Typography>
+                                    </Divider>
+                                </Grid>
+                                {all_collections?.map((collection) => (
+                                    <Grid
+                                        key={collection.id}
+                                        size={{ xs: 6, sm: 4, md: 3, lg: 2 }}
+                                        sx={{ p: 1 }}
+                                    >
+                                        <CollectionItem
+                                            collection={collection}
+                                            onClick={handleCollectionClick}
+                                        />
+                                    </Grid>
+                                ))}
+                            </>
+                        )}
 
                         {/* Featured and categories */}
                         {!return_sale && (
-                            <POSBottomBar drawerWidth={drawerWidth} categories={categories} setProducts={setDataProducts} setTemplates={setTemplates} />
+                            <POSBottomBar
+                                drawerWidth={drawerWidth}
+                                categories={categories}
+                                setProducts={setDataProducts}
+                                setTemplates={setTemplates}
+                                onViewModeChange={handleViewModeChange}
+                                tabValue={tabValue}
+                                onTabChange={setTabValue}
+                            />
                         )}
                     </Grid>
                 </Box>

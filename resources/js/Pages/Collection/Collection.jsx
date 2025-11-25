@@ -23,6 +23,16 @@ const columns = (handleAction) => [
     )
   },
   { field: 'collection_type', headerName: 'Collection Type', width: 150 },
+  {
+    field: 'parent',
+    headerName: 'Parent Collection',
+    width: 180,
+    renderCell: (params) => (
+      <span className="text-gray-600">
+        {params.row.parent ? params.row.parent.name : '—'}
+      </span>
+    )
+  },
   { field: 'description', headerName: 'Description', width: 250 },
   { field: 'created_at', headerName: 'Created At', width: 150 },
   {

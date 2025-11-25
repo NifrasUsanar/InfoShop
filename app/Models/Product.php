@@ -46,4 +46,9 @@ class Product extends Model
     {
         return $this->hasMany(ProductStock::class, 'product_id');
     }
+
+    public function collections()
+    {
+        return $this->belongsToMany(Collection::class, 'collection_product');
+    }
 }

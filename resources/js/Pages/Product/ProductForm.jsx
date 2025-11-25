@@ -45,6 +45,7 @@ import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import productplaceholder from "@/Pages/Product/product-placeholder.webp";
 import BatchesTable from "./Partials/BatchesTable";
+import CollectionSelector from "./Partials/CollectionSelector";
 
 
 const VisuallyHiddenInput = styled("input")({
@@ -65,23 +66,17 @@ export default function Product({ product, collection, product_code, contacts, p
     const [loading, setLoading] = useState(false);
     const [compressedFile, setCompressedFile] = useState(null);
     const [batches, setBatches] = useState(product?.batches || []);
+    const [collections, setCollections] = useState(collection || []);
 
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
-    
-    const brandOptions = collection
-        .filter((item) => item.collection_type === "brand")
-        .map(({ id, name }) => ({ id, label: name }));
 
-    const categoryOptions = collection
-        .filter((item) => item.collection_type === "category")
+    const brandOptions = collections
+        .filter((item) => item.collection_type === "brand")
         .map(({ id, name }) => ({ id, label: name }));
 
     const [manageStock, setManageStock] = React.useState("1");
     const [selectedBrand, setSelectedBrand] = useState(
         brandOptions.find((option) => option.id === null) || null
-    );
-    const [selectedCategory, setSelectedCategory] = useState(
-        categoryOptions.find((option) => option.id === null) || null
     );
 
     const [productFormData, setFormData] = useState({
@@ -96,7 +91,6 @@ export default function Product({ product, collection, product_code, contacts, p
         is_stock_managed: 1,
         is_active: 1,
         brand_id: "",
-        category_id: "",
         product_type: "simple",
         fixed_commission: 0,
         batch_number: dayjs().format('DDMMYYYY'),
@@ -104,7 +98,12 @@ export default function Product({ product, collection, product_code, contacts, p
         discount_percentage: 0,
         price: '',
         delete_image: 0,
+        collection_ids: [],
     });
+
+    // Collection multi-select state - separate for categories and tags
+    const [selectedCategories, setSelectedCategories] = useState([]);
+    const [selectedTags, setSelectedTags] = useState([]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -176,9 +175,20 @@ export default function Product({ product, collection, product_code, contacts, p
             setSelectedBrand(
                 brandOptions.find((option) => option.id === product.brand_id)
             );
-            setSelectedCategory(
-                categoryOptions.find((option) => option.id === product.category_id)
-            );
+
+            // Set selected collections - split by type
+            if (product.collection_ids && Array.isArray(product.collection_ids)) {
+                const productCollections = collection
+                    .filter(col => product.collection_ids.includes(col.id))
+                    .map(col => ({ id: col.id, label: col.name, collection_type: col.collection_type }));
+
+                // Separate categories and tags
+                const categories = productCollections.filter(col => col.collection_type === 'category');
+                const tags = productCollections.filter(col => col.collection_type === 'tag');
+
+                setSelectedCategories(categories);
+                setSelectedTags(tags);
+            }
         }
     }, [product]);
 
@@ -199,6 +209,12 @@ export default function Product({ product, collection, product_code, contacts, p
         // No page reload or redirect needed
     };
 
+    // Callback when a new collection is created inline
+    const handleCollectionCreated = (newCollection) => {
+        // Add the new collection to the collections state
+        setCollections(prev => [...prev, newCollection]);
+    };
+
     const handleSubmit = (event) => {
         event.preventDefault();
 
@@ -213,8 +229,15 @@ export default function Product({ product, collection, product_code, contacts, p
 
         const formJson = Object.fromEntries(submittedFormData.entries());
         formJson.brand_id = selectedBrand?.id ?? "";
-        formJson.category_id = selectedCategory?.id ?? "";
         formJson.delete_image = productFormData.delete_image;
+
+        // Add selected collection IDs (combine categories and tags)
+        const allSelectedCollections = [...selectedCategories, ...selectedTags];
+        if (allSelectedCollections.length > 0) {
+            allSelectedCollections.forEach((collection, index) => {
+                formJson[`collection_ids[${index}]`] = collection.id;
+            });
+        }
 
         const endpoint = product ? `/products/${product.id}` : "/products";
 
@@ -280,93 +303,93 @@ export default function Product({ product, collection, product_code, contacts, p
                                     </div>
                                     <div className="px-6 py-5">
                                         <Grid container spacing={2}>
-                                        <Grid size={{ xs: 12, sm: 4 }}>
-                                            <TextField
-                                                size="small"
-                                                label="Barcode"
-                                                id="barcode"
-                                                name="barcode"
-                                                fullWidth
-                                                required
-                                                value={productFormData.barcode}
-                                                onChange={handleChange}
-                                                autoFocus
-                                                ref={refBarcode}
-                                                onFocus={(event) => {
-                                                    event.target.select();
-                                                }}
-                                            />
-                                        </Grid>
-                                        <Grid size={{ xs: 12, sm: 8 }}>
-                                            <TextField
-                                                size="small"
-                                                label="Product Name"
-                                                name="name"
-                                                fullWidth
-                                                required
-                                                value={productFormData.name}
-                                                onChange={handleChange}
-                                            />
-                                        </Grid>
-                                        <Grid size={{ xs: 12, sm: 4 }}>
-                                            <TextField
-                                                size="small"
-                                                value={productFormData.unit}
-                                                label="Product Unit"
-                                                onChange={handleChange}
-                                                name="unit"
-                                                select
-                                                fullWidth
-                                            >
-                                                <MenuItem value={"PC"}>PC</MenuItem>
-                                                <MenuItem value={"KG"}>KG</MenuItem>
-                                                <MenuItem value={"Meter"}>Meter</MenuItem>
-                                            </TextField>
-                                        </Grid>
-                                        <Grid size={{ xs: 12, sm: 4 }}>
-                                            <TextField
-                                                size="small"
-                                                label="Product Type"
-                                                name="product_type"
-                                                select
-                                                fullWidth
-                                                onChange={handleChange}
-                                                value={productFormData.product_type}
-                                                required
-                                            >
-                                                <MenuItem value={"simple"}>SIMPLE</MenuItem>
-                                                <MenuItem value={"reload"}>RELOAD</MenuItem>
-                                                <MenuItem value={"commission"}>COMMISSION</MenuItem>
-                                                <MenuItem value={"custom"}>CUSTOM</MenuItem>
-                                            </TextField>
-                                        </Grid>
-                                        <Grid size={{ xs: 12, sm: 4 }}>
-                                            <TextField
-                                                size="small"
-                                                label="Alert Quantity"
-                                                id="alert-quantity"
-                                                name="alert_quantity"
-                                                type="number"
-                                                fullWidth
-                                                onChange={handleChange}
-                                                value={productFormData.alert_quantity}
-                                            />
-                                        </Grid>
-
-                                        {(productFormData.product_type === 'reload' || productFormData.product_type === 'commission') && (
                                             <Grid size={{ xs: 12, sm: 4 }}>
                                                 <TextField
                                                     size="small"
-                                                    label={productFormData.product_type === 'reload' ? 'Commission (%)' : 'Fixed Commission'}
-                                                    name="fixed_commission"
-                                                    type="number"
+                                                    label="Barcode"
+                                                    id="barcode"
+                                                    name="barcode"
                                                     fullWidth
                                                     required
+                                                    value={productFormData.barcode}
                                                     onChange={handleChange}
-                                                    value={productFormData.fixed_commission}
+                                                    autoFocus
+                                                    ref={refBarcode}
+                                                    onFocus={(event) => {
+                                                        event.target.select();
+                                                    }}
                                                 />
                                             </Grid>
-                                        )}
+                                            <Grid size={{ xs: 12, sm: 8 }}>
+                                                <TextField
+                                                    size="small"
+                                                    label="Product Name"
+                                                    name="name"
+                                                    fullWidth
+                                                    required
+                                                    value={productFormData.name}
+                                                    onChange={handleChange}
+                                                />
+                                            </Grid>
+                                            <Grid size={{ xs: 12, sm: 4 }}>
+                                                <TextField
+                                                    size="small"
+                                                    value={productFormData.unit}
+                                                    label="Product Unit"
+                                                    onChange={handleChange}
+                                                    name="unit"
+                                                    select
+                                                    fullWidth
+                                                >
+                                                    <MenuItem value={"PC"}>PC</MenuItem>
+                                                    <MenuItem value={"KG"}>KG</MenuItem>
+                                                    <MenuItem value={"Meter"}>Meter</MenuItem>
+                                                </TextField>
+                                            </Grid>
+                                            <Grid size={{ xs: 12, sm: 4 }}>
+                                                <TextField
+                                                    size="small"
+                                                    label="Product Type"
+                                                    name="product_type"
+                                                    select
+                                                    fullWidth
+                                                    onChange={handleChange}
+                                                    value={productFormData.product_type}
+                                                    required
+                                                >
+                                                    <MenuItem value={"simple"}>SIMPLE</MenuItem>
+                                                    <MenuItem value={"reload"}>RELOAD</MenuItem>
+                                                    <MenuItem value={"commission"}>COMMISSION</MenuItem>
+                                                    <MenuItem value={"custom"}>CUSTOM</MenuItem>
+                                                </TextField>
+                                            </Grid>
+                                            <Grid size={{ xs: 12, sm: 4 }}>
+                                                <TextField
+                                                    size="small"
+                                                    label="Alert Quantity"
+                                                    id="alert-quantity"
+                                                    name="alert_quantity"
+                                                    type="number"
+                                                    fullWidth
+                                                    onChange={handleChange}
+                                                    value={productFormData.alert_quantity}
+                                                />
+                                            </Grid>
+
+                                            {(productFormData.product_type === 'reload' || productFormData.product_type === 'commission') && (
+                                                <Grid size={{ xs: 12, sm: 4 }}>
+                                                    <TextField
+                                                        size="small"
+                                                        label={productFormData.product_type === 'reload' ? 'Commission (%)' : 'Fixed Commission'}
+                                                        name="fixed_commission"
+                                                        type="number"
+                                                        fullWidth
+                                                        required
+                                                        onChange={handleChange}
+                                                        value={productFormData.fixed_commission}
+                                                    />
+                                                </Grid>
+                                            )}
                                         </Grid>
                                     </div>
                                 </div>
@@ -379,94 +402,94 @@ export default function Product({ product, collection, product_code, contacts, p
                                         </div>
                                         <div className="px-6 py-5">
                                             <Grid container spacing={2}>
-                                            <Grid size={{ xs: 12, sm: 4 }}>
-                                                <TextField
-                                                    size="small"
-                                                    label="Cost"
-                                                    name="cost"
-                                                    type="number"
-                                                    fullWidth
-                                                    required
-                                                    step={0.5}
-                                                    value={productFormData.cost}
-                                                    onChange={handleChange}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 4 }}>
-                                                <TextField
-                                                    size="small"
-                                                    label="Price"
-                                                    name="price"
-                                                    type="number"
-                                                    fullWidth
-                                                    required
-                                                    value={productFormData.price}
-                                                    onChange={handleChange}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 4 }}>
-                                                <TextField
-                                                    size="small"
-                                                    label="Quantity"
-                                                    name="quantity"
-                                                    type="number"
-                                                    fullWidth
-                                                    required
-                                                    step={0.5}
-                                                    value={productFormData.quantity}
-                                                    onChange={handleChange}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 4 }}>
-                                                <TextField
-                                                    size="small"
-                                                    label="Discount %"
-                                                    name="discount_percentage"
-                                                    type="number"
-                                                    fullWidth
-                                                    value={productFormData.discount_percentage}
-                                                    onChange={handleChange}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 4 }}>
-                                                <TextField
-                                                    size="small"
-                                                    label="Flat Discount"
-                                                    name="discount"
-                                                    type="number"
-                                                    fullWidth
-                                                    value={productFormData.discount}
-                                                    onChange={handleChange}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 4 }}>
-                                                <TextField
-                                                    size="small"
-                                                    label="Batch #"
-                                                    name="batch_number"
-                                                    fullWidth
-                                                    value={productFormData.batch_number}
-                                                    onChange={handleChange}
-                                                />
-                                            </Grid>
-                                            <Grid size={{ xs: 12, sm: 12 }}>
-                                                <LocalizationProvider
-                                                    dateAdapter={AdapterDayjs}
-                                                    adapterLocale="en-gb"
-                                                >
-                                                    <DatePicker
-                                                        name="expiry_date"
-                                                        label="Expiry Date"
-                                                        className="w-full"
-                                                        format="YYYY-MM-DD"
-                                                        slotProps={{
-                                                            textField: {
-                                                                size: 'small'
-                                                            }
-                                                        }}
+                                                <Grid size={{ xs: 12, sm: 4 }}>
+                                                    <TextField
+                                                        size="small"
+                                                        label="Cost"
+                                                        name="cost"
+                                                        type="number"
+                                                        fullWidth
+                                                        required
+                                                        step={0.5}
+                                                        value={productFormData.cost}
+                                                        onChange={handleChange}
                                                     />
-                                                </LocalizationProvider>
-                                            </Grid>
+                                                </Grid>
+                                                <Grid size={{ xs: 12, sm: 4 }}>
+                                                    <TextField
+                                                        size="small"
+                                                        label="Price"
+                                                        name="price"
+                                                        type="number"
+                                                        fullWidth
+                                                        required
+                                                        value={productFormData.price}
+                                                        onChange={handleChange}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, sm: 4 }}>
+                                                    <TextField
+                                                        size="small"
+                                                        label="Quantity"
+                                                        name="quantity"
+                                                        type="number"
+                                                        fullWidth
+                                                        required
+                                                        step={0.5}
+                                                        value={productFormData.quantity}
+                                                        onChange={handleChange}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, sm: 4 }}>
+                                                    <TextField
+                                                        size="small"
+                                                        label="Discount %"
+                                                        name="discount_percentage"
+                                                        type="number"
+                                                        fullWidth
+                                                        value={productFormData.discount_percentage}
+                                                        onChange={handleChange}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, sm: 4 }}>
+                                                    <TextField
+                                                        size="small"
+                                                        label="Flat Discount"
+                                                        name="discount"
+                                                        type="number"
+                                                        fullWidth
+                                                        value={productFormData.discount}
+                                                        onChange={handleChange}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, sm: 4 }}>
+                                                    <TextField
+                                                        size="small"
+                                                        label="Batch #"
+                                                        name="batch_number"
+                                                        fullWidth
+                                                        value={productFormData.batch_number}
+                                                        onChange={handleChange}
+                                                    />
+                                                </Grid>
+                                                <Grid size={{ xs: 12, sm: 12 }}>
+                                                    <LocalizationProvider
+                                                        dateAdapter={AdapterDayjs}
+                                                        adapterLocale="en-gb"
+                                                    >
+                                                        <DatePicker
+                                                            name="expiry_date"
+                                                            label="Expiry Date"
+                                                            className="w-full"
+                                                            format="YYYY-MM-DD"
+                                                            slotProps={{
+                                                                textField: {
+                                                                    size: 'small'
+                                                                }
+                                                            }}
+                                                        />
+                                                    </LocalizationProvider>
+                                                </Grid>
                                             </Grid>
                                         </div>
                                     </div>
@@ -501,15 +524,15 @@ export default function Product({ product, collection, product_code, contacts, p
                                     </div>
                                     <div className="px-6 py-5">
                                         <TextField
-                                        size="small"
-                                        label="Product Description"
-                                        id="product-description"
-                                        name="description"
-                                        fullWidth
-                                        multiline
-                                        rows={4}
-                                        value={productFormData.description}
-                                        onChange={handleChange}
+                                            size="small"
+                                            label="Product Description"
+                                            id="product-description"
+                                            name="description"
+                                            fullWidth
+                                            multiline
+                                            rows={4}
+                                            value={productFormData.description}
+                                            onChange={handleChange}
                                         />
                                     </div>
                                 </div>
@@ -521,93 +544,93 @@ export default function Product({ product, collection, product_code, contacts, p
                                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
                                         {/* Manage Stock Toggle - Always Visible */}
                                         <div className="px-6 py-4 border-b border-gray-100">
-                                        <ToggleButtonGroup
-                                            color="primary"
-                                            value={manageStock}
-                                            exclusive
-                                            onChange={handleStockChange}
-                                            aria-label="Manage stock"
-                                            id="btn-manage-stock"
-                                            variant="contained"
-                                            fullWidth
-                                            size="small"
-                                        >
-                                            <ToggleButton
-                                                value="1"
-                                                sx={{
-                                                    color: "black",
-                                                    "&.Mui-selected": {
-                                                        bgcolor: "success.dark",
-                                                        color: "white",
-                                                        "&:hover": {
-                                                            bgcolor: "success.dark",
-                                                        },
-                                                    },
-                                                }}
+                                            <ToggleButtonGroup
+                                                color="primary"
+                                                value={manageStock}
+                                                exclusive
+                                                onChange={handleStockChange}
+                                                aria-label="Manage stock"
+                                                id="btn-manage-stock"
                                                 variant="contained"
+                                                fullWidth
+                                                size="small"
                                             >
-                                                Manage Stock
-                                            </ToggleButton>
-                                        </ToggleButtonGroup>
+                                                <ToggleButton
+                                                    value="1"
+                                                    sx={{
+                                                        color: "black",
+                                                        "&.Mui-selected": {
+                                                            bgcolor: "success.dark",
+                                                            color: "white",
+                                                            "&:hover": {
+                                                                bgcolor: "success.dark",
+                                                            },
+                                                        },
+                                                    }}
+                                                    variant="contained"
+                                                >
+                                                    Manage Stock
+                                                </ToggleButton>
+                                            </ToggleButtonGroup>
                                         </div>
 
                                         {/* Product Image */}
                                         <div className="px-6 py-4 border-b border-gray-100">
-                                        <CardMedia
-                                            sx={{ height: { xs: 200, sm: 240 } }}
-                                            image={
-                                                productFormData.featured_image ??
-                                                productplaceholder
-                                            }
-                                        />
-                                        <CardActions className="p-3 flex gap-2">
-                                            <Button
-                                                component="label"
-                                                role={undefined}
-                                                variant="contained"
-                                                size="small"
-                                                tabIndex={-1}
-                                                startIcon={<Upload size={18} />}
-                                                fullWidth
-                                                sx={{ textTransform: 'none', fontWeight: 500 }}
-                                            >
-                                                Upload
-                                                <VisuallyHiddenInput
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleFileChange}
-                                                    name="featured_image"
-                                                />
-                                            </Button>
-                                            {productFormData.featured_image && productFormData.featured_image !== productplaceholder && (
-                                <IconButton
-                                    size="small"
-                                    onClick={() => {
-                                        // Clear the featured image display
-                                        setFormData({
-                                            ...productFormData,
-                                            featured_image: productplaceholder,
-                                            delete_image: 1,
-                                        });
-                                        // Clear the file input
-                                        const fileInput = document.querySelector('input[name="featured_image"]');
-                                        if (fileInput) {
-                                            fileInput.value = '';
-                                        }
-                                        setCompressedFile(null);
-                                    }}
-                                    sx={{
-                                        bgcolor: 'error.main',
-                                        color: 'white',
-                                        '&:hover': {
-                                            bgcolor: 'error.dark',
-                                        }
-                                    }}
-                                >
-                                    <Trash2 size={18} />
-                                </IconButton>
-                            )}
-                                        </CardActions>
+                                            <CardMedia
+                                                sx={{ height: { xs: 200, sm: 240 } }}
+                                                image={
+                                                    productFormData.featured_image ??
+                                                    productplaceholder
+                                                }
+                                            />
+                                            <CardActions className="p-3 flex gap-2">
+                                                <Button
+                                                    component="label"
+                                                    role={undefined}
+                                                    variant="contained"
+                                                    size="small"
+                                                    tabIndex={-1}
+                                                    startIcon={<Upload size={18} />}
+                                                    fullWidth
+                                                    sx={{ textTransform: 'none', fontWeight: 500 }}
+                                                >
+                                                    Upload
+                                                    <VisuallyHiddenInput
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleFileChange}
+                                                        name="featured_image"
+                                                    />
+                                                </Button>
+                                                {productFormData.featured_image && productFormData.featured_image !== productplaceholder && (
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => {
+                                                            // Clear the featured image display
+                                                            setFormData({
+                                                                ...productFormData,
+                                                                featured_image: productplaceholder,
+                                                                delete_image: 1,
+                                                            });
+                                                            // Clear the file input
+                                                            const fileInput = document.querySelector('input[name="featured_image"]');
+                                                            if (fileInput) {
+                                                                fileInput.value = '';
+                                                            }
+                                                            setCompressedFile(null);
+                                                        }}
+                                                        sx={{
+                                                            bgcolor: 'error.main',
+                                                            color: 'white',
+                                                            '&:hover': {
+                                                                bgcolor: 'error.dark',
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </IconButton>
+                                                )}
+                                            </CardActions>
                                         </div>
 
                                         {/* More Information */}
@@ -615,61 +638,63 @@ export default function Product({ product, collection, product_code, contacts, p
                                             <h3 className="text-lg font-bold text-gray-900">More Information</h3>
                                         </div>
                                         <div className="px-6 py-5 space-y-4">
-                                        {!product && (
-                                            <Select2
-                                                className="w-full"
-                                                placeholder="Select a supplier..."
-                                                name="contact_id"
-                                                styles={{
-                                                    control: (baseStyles, state) => ({
-                                                        ...baseStyles,
-                                                        height: "40px",
-                                                    }),
+                                            {!product && (
+                                                <Select2
+                                                    className="w-full"
+                                                    placeholder="Select a supplier..."
+                                                    name="contact_id"
+                                                    styles={{
+                                                        control: (baseStyles, state) => ({
+                                                            ...baseStyles,
+                                                            height: "40px",
+                                                        }),
+                                                    }}
+                                                    options={contacts}
+                                                    isClearable
+                                                    getOptionLabel={(option) => option.name}
+                                                    getOptionValue={(option) => option.id}
+                                                />
+                                            )}
+                                            <Autocomplete
+                                                size="small"
+                                                disablePortal
+                                                value={selectedBrand || null}
+                                                onChange={(event, newValue) => {
+                                                    setSelectedBrand(newValue);
                                                 }}
-                                                options={contacts}
-                                                isClearable
-                                                getOptionLabel={(option) => option.name}
-                                                getOptionValue={(option) => option.id}
+                                                getOptionLabel={(options) => options.label}
+                                                options={brandOptions}
+                                                fullWidth
+                                                id="brand"
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        label="Brand"
+                                                        size="small"
+                                                    />
+                                                )}
                                             />
-                                        )}
-                                        <Autocomplete
-                                            size="small"
-                                            disablePortal
-                                            value={selectedBrand || null}
-                                            onChange={(event, newValue) => {
-                                                setSelectedBrand(newValue);
-                                            }}
-                                            getOptionLabel={(options) => options.label}
-                                            options={brandOptions}
-                                            fullWidth
-                                            id="brand"
-                                            renderInput={(params) => (
-                                                <TextField
-                                                    {...params}
-                                                    label="Brand"
-                                                    size="small"
-                                                />
-                                            )}
-                                        />
-                                        <Autocomplete
-                                            size="small"
-                                            disablePortal
-                                            value={selectedCategory || null}
-                                            onChange={(event, newValue) => {
-                                                setSelectedCategory(newValue);
-                                            }}
-                                            options={categoryOptions}
-                                            getOptionLabel={(options) => options.label}
-                                            fullWidth
-                                            id="category"
-                                            renderInput={(params) => (
-                                                <TextField
-                                                    {...params}
-                                                    label="Category"
-                                                    size="small"
-                                                />
-                                            )}
-                                        />
+                                            {/* Categories Multi-Select */}
+                                            <CollectionSelector
+                                                collections={collections}
+                                                selectedCollections={selectedCategories}
+                                                onCollectionChange={setSelectedCategories}
+                                                onCollectionCreated={handleCollectionCreated}
+                                                collectionType="category"
+                                                label="Categories"
+                                                placeholder="Select categories..."
+                                            />
+
+                                            {/* Tags Multi-Select */}
+                                            <CollectionSelector
+                                                collections={collections}
+                                                selectedCollections={selectedTags}
+                                                onCollectionChange={setSelectedTags}
+                                                onCollectionCreated={handleCollectionCreated}
+                                                collectionType="tag"
+                                                label="Tags"
+                                                placeholder="Select tags..."
+                                            />
                                         </div>
                                     </div>
                                 </div>

@@ -172,6 +172,9 @@ class ProductController extends Controller
 
         $product->batches = $batches;
 
+        // Load the product's current collections
+        $product->collection_ids = $product->collections()->pluck('collections.id')->toArray();
+
         // Render the 'Product/ProductForm' component for adding a new product
         return Inertia::render('Product/ProductForm', [
             'collection' => $collection, // Example if you have categories
@@ -200,6 +203,8 @@ class ProductController extends Controller
             'category_id' => 'nullable|exists:collections,id',
             'discount' => 'nullable|numeric|min:0',
             'discount_percentage' => 'nullable|numeric|min:0|max:100',
+            'collection_ids' => 'nullable|array',
+            'collection_ids.*' => 'exists:collections,id',
         ]);
 
         $imageUrl = null;
@@ -264,6 +269,11 @@ class ProductController extends Controller
             'product_id' => $product->id,
         ]);
 
+        // Sync collections for the new product
+        if ($request->has('collection_ids') && is_array($request->collection_ids)) {
+            $product->collections()->sync($request->collection_ids);
+        }
+
         return redirect()->route('products.index')->with('success', 'Product created successfully!');
     }
 
@@ -282,6 +292,8 @@ class ProductController extends Controller
             'is_active' => 'boolean',
             'brand_id' => 'nullable|exists:collections,id',
             'category_id' => 'nullable|exists:collections,id',
+            'collection_ids' => 'nullable|array',
+            'collection_ids.*' => 'exists:collections,id',
         ]);
 
         DB::beginTransaction();
@@ -358,6 +370,11 @@ class ProductController extends Controller
                 'product_type' => $request->product_type,
                 'meta_data' => $metaData,
             ]);
+
+            // Sync collections for the updated product
+            if ($request->has('collection_ids')) {
+                $product->collections()->sync($request->collection_ids ?? []);
+            }
 
             DB::commit();
 

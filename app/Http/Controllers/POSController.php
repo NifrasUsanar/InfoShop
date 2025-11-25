@@ -57,7 +57,13 @@ class POSController extends Controller
             ->where('pb.is_active', 1);
 
         // Apply category filter if set
-        if (isset($filters['category_id'])) {
+        // Apply collection filter if set (supports categories, tags, brands via pivot)
+        if (isset($filters['collection_id'])) {
+            $query->join('collection_product', 'products.id', '=', 'collection_product.product_id')
+                  ->where('collection_product.collection_id', $filters['collection_id']);
+        } 
+        // Apply category filter if set (legacy/direct column)
+        else if (isset($filters['category_id'])) {
             $query->where('products.category_id', $filters['category_id']);
         } else if (!isset($filters['all_products'])) {
             $query->where('pb.is_featured', 1);
@@ -101,11 +107,14 @@ class POSController extends Controller
     public function getProductsByFilter(Request $request)
     {
         $categoryId = $request->input('category_id');
+        $collectionId = $request->input('collection_id');
         $allProducts = $request->input('all_products');
 
         $filters = [];
 
-        if ($categoryId != 0) {
+        if ($collectionId) {
+            $filters['collection_id'] = $collectionId;
+        } elseif ($categoryId != 0) {
             $filters['category_id'] = $categoryId;
         }
 
@@ -128,6 +137,7 @@ class POSController extends Controller
             return redirect()->route('store'); // Adjust the route name as necessary
         }
         $categories = Collection::where('collection_type', 'category')->get();
+        $allCollections = Collection::all();
         $products = $this->getProducts();
         $miscSettings = Setting::where('meta_key', 'misc_settings')->first();
         $miscSettings = json_decode($miscSettings->meta_value, true);
@@ -156,7 +166,9 @@ class POSController extends Controller
             'currentStore' => $currentStore->name,
             'return_sale' => false,
             'sale_id' => null,
+            'sale_id' => null,
             'categories' => $categories,
+            'all_collections' => $allCollections,
             'cart_first_focus' => $cart_first_focus,
             'misc_settings' => $miscSettings,
             'default_charges' => $defaultCharges
@@ -170,6 +182,7 @@ class POSController extends Controller
         $currentStore = Store::find($sale->store_id);
 
         $categories = Collection::where('collection_type', 'category')->get();
+        $allCollections = Collection::all();
         $products = $this->getProducts();
         $miscSettings = Setting::where('meta_key', 'misc_settings')->first();
         $miscSettings = json_decode($miscSettings->meta_value, true);
@@ -199,7 +212,9 @@ class POSController extends Controller
             'currentStore' => $currentStore->name,
             'return_sale' => false,
             'sale_id' => $sale->id,
+            'sale_id' => $sale->id,
             'categories' => $categories,
+            'all_collections' => $allCollections,
             'cart_first_focus' => $cart_first_focus,
             'edit_sale' => true,
             'sale_data' => $sale,
@@ -316,6 +331,7 @@ class POSController extends Controller
             'sale_type' => $request->input('return_sale') ? 'return' : 'sale',
             'contact_id' => $request->input('contact_id'),
             'sale_date' => $request->input('sale_date', Carbon::now()->toDateString()),
+            'sale_time' => $request->input('sale_time', Carbon::now()->format('H:i:s')),
             'total_amount' => $request->input('net_total'),
             'discount' => $request->input('discount'),
             'amount_received' => $request->input('amount_received', 0),

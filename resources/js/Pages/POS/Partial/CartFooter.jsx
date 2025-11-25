@@ -78,7 +78,7 @@ export default function CartFooter() {
     const edit_sale = usePage().props.edit_sale;
 
     const { cartState, holdCart, emptyCart } = useCart();
-    const { selectedCustomer, saleDate } = useContext(SharedContext);
+    const { selectedCustomer, saleDate, saleTime } = useContext(SharedContext);
     const [heldModalOpen, setHeldModalOpen] = useState(false);
     const [paymentsModalOpen, setPaymentsModalOpen] = useState(false);
     const [quotationModalOpen, setQuotationModalOpen] = useState(false);
@@ -270,7 +270,7 @@ export default function CartFooter() {
                 setOpen={setPaymentsModalOpen}
                 selectedContact={selectedCustomer}
                 is_sale={true}
-                formData={{ sale_date: saleDate }}
+                formData={{ sale_date: saleDate, sale_time: saleTime }}
             />
             <QuotationDialog
                 useCart={useCart}

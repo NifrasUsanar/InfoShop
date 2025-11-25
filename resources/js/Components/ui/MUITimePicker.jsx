@@ -1,27 +1,28 @@
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { MobileTimePicker } from "@mui/x-date-pickers/MobileTimePicker";
 import "dayjs/locale/en-gb";
 import dayjs from "dayjs";
 
-export default function MUIDatePicker({ name, label, value, onChange, format = "DD/MM/YYYY", returnFormat = "YYYY-MM-DD", size = "medium" }) {
+export default function MUITimePicker({ name, label, value, onChange, size = "medium" }) {
     return (
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="en-gb">
-            <DatePicker
+            <MobileTimePicker
                 name={name}
                 label={label}
                 className="w-full"
-                format={format}
-                size={size}
+                format="hh:mm A"
+                ampm={true}
+                views={['hours', 'minutes']}
                 slotProps={{
                     textField: {
                         size: size,
                         fullWidth: true
                     }
                 }}
-                value={value ? dayjs(value, [returnFormat, "YYYY-MM-DD", "DD/MM/YYYY"]) : null}
+                value={value ? dayjs(`2000-01-01 ${value}`, 'YYYY-MM-DD HH:mm') : null}
                 onChange={(newValue) =>
-                    onChange(newValue ? newValue.format(returnFormat) : "")
+                    onChange(newValue ? newValue.format('HH:mm') : '')
                 }
             />
         </LocalizationProvider>

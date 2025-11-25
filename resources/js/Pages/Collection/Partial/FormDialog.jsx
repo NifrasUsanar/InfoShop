@@ -1,25 +1,29 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
-import { router } from '@inertiajs/react';
-import { Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem,  Grid } from '@mui/material';
+import { router, usePage } from '@inertiajs/react';
+import { Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Grid } from '@mui/material';
 
 import Swal from 'sweetalert2';
 
 
 export default function FormDialog({ open, handleClose, collection }) {
+  const { allCollections } = usePage().props;
   const [name, setName] = useState('');
   const [collectionType, setCollectionType] = useState('category');
   const [description, setDescription] = useState('');
+  const [parentId, setParentId] = useState('');
 
   useEffect(() => {
     if (collection) {
       setName(collection.name || '');
       setCollectionType(collection.collection_type || 'category');
       setDescription(collection.description || '');
+      setParentId(collection.parent_id || '');
     } else {
       setName('');
       setCollectionType('category');
       setDescription('');
+      setParentId('');
     }
   }, [collection]);
 
@@ -62,8 +66,60 @@ export default function FormDialog({ open, handleClose, collection }) {
 
   // Collection type select box
   const handleChange = (event) => {
-    setCollectionType(event.target.value);
+    const newType = event.target.value;
+    setCollectionType(newType);
+
+    // Reset parent ID if type is not category
+    if (newType !== 'category') {
+      setParentId('');
+    }
   };
+
+  // Build hierarchical collection list for dropdown
+  const buildHierarchicalOptions = () => {
+    if (!allCollections) return [];
+
+    const collectionsMap = {};
+    const rootCollections = [];
+
+    // Create a map of all collections
+    allCollections.forEach(col => {
+      collectionsMap[col.id] = { ...col, children: [] };
+    });
+
+    // Build the tree structure
+    allCollections.forEach(col => {
+      if (col.parent_id && collectionsMap[col.parent_id]) {
+        collectionsMap[col.parent_id].children.push(collectionsMap[col.id]);
+      } else {
+        rootCollections.push(collectionsMap[col.id]);
+      }
+    });
+
+    // Flatten the tree with indentation
+    const flattenWithIndent = (collections, level = 0) => {
+      let result = [];
+      collections.forEach(col => {
+        // Skip current collection when editing to prevent self-reference
+        if (collection && col.id === collection.id) return;
+
+        result.push({
+          id: col.id,
+          name: col.name,
+          level: level
+        });
+
+        if (col.children && col.children.length > 0) {
+          result = result.concat(flattenWithIndent(col.children, level + 1));
+        }
+      });
+      return result;
+    };
+
+    return flattenWithIndent(rootCollections);
+  };
+
+  const hierarchicalCollections = buildHierarchicalOptions();
 
   return (
     <>
@@ -113,6 +169,35 @@ export default function FormDialog({ open, handleClose, collection }) {
                 <MenuItem value={'tag'}>Tag</MenuItem>
               </TextField>
             </Grid>
+
+            {collectionType === 'category' && (
+              <Grid size={12}>
+                {/* Parent Collection */}
+                <TextField
+                  value={parentId}
+                  label="Parent Collection (Optional)"
+                  onChange={(e) => setParentId(e.target.value)}
+                  name="parent_id"
+                  select
+                  fullWidth
+                  margin="dense"
+                  variant="outlined"
+                  style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}
+                >
+                  <MenuItem value="">
+                    <em className="text-gray-500">None (Root Level)</em>
+                  </MenuItem>
+                  {hierarchicalCollections.map((col) => (
+                    <MenuItem key={col.id} value={col.id}>
+                      <span className={`pl-${col.level * 4}`}>
+                        {col.level > 0 && '└─ '}
+                        {col.name}
+                      </span>
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+            )}
 
             <Grid size={12}>
               {/* Collection Description */}

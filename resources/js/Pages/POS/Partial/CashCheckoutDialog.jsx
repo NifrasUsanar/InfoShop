@@ -29,7 +29,7 @@ export default function CashCheckoutDialog({ disabled }) {
     const edit_sale_id = usePage().props.sale_id;
 
     const { cartState, cartTotal, totalProfit, emptyCart, charges, totalChargeAmount, finalTotal, discount, setDiscount: setContextDiscount, calculateChargesWithDiscount } = useCart();
-    const { selectedCustomer, saleDate } = useContext(SharedContext);
+    const { selectedCustomer, saleDate, saleTime } = useContext(SharedContext);
     const [loading, setLoading] = useState(false);
 
     const [amountReceived, setAmountReceived] = useState(0);
@@ -92,6 +92,7 @@ export default function CashCheckoutDialog({ disabled }) {
         }));
         formJson.profit_amount = totalProfit - discount; //total profit is from the sale items, but we apply discount for the bill also
         formJson.sale_date = saleDate;
+        formJson.sale_time = saleTime;
         formJson.payment_method = 'Cash'
         formJson.contact_id = selectedCustomer.id
         formJson.return_sale = return_sale;

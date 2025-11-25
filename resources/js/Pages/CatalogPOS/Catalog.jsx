@@ -7,6 +7,9 @@ import { Banknote, CheckCircle2, ShoppingCart } from 'lucide-react';
 import numeral from 'numeral';
 import PaymentsCheckoutDialog from '@/Components/PaymentsCheckoutDialog';
 import dayjs from 'dayjs';
+import { MobileTimePicker } from '@mui/x-date-pickers/MobileTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 const Catalog = ({ open, id, onClose }) => {
     const [searchProduct, setSearchProduct] = useState("");
@@ -159,6 +162,7 @@ export default Catalog;
 const Cart = ({ cartState, contact_id, useCart }) => {
     const [paymentsModalOpen, setPaymentsModalOpen] = useState(false);
     const [sale_date, setSaleDate] = useState(dayjs().format("YYYY-MM-DD"));
+    const [sale_time, setSaleTime] = useState(dayjs().format("HH:mm"));
     if (!cartState.length) return <div className="p-4">Your cart is empty</div>;
     const { cartTotal } = useCart();
     return (
@@ -206,28 +210,51 @@ const Cart = ({ cartState, contact_id, useCart }) => {
                     </div>
                 </li>
             </ul>
-            <div className="flex justify-center mt-5 flex-col gap-2">
-                <TextField
-                    type="date"
-                    label="Date"
-                    variant="outlined"
-                    size="small"
-                    value={sale_date}
-                    onChange={(e) => setSaleDate(e.target.value)}
-                    fullWidth
-                    sx={{ mt: 2 }}
-                />
-                <Button
-                    variant="contained"
-                    color="primary"
-                    size="large"
-                    fullWidth
-                    endIcon={<Banknote />}
-                    onClick={() => setPaymentsModalOpen(true)}
-                >
-                    PAYMENTS
-                </Button>
-            </div>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <div className="flex justify-center mt-5 flex-col gap-2">
+                    <TextField
+                        type="date"
+                        label="Date"
+                        variant="outlined"
+                        size="small"
+                        value={sale_date}
+                        onChange={(e) => setSaleDate(e.target.value)}
+                        fullWidth
+                        sx={{ mt: 2 }}
+                    />
+                    <MobileTimePicker
+                        label="Time"
+                        value={sale_time ? dayjs(`2000-01-01 ${sale_time}`, 'YYYY-MM-DD HH:mm') : null}
+                        onChange={(newValue) => {
+                            if (newValue) {
+                                setSaleTime(newValue.format('HH:mm'));
+                            }
+                        }}
+                        format="hh:mm A"
+                        views={['hours', 'minutes']}
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                size: 'small',
+                            },
+                            popper: {
+                                placement: 'bottom-start',
+                            },
+                        }}
+                        ampm={true}
+                    />
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                        fullWidth
+                        endIcon={<Banknote />}
+                        onClick={() => setPaymentsModalOpen(true)}
+                    >
+                        PAYMENTS
+                    </Button>
+                </div>
+            </LocalizationProvider>
 
             <PaymentsCheckoutDialog
                 useCart={useCart}
@@ -235,9 +262,8 @@ const Cart = ({ cartState, contact_id, useCart }) => {
                 setOpen={setPaymentsModalOpen}
                 selectedContact={{ id: contact_id }}
                 is_sale={true}
-                formData={{ sale_date: sale_date }}
+                formData={{ sale_date: sale_date, sale_time: sale_time }}
             />
         </>
     );
 };
-

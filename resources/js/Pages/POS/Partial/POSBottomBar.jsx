@@ -3,22 +3,23 @@ import { Typography, Toolbar, Box, AppBar, Tab, Tabs } from "@mui/material";
 
 import axios from "axios";
 
-export default function POSBottomBar({ setProducts, drawerWidth, categories, setTemplates }) {
-    const [tabValue, setTabValue] = useState(0);
+export default function POSBottomBar({ setProducts, drawerWidth, categories, setTemplates, onViewModeChange, tabValue, onTabChange }) {
 
     const handleTabChange = async (event, newValue) => {
-        setTabValue(newValue);
+        onTabChange(newValue);
 
         if (newValue === 'template') {
             setProducts([]);
             const response = await axios.get(`/sale-templates`);
             setTemplates(response.data);
+            if (onViewModeChange) onViewModeChange('products');
         }
         else {
             try {
                 const response = await axios.post(`/pos/filter`, { category_id: newValue });
                 setTemplates([])
                 setProducts(response.data);
+                if (onViewModeChange) onViewModeChange('products');
             } catch (error) {
                 console.error("Error fetching products:", error);
             }

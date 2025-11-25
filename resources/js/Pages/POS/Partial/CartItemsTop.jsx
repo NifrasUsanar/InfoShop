@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { IconButton, Autocomplete, TextField,  Grid, Tooltip } from '@mui/material';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import { Autocomplete, TextField, Grid, Tooltip, Box, Divider } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
 import FormDialog from '@/Pages/Contact/Partial/FormDialog';
 import { usePage } from "@inertiajs/react";
+import dayjs from 'dayjs';
+import MUIDatePicker from '@/Components/ui/MUIDatePicker';
+import MUITimePicker from '@/Components/ui/MUITimePicker';
 
 import { SharedContext } from '@/Context/SharedContext';
 
@@ -10,7 +13,17 @@ export default function CartItemsTop({ customers }) {
   const return_sale = usePage().props.return_sale;
   const [open, setOpen] = useState(false);
   const [customerList, setCustomerList] = useState(customers)
-  const { selectedCustomer, setSelectedCustomer, saleDate, setSaleDate } = useContext(SharedContext);
+  const { selectedCustomer, setSelectedCustomer, saleDate, setSaleDate, saleTime, setSaleTime } = useContext(SharedContext);
+
+  // Special option for creating a new customer
+  const CREATE_NEW_OPTION = {
+    id: 'create-new',
+    name: 'Add new customer',
+    isCreateNew: true
+  };
+
+  // Include "Add new customer" at the top of the list
+  const optionsWithCreateNew = [CREATE_NEW_OPTION, ...customerList];
 
   const handleClose = () => {
     setOpen(false);
@@ -40,72 +53,118 @@ export default function CartItemsTop({ customers }) {
     }
   }, [customers]);
 
+  useEffect(() => {
+    setSaleTime(dayjs().format('HH:mm'));
+  }, []);
+
   return (
-    <Grid sx={{ width: '100%', marginY: { xs: '1rem', sm: '1.2rem' }, alignItems: 'center', justifyContent:'space-between' }} container spacing={2} flexDirection={{ xs: 'column-reverse', sm: 'row' }} alignItems={'center'}>
+    <Box sx={{ width: '100%' }}>
+      <Grid sx={{ width: '100%', marginY: { xs: '1rem', sm: '1.2rem' }, alignItems: 'center', justifyContent:'space-between' }} container spacing={2} flexDirection={{ xs: 'column-reverse', sm: 'row' }} alignItems={'center'}>
       <Tooltip
-          title={!saleDate ? "Sale date is required" : ""} // Tooltip message if saleDate is empty
-          arrow
-          placement="top" // Adjust placement as needed
-          open={!saleDate} // Show tooltip only when saleDate is empty
-          disableHoverListener
-          PopperProps={{
-            disablePortal: true, // Ensures tooltip is attached to the right place
+        title={!saleDate ? "Sale date is required" : ""}
+        arrow
+        placement="top"
+        open={!saleDate}
+        disableHoverListener
+        PopperProps={{
+          disablePortal: true,
         }}
-        >
-      <Grid size={{ xs: 12, sm: 4 }} width={'100%'}>
-        
-          <TextField
-            label="Date"
+      >
+        <Grid size={{ xs: 12, sm: 6 }} width={'100%'}>
+          <MUIDatePicker
             name="sale_date"
-            placeholder="Date"
-            fullWidth
-            type="date"
-            slotProps={{
-              inputLabel: {
-                shrink: true,
-              },
-            }}
+            label="Date"
             value={saleDate}
-            onChange={(e) => setSaleDate(e.target.value)}
-            error={!saleDate}
-            required
-            size='small'
+            onChange={setSaleDate}
+            size="small"
           />
-        
-      </Grid>
+        </Grid>
       </Tooltip>
 
-      <Grid size={{ xs: 12, sm: 8 }} container alignItems={'center'} width={'100%'} display={'flex'}>
-        <Grid size={10}>
-          {Array.isArray(customerList) && (
-            <Autocomplete
-              disablePortal
-              options={customerList}
-              fullWidth
-              value={selectedCustomer || null}
-              getOptionKey={(option) => option.id}
-              getOptionLabel={(option) => typeof option === 'string' ? option : option.name + ' | ' + parseFloat(option.balance).toFixed(2)}
-              onChange={(event, newValue) => {
-                setSelectedCustomer(newValue)
-              }}
-              size='small'
-              renderInput={(params) => <TextField {...params} label="Customer" />}
-            />
-          )}
+      <Tooltip
+        title={!saleTime ? "Sale time is required" : ""}
+        arrow
+        placement="top"
+        open={!saleTime}
+        disableHoverListener
+        PopperProps={{
+          disablePortal: true,
+        }}
+      >
+        <Grid size={{ xs: 12, sm: 6 }} width={'100%'}>
+          <MUITimePicker
+            name="sale_time"
+            label="Time"
+            value={saleTime}
+            onChange={setSaleTime}
+            size="small"
+          />
         </Grid>
+      </Tooltip>
 
-        <Grid size={2}>
-          <IconButton disabled={return_sale} onClick={() => setOpen(true)} sx={{
-            bgcolor: 'success.main', width: '35px', height: '35px', color: 'white', '&:hover': {
-              bgcolor: 'success.dark', // Change the background color on hover
-            }
-          }}>
-            <PersonAddIcon fontSize="inherit" />
-          </IconButton>
-        </Grid>
+      <Grid size={{ xs: 12, sm: 12 }} width={'100%'}>
+        {Array.isArray(customerList) && (
+          <Autocomplete
+            disablePortal
+            options={optionsWithCreateNew}
+            fullWidth
+            value={selectedCustomer || null}
+            getOptionKey={(option) => option.id}
+            getOptionLabel={(option) => {
+              if (option.isCreateNew) {
+                return '+ Add new customer';
+              }
+              return typeof option === 'string' ? option : option.name + ' | ' + parseFloat(option.balance).toFixed(2);
+            }}
+            renderOption={(props, option) => {
+              if (option.isCreateNew) {
+                return (
+                  <Box>
+                    <Box
+                      component="li"
+                      {...props}
+                      sx={{
+                        color: 'primary.main',
+                        fontWeight: 600,
+                        py: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        '&:hover': {
+                          backgroundColor: 'primary.100',
+                          color: 'primary.900'
+                        }
+                      }}
+                    >
+                      <AddIcon sx={{ fontSize: 18 }} />
+                      Add new customer
+                    </Box>
+                    <Divider sx={{ mt: 1 }} />
+                  </Box>
+                );
+              }
+              return (
+                <Box component="li" {...props}>
+                  {option.name} | {parseFloat(option.balance).toFixed(2)}
+                </Box>
+              );
+            }}
+            onChange={(event, newValue) => {
+              // Check if "Add new customer" option was selected
+              if (newValue?.isCreateNew) {
+                setOpen(true); // Open the form dialog
+                return; // Don't set this as the selected customer
+              }
+              setSelectedCustomer(newValue);
+            }}
+            size='small'
+            renderInput={(params) => <TextField {...params} label="Customer" />}
+          />
+        )}
       </Grid>
 
       <FormDialog open={open} handleClose={handleClose} onSuccess={handleFormSuccess} contactType={'customer'} />
-    </Grid>
+      </Grid>
+    </Box>
   );
 }

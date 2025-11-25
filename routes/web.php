@@ -84,6 +84,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/collection', [CollectionController::class, 'store']);
     Route::post('/collection/{id}', [CollectionController::class, 'update']);
     Route::delete('/collections/{id}', [CollectionController::class, 'destroy']);
+    Route::post('/collections/quick-create', [CollectionController::class, 'quickCreate'])->name('collections.quick-create');
 
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
