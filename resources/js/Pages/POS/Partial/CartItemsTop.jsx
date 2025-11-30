@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Autocomplete, TextField, Grid, Tooltip, Box, Divider } from '@mui/material';
+import { Autocomplete, TextField, Grid, Tooltip, Box, Divider, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import CheckIcon from '@mui/icons-material/Check';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import FormDialog from '@/Pages/Contact/Partial/FormDialog';
 import { usePage } from "@inertiajs/react";
 import dayjs from 'dayjs';
@@ -13,7 +16,8 @@ export default function CartItemsTop({ customers }) {
   const return_sale = usePage().props.return_sale;
   const [open, setOpen] = useState(false);
   const [customerList, setCustomerList] = useState(customers)
-  const { selectedCustomer, setSelectedCustomer, saleDate, setSaleDate, saleTime, setSaleTime } = useContext(SharedContext);
+  const [isTimeEditMode, setIsTimeEditMode] = useState(false);
+  const { selectedCustomer, setSelectedCustomer, saleDate, setSaleDate, saleTime, setSaleTime, isSaleTimeManual, setIsSaleTimeManual } = useContext(SharedContext);
 
   // Special option for creating a new customer
   const CREATE_NEW_OPTION = {
@@ -53,9 +57,20 @@ export default function CartItemsTop({ customers }) {
     }
   }, [customers]);
 
-  useEffect(() => {
-    setSaleTime(dayjs().format('HH:mm'));
-  }, []);
+
+  const handleTimeEditClick = () => {
+    setIsSaleTimeManual(true); // Stop auto-updates immediately
+    setIsTimeEditMode(true);
+  };
+
+  const handleTimeSave = () => {
+    setIsTimeEditMode(false);
+  };
+
+  const handleTimeReset = () => {
+    setIsSaleTimeManual(false); // Resume auto-updates
+    setSaleTime(dayjs().format('HH:mm')); // Set to current time immediately
+  };
 
   return (
     <Box sx={{ width: '100%' }}>
@@ -92,13 +107,60 @@ export default function CartItemsTop({ customers }) {
         }}
       >
         <Grid size={{ xs: 12, sm: 6 }} width={'100%'}>
-          <MUITimePicker
-            name="sale_time"
-            label="Time"
-            value={saleTime}
-            onChange={setSaleTime}
-            size="small"
-          />
+          {isTimeEditMode ? (
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <MUITimePicker
+                name="sale_time"
+                label="Time"
+                value={saleTime}
+                onChange={setSaleTime}
+                size="small"
+                sx={{ flex: 1 }}
+              />
+              <IconButton
+                size="small"
+                onClick={handleTimeSave}
+                color="primary"
+                title="Save time"
+              >
+                <CheckIcon />
+              </IconButton>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <TextField
+                name="sale_time"
+                label="Time"
+                value={dayjs(saleTime, 'HH:mm').format('hh:mm A')}
+                size="small"
+                fullWidth
+                disabled
+                slotProps={{
+                  input: {
+                    readOnly: true,
+                  }
+                }}
+              />
+              <IconButton
+                size="small"
+                onClick={handleTimeEditClick}
+                color="primary"
+                title="Edit time"
+              >
+                <EditIcon />
+              </IconButton>
+              {isSaleTimeManual && (
+                <IconButton
+                  size="small"
+                  onClick={handleTimeReset}
+                  color="secondary"
+                  title="Reset to current time"
+                >
+                  <RefreshIcon />
+                </IconButton>
+              )}
+            </Box>
+          )}
         </Grid>
       </Tooltip>
 

@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\SaleCreated;
 use App\Notifications\SaleDeleted;
+use App\Services\ReceiptDataService;
 use Carbon\Carbon;
 
 class SaleController extends Controller
@@ -90,75 +91,13 @@ class SaleController extends Controller
 
     public function receipt($id)
     {
-        $imageUrl = '';
-        if (app()->environment('production')) $imageUrl = 'public/';
+        $receiptData = ReceiptDataService::getReceiptData($id);
 
-        $settings = Setting::all();
-        $settingArray = $settings->pluck('meta_value', 'meta_key')->all();
-        $settingArray['shop_logo'] = $imageUrl . $settingArray['shop_logo'];
-
-        $sale = Sale::select(
-            'sales.id',
-            'contact_id',            // Customer ID
-            'sale_date',              // Sale date
-            'total_amount',           // Total amount (Total amount after discount [net_total - discount])
-            'total_charge_amount',    // Total charge amount
-            'discount',                // Discount
-            'amount_received',         // Amount received
-            'status',                  // Sale status
-            'stores.address',
-            'contacts.name', // Customer name from contacts
-            'contacts.whatsapp',
-            'sales.created_by',
-            'invoice_number',
-            'stores.sale_prefix',
-            'stores.contact_number',
-            'sales.created_at'
-        )
-            ->leftJoin('contacts', 'sales.contact_id', '=', 'contacts.id') // Join with contacts table using customer_id
-            ->join('stores', 'sales.store_id', '=', 'stores.id')
-            ->where('sales.id', $id)
-            ->first();
-
-        if (!$sale) {
-            abort(404); // This will trigger the 404 error page
+        if (!$receiptData['sale']) {
+            abort(404);
         }
 
-        $user = User::find($sale->created_by);
-
-        $salesItems = SaleItem::select(
-            'sale_items.quantity',
-            'sale_items.unit_price',
-            'sale_items.discount',
-            'sale_items.flat_discount',
-            'sale_items.free_quantity',
-            'sale_items.charge_id',
-            'sale_items.item_type',
-            'sale_items.description',
-            'sale_items.charge_type',
-            'sale_items.rate_value',
-            'sale_items.rate_type',
-            'products.name',
-            DB::raw("CASE
-                WHEN products.product_type = 'reload'
-                THEN reload_and_bill_metas.account_number
-                ELSE NULL
-             END as account_number")
-        )
-            ->leftJoin('products', 'sale_items.product_id', '=', 'products.id') // Join with contacts table using customer_id
-            ->leftJoin('reload_and_bill_metas', function ($join) {
-                $join->on('sale_items.id', '=', 'reload_and_bill_metas.sale_item_id')
-                    ->where('products.product_type', '=', 'reload');
-            })
-            ->where('sale_items.sale_id', $id)
-            ->get();
-
-        return Inertia::render('Sale/Receipt', [
-            'sale' => $sale,
-            'salesItems' => $salesItems,
-            'settings' => $settingArray,
-            'user_name' => $user->name,
-        ]);
+        return Inertia::render('Sale/Receipt', $receiptData);
     }
 
     public function getSoldItems($filters)

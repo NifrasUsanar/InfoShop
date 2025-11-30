@@ -1,4 +1,4 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 // Create SharedContext
 export const SharedContext = createContext();
@@ -13,6 +13,17 @@ export const SharedProvider = ({ children }) => {
     const [selectedLabel, setSelectedLabel] = useState('');
     const [saleDate, setSaleDate] = useState(dayjs().format('YYYY-MM-DD'));
     const [saleTime, setSaleTime] = useState(dayjs().format('HH:mm')); // 24-hour format for storage
+    const [isSaleTimeManual, setIsSaleTimeManual] = useState(false);
+
+    useEffect(() => {
+        if (isSaleTimeManual) return;
+
+        const interval = setInterval(() => {
+            setSaleTime(dayjs().format('HH:mm'));
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [isSaleTimeManual, setSaleTime]);
 
     return (
         <SharedContext.Provider
@@ -30,7 +41,9 @@ export const SharedProvider = ({ children }) => {
                 saleDate,
                 setSaleDate,
                 saleTime,
-                setSaleTime
+                setSaleTime,
+                isSaleTimeManual,
+                setIsSaleTimeManual
             }}
         >
             {children}

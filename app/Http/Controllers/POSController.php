@@ -14,6 +14,7 @@ use App\Models\ProductStock;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\ReloadAndBillMeta;
+use App\Services\ReceiptDataService;
 use App\Models\Setting;
 use App\Notifications\SaleCreated;
 use Illuminate\Support\Facades\Notification;
@@ -641,7 +642,13 @@ class POSController extends Controller
 
             DB::commit();
 
-            return response()->json(['message' => 'Sale recorded successfully!', 'sale_id' => $sale->id], 201);
+            $receiptData = ReceiptDataService::getReceiptData($sale->id);
+
+            return response()->json([
+                'message' => 'Sale recorded successfully!',
+                'sale_id' => $sale->id,
+                'receipt' => $receiptData
+            ], 201);
         } catch (\Exception $e) {
             // Rollback transaction in case of error
             DB::rollBack();

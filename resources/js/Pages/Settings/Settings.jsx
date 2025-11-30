@@ -130,6 +130,7 @@ export default function Setting({ settings }) {
             show_barcode_product_price: settings.show_barcode_product_price,
             show_barcode_product_name: settings.show_barcode_product_name,
             sale_receipt_second_note: settings.sale_receipt_second_note,
+            auto_open_print_dialog: settings.auto_open_print_dialog ?? '0',
             enable_unit_discount: 'yes',
             enable_flat_item_discount: 'no',
             cart_first_focus: 'quantity',
@@ -501,6 +502,21 @@ export default function Setting({ settings }) {
                                                         </Typography>
                                                     </MenuItem>
                                                 ))}
+                                            </TextField>
+                                        </Grid>
+                                        <Grid size={12}>
+                                            <TextField
+                                                fullWidth
+                                                variant="outlined"
+                                                label={"Auto Open Print Dialog"}
+                                                name="auto_open_print_dialog"
+                                                required
+                                                value={settingFormData.auto_open_print_dialog}
+                                                onChange={handleChange}
+                                                select
+                                            >
+                                                <MenuItem value="1">Yes</MenuItem>
+                                                <MenuItem value="0">No</MenuItem>
                                             </TextField>
                                         </Grid>
                                     </Grid>

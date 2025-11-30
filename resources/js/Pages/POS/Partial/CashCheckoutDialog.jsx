@@ -5,8 +5,9 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import PaymentsIcon from "@mui/icons-material/Payments";
-import { Box,  Grid, IconButton, TextField } from "@mui/material";
+import { Box, Grid, IconButton, TextField, FormControlLabel, Checkbox } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import PrintReceiptModal from "@/Components/PrintReceiptModal";
 import PercentIcon from '@mui/icons-material/Percent';
 import InputAdornment from '@mui/material/InputAdornment';
 import { router } from '@inertiajs/react';
@@ -31,6 +32,11 @@ export default function CashCheckoutDialog({ disabled }) {
     const { cartState, cartTotal, totalProfit, emptyCart, charges, totalChargeAmount, finalTotal, discount, setDiscount: setContextDiscount, calculateChargesWithDiscount } = useCart();
     const { selectedCustomer, saleDate, saleTime } = useContext(SharedContext);
     const [loading, setLoading] = useState(false);
+
+    const [showPrintModal, setShowPrintModal] = useState(false);
+    const [receiptData, setReceiptData] = useState(null);
+    const autoOpenPrintSetting = usePage().props.settings?.auto_open_print_dialog ?? '1';
+    const [openPrintDialog, setOpenPrintDialog] = useState(autoOpenPrintSetting === '1');
 
     const [amountReceived, setAmountReceived] = useState(0);
     const [recalculatedCharges, setRecalculatedCharges] = useState(totalChargeAmount);
@@ -113,7 +119,12 @@ export default function CashCheckoutDialog({ disabled }) {
                 emptyCart() //Clear the cart from the Context API
                 setAmountReceived(0)
                 setContextDiscount(0)
-                router.visit('/receipt/' + resp.data.sale_id)
+                if (openPrintDialog && resp.data.receipt) {
+                    setReceiptData(resp.data.receipt);
+                    setShowPrintModal(true);
+                } else {
+                    router.visit('/receipt/' + resp.data.sale_id)
+                }
                 axios.get('/sale-notification/' + resp.data.sale_id)
                     .then((resp) => {
                         console.log("Notification sent successfully:", resp.data.success);
@@ -303,6 +314,19 @@ export default function CashCheckoutDialog({ disabled }) {
                         sx={{ mt: '2rem', }}
                     />
 
+                    <Grid container size={12} sx={{ mt: "2rem", mb: "1rem" }}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={openPrintDialog}
+                                    onChange={(e) => setOpenPrintDialog(e.target.checked)}
+                                    name="open_print_dialog"
+                                />
+                            }
+                            label="Open Print Dialog"
+                        />
+                    </Grid>
+
                 </DialogContent>
                 <DialogActions>
                     <Button
@@ -324,6 +348,14 @@ export default function CashCheckoutDialog({ disabled }) {
                     </Button>
                 </DialogActions>
             </Dialog>
+            <PrintReceiptModal
+                open={showPrintModal}
+                onClose={() => {
+                    setShowPrintModal(false);
+                    setReceiptData(null);
+                }}
+                receiptData={receiptData}
+            />
         </Grid>
     );
 }

@@ -20,6 +20,7 @@ class SettingSeeder extends Seeder
             ['meta_key' => 'sale_print_padding_right', 'meta_value' => '35'],
             ['meta_key' => 'sale_print_padding_left', 'meta_value' => '2'],
             ['meta_key' => 'sale_print_font', 'meta_value' => 'Arial, sans-serif'],
+            ['meta_key' => 'auto_open_print_dialog', 'meta_value' => '0'],
             ['meta_key' => 'show_barcode_store', 'meta_value' => 'on'],
             ['meta_key' => 'show_barcode_product_price', 'meta_value' => 'on'],
             ['meta_key' => 'show_barcode_product_name', 'meta_value' => 'on'],

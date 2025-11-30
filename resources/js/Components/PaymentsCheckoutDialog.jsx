@@ -9,7 +9,10 @@ import {
     Grid,
     Divider,
     Table, TableBody, TableRow, TableCell,
+    FormControlLabel,
+    Checkbox,
 } from "@mui/material";
+import PrintReceiptModal from "@/Components/PrintReceiptModal";
 
 import PercentIcon from '@mui/icons-material/Percent';
 import PaymentsIcon from '@mui/icons-material/Payments';
@@ -45,6 +48,11 @@ export default function PaymentsCheckoutDialog({
     const edit_sale_id = usePage().props.sale_id;
 
     const [loading, setLoading] = useState(false);
+
+    const [showPrintModal, setShowPrintModal] = useState(false);
+    const [receiptData, setReceiptData] = useState(null);
+    const autoOpenPrintSetting = usePage().props.settings?.auto_open_print_dialog ?? '1';
+    const [openPrintDialog, setOpenPrintDialog] = useState(autoOpenPrintSetting === '1');
 
     const [amount, setAmount] = useState((finalTotal - discount))
     const [payments, setPayments] = useState([])
@@ -155,9 +163,15 @@ export default function PaymentsCheckoutDialog({
                 emptyCart(); //Clear the cart from the Context API
                 setContextDiscount(0);
                 setPayments([])
-                if (!is_sale) router.visit("/purchases");
-                else {
-                    router.visit('/receipt/' + resp.data.sale_id)
+                if (!is_sale) {
+                    router.visit("/purchases");
+                } else {
+                    if (openPrintDialog && resp.data.receipt) {
+                        setReceiptData(resp.data.receipt);
+                        setShowPrintModal(true);
+                    } else {
+                        router.visit('/receipt/' + resp.data.sale_id)
+                    }
                     axios.get('/sale-notification/' + resp.data.sale_id)
                         .then((resp) => {
                             console.log("Notification sent successfully:", resp.data.success);
@@ -281,16 +295,19 @@ export default function PaymentsCheckoutDialog({
                         </Grid>
 
                         <Grid size={{ xs: 12, sm: 6 }}>
-
                             <TextField
                                 size="large"
                                 fullWidth
-                                type="number"
                                 name="net_total"
                                 label="Total"
                                 variant="outlined"
-                                sx={{ input: { fontWeight: 'bold', } }}
-                                value={formatCurrency(reactiveFinalTotal, false)}
+                                sx={{
+                                    input: { fontWeight: 'bold' },
+                                    '& .MuiOutlinedInput-root': {
+                                        backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                                    }
+                                }}
+                                value={String(formatCurrency(reactiveFinalTotal, false)) || '0'}
                                 onFocus={(event) => {
                                     event.target.select();
                                 }}
@@ -308,12 +325,10 @@ export default function PaymentsCheckoutDialog({
                                     },
                                 }}
                             />
-
                         </Grid>
 
                         <Grid container size={12} flexDirection={'column'} alignItems={'center'} justifyContent={'center'}>
                             <Grid size={12} sx={{ mt: '1rem' }}>
-
                                 <TextField
                                     autoFocus
                                     fullWidth
@@ -429,6 +444,19 @@ export default function PaymentsCheckoutDialog({
                         </TableBody>
                     </Table>
 
+                    <Grid container size={12} sx={{ mt: "1rem", mb: "1rem" }}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={openPrintDialog}
+                                    onChange={(e) => setOpenPrintDialog(e.target.checked)}
+                                    name="open_print_dialog"
+                                />
+                            }
+                            label="Open Print Dialog"
+                        />
+                    </Grid>
+
                     <TextField
                         fullWidth
                         variant="outlined"
@@ -451,6 +479,14 @@ export default function PaymentsCheckoutDialog({
                     </Button>
                 </DialogActions>
             </Dialog>
+            <PrintReceiptModal
+                open={showPrintModal}
+                onClose={() => {
+                    setShowPrintModal(false);
+                    setReceiptData(null);
+                }}
+                receiptData={receiptData}
+            />
         </>
     );
 }
