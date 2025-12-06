@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             '/api/*',
             '/install/*',
+            '/automation/backup/run',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

@@ -57,6 +57,9 @@ Route::post('/api/application-update', [UpgradeController::class, 'applicationUp
 // V2 Update routes (migration-based)
 Route::post('/api/application-update-v2', [UpgradeController::class, 'applicationUpdateV2']);
 
+Route::match(['get', 'post'], '/automation/backup/run', [BackupController::class, 'automation'])
+    ->middleware('throttle:5,1')
+    ->name('automation.backup');
 
 // Unified Sync API endpoints for offline-first InfoPOS app are now defined in routes/api.php
 
@@ -253,8 +256,12 @@ Route::get('/update', [UpgradeController::class, 'showUploadForm'])->name('uploa
         return 'Update';
     });
 
-    Route::get('/download-backup/{file}', [BackupController::class, 'download']);
-    Route::get('/backup-now', [BackupController::class, 'downloadBackupZip']);
+    Route::get('/api/backups', [BackupController::class, 'listBackups'])->name('backups.list');
+    Route::delete('/api/backups/{file}', [BackupController::class, 'deleteBackup'])
+        ->where('file', '[A-Za-z0-9._-]+')
+        ->name('backups.delete');
+    Route::get('/download-backup/{file}', [BackupController::class, 'download'])->name('backups.download');
+    Route::get('/backup-now', [BackupController::class, 'downloadBackupZip'])->name('backups.download-now');
 
     Route::post('/test-mail', function (Request $request) {
         Mail::raw('Test email', function ($message) use ($request) {

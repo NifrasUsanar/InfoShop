@@ -3,10 +3,12 @@ import { useState } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
 import { Box, Tabs, Tab } from "@mui/material";
+import ArchiveIcon from "@mui/icons-material/Archive";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import StorageIcon from "@mui/icons-material/Storage";
 import UpdateV2Tab from "./Tabs/UpdateV2Tab";
 import DatabaseStructureTab from "./Tabs/DatabaseStructureTab";
+import BackupFilesTab from "./Tabs/BackupFilesTab";
 
 export default function Maintenance() {
     const [activeTab, setActiveTab] = useState(0);
@@ -61,12 +63,24 @@ export default function Maintenance() {
                                         px: { xs: 1.5, sm: 2 }
                                     }}
                                 />
+                                <Tab
+                                    icon={<ArchiveIcon />}
+                                    iconPosition="start"
+                                    label={
+                                        <span className="hidden sm:inline">Backup Files</span>
+                                    }
+                                    sx={{
+                                        minWidth: 'auto',
+                                        px: { xs: 1.5, sm: 2 }
+                                    }}
+                                />
                             </Tabs>
                         </Box>
 
                         <Box sx={{ p: 3 }}>
                             {activeTab === 0 && <UpdateV2Tab />}
                             {activeTab === 1 && <DatabaseStructureTab />}
+                            {activeTab === 2 && <BackupFilesTab />}
                         </Box>
                     </div>
                 </div>
