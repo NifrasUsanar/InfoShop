@@ -58,7 +58,7 @@ export default function BatchModal({
         formJson.append('quantity', formState.quantity);
         formJson.append('cost', formState.cost);
         formJson.append('price', formState.price);
-        formJson.append('expiry_date', formState.expiry_date || '');
+        formJson.append('expiry_date', (formState.expiry_date === 'N/A' ? '' : formState.expiry_date) || '');
         formJson.append('is_active', formState.is_active ? 1 : 0);
         formJson.append('is_featured', formState.is_featured ? 1 : 0);
         if (formState.contact_id) {
@@ -107,11 +107,11 @@ export default function BatchModal({
     const updateFormStateFromBatch = (batch) => {
         setFormState((prevState) => ({
             ...prevState,
-            batch_id: batch.id || batch.batch_id,
+            batch_id: batch.batch_id || batch.id,
             cost: batch.cost,
             price: batch.price,
             batch_number: batch.batch_number,
-            expiry_date: batch.expiry_date,
+            expiry_date: batch.expiry_date === 'N/A' ? '' : batch.expiry_date,
             is_active: batch.is_active === 1 ? true : false,
             is_featured: batch.is_featured === 1 ? true : false,
             contact_id: batch.contact_id,

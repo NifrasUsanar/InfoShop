@@ -57,6 +57,8 @@ Route::post('/api/application-update', [UpgradeController::class, 'applicationUp
 // V2 Update routes (migration-based)
 Route::post('/api/application-update-v2', [UpgradeController::class, 'applicationUpdateV2']);
 
+// Automated Backup Endpoint for external schedulers
+// http://localhost:8000/automation/backup/run?token=[xxxxxxxxxxxxxxxxxxxx] | token is defined in .env as INFOSHOP_TOKEN
 Route::match(['get', 'post'], '/automation/backup/run', [BackupController::class, 'automation'])
     ->middleware('throttle:5,1')
     ->name('automation.backup');

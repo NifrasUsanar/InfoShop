@@ -1,18 +1,18 @@
 import React from 'react';
 import { Card, CardContent, Typography, Box } from '@mui/material';
-import FolderIcon from '@mui/icons-material/Folder';
+import { Folder } from 'lucide-react';
 import CategoryIcon from '@mui/icons-material/Category';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import BrandingWatermarkIcon from '@mui/icons-material/BrandingWatermark';
 
-export default function CollectionItem({ collection, onClick }) {
+export default function CollectionItem({ collection, onClick, hasChildren = false }) {
 
     const getIcon = (type) => {
         switch (type) {
             case 'category': return <CategoryIcon fontSize="large" color="primary" />;
             case 'brand': return <BrandingWatermarkIcon fontSize="large" color="secondary" />;
             case 'tag': return <LocalOfferIcon fontSize="large" color="action" />;
-            default: return <FolderIcon fontSize="large" />;
+            default: return <Folder size={32} color="currentColor" />;
         }
     };
 
@@ -35,10 +35,31 @@ export default function CollectionItem({ collection, onClick }) {
                     transform: 'translateY(-4px)',
                     boxShadow: 4
                 },
-                backgroundColor: 'background.paper'
+                backgroundColor: 'background.paper',
+                position: 'relative'
             }}
             onClick={() => onClick(collection)}
         >
+            {/* Parent Category Indicator */}
+            {hasChildren && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        backgroundColor: 'primary.main',
+                        color: 'white',
+                        borderRadius: '50%',
+                        padding: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+                    }}
+                >
+                    <Folder size={18} />
+                </Box>
+            )}
             <CardContent sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -59,7 +80,7 @@ export default function CollectionItem({ collection, onClick }) {
                     {getIcon(collection.collection_type)}
                 </Box>
 
-                <Typography variant="h6" component="div" align="center" noWrap sx={{ width: '100%', fontWeight: 'bold' }}>
+                <Typography variant="body1" component="div" align="center" noWrap sx={{ width: '100%', fontWeight: 'bold' }}>
                     {collection.name}
                 </Typography>
 

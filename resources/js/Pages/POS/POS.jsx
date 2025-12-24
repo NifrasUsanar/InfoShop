@@ -3,6 +3,7 @@ import { Head, Link, router } from "@inertiajs/react";
 import {
     AppBar,
     Box,
+    Breadcrumbs,
     CssBaseline,
     Divider,
     Drawer,
@@ -10,11 +11,12 @@ import {
     Toolbar,
     Typography,
     Grid,
+    Link as MuiLink,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import HomeIcon from "@mui/icons-material/Home";
+import { Folder, FolderOpen } from "lucide-react";
 import { Button } from "@mui/material";
 
 import ProductItem from "./Partial/ProductItem";
@@ -58,6 +60,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
     const [templates, setTemplates] = useState([]);
     const [viewMode, setViewMode] = useState('products'); // 'products' or 'collections'
     const [selectedCollection, setSelectedCollection] = useState(null);
+    const [selectedChildCategories, setSelectedChildCategories] = useState([]);
     const [tabValue, setTabValue] = useState(0);
 
     const handleDrawerClose = () => {
@@ -112,58 +115,33 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
 
     const handleCollectionClick = async (collection) => {
         try {
-            // Use the generic collection_id filter which works for all types (category, tag, brand)
-            // via the collection_product pivot table
+            // Fetch products for this collection (parent or child)
             const payload = { collection_id: collection.id };
-
             const response = await axios.post(`/pos/filter`, payload);
+
             setDataProducts(response.data);
             setTemplates([]);
             setSelectedCollection(collection);
+
+            // Show child categories if this collection has children
+            if (collection.children && collection.children.length > 0) {
+                setSelectedChildCategories(collection.children);
+            } else {
+                setSelectedChildCategories([]);
+            }
+
             setViewMode('products');
         } catch (error) {
             console.error("Error fetching products for collection:", error);
         }
     };
 
-    const handleBackToCollections = () => {
-        // If we are in Featured tab (0), "Back" means clearing selection to show all collections again
-        // If we were in "Collections" view mode (legacy), it switches back
-        // But with new design, we just clear selection
-        setSelectedCollection(null);
-
-        // If we are in Featured tab, we reload featured products? 
-        // Or we just clear the filter? 
-        // When we clicked a collection, we fetched filtered products.
-        // To go back, if we are in Tab 0, we should probably restore Featured products.
-        // But we don't have them cached easily unless we reload or keep them.
-        // For simplicity, if we are in Tab 0, we can trigger a reload of featured items 
-        // or just rely on the fact that we render collections below.
-
-        // Actually, if we are in Tab 0, we want to see Featured Items + Collections.
-        // So we need to reset dataProducts to Featured Items.
-        // We can pass a callback to POSBottomBar to reset? Or just reload here.
-        // Since we lifted state, maybe we can just reset here if we had the fetch logic.
-        // But fetch logic is in POSBottomBar. 
-        // Let's just clear selection for now, but we need to restore products.
-        // A simple way is to reload the page or re-fetch featured.
-
-        if (tabValue === 0) {
-            // We need to restore featured products. 
-            // Since we don't have the fetch logic here, we might need to rely on the user clicking "Featured" tab again?
-            // Or better, we can just reload the window location to reset? No that's slow.
-            // Let's use the initial `products` prop if it hasn't changed?
-            setDataProducts(products);
-        }
-
-        setViewMode('products');
-    };
-
     const handleViewModeChange = (mode) => {
         setViewMode(mode);
-        // If switching view mode via bottom bar (tabs), clear selected collection
+        // If switching view mode via bottom bar (tabs), clear selected collection and child categories
         if (mode === 'products' || mode === 'collections') {
             setSelectedCollection(null);
+            setSelectedChildCategories([]);
         }
     };
 
@@ -275,33 +253,91 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                     <Grid container spacing={1} sx={{ mb: 8 }}>
                         <SaleTemplateItem templates={templates} setTemplates={setTemplates} />
 
-                        {/* Back to Collections Button */}
+                        {/* Breadcrumb Navigation */}
                         {viewMode === 'products' && selectedCollection && (
-                            <Grid size={12} sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
-                                <Button
-                                    startIcon={<ArrowBackIcon />}
-                                    onClick={handleBackToCollections}
-                                    variant="outlined"
-                                    size="small"
-                                >
-                                    Back to Collections
-                                </Button>
-                                <Typography variant="subtitle1" component="span" sx={{ ml: 2, fontWeight: 'bold' }}>
-                                    {selectedCollection.name}
-                                </Typography>
+                            <Grid size={12} sx={{ mb: 2 }}>
+                                <Breadcrumbs separator="/" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <MuiLink
+                                        component="button"
+                                        variant="body2"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            setSelectedCollection(null);
+                                            setSelectedChildCategories([]);
+                                            if (tabValue === 0) {
+                                                setDataProducts(products);
+                                            }
+                                        }}
+                                        sx={{ cursor: 'pointer', color: 'primary.main', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                                    >
+                                        <HomeIcon sx={{ fontSize: '18px' }} />
+                                        Home
+                                    </MuiLink>
+                                    {selectedCollection.parent_id && (
+                                        <MuiLink
+                                            component="button"
+                                            variant="body2"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                const parentCollection = all_collections?.find(c => c.id === selectedCollection.parent_id);
+                                                if (parentCollection) {
+                                                    handleCollectionClick(parentCollection);
+                                                }
+                                            }}
+                                            sx={{ cursor: 'pointer', color: 'primary.main', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                                        >
+                                            <Folder size={18} />
+                                            {all_collections?.find(c => c.id === selectedCollection.parent_id)?.name}
+                                        </MuiLink>
+                                    )}
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.primary', fontWeight: 'bold' }}>
+                                        <FolderOpen size={18} />
+                                        {selectedCollection.name}
+                                    </Box>
+                                </Breadcrumbs>
                             </Grid>
                         )}
 
                         {viewMode === 'products' && (
-                            dataProducts?.map((product) => (
-                                <Grid
-                                    key={product.id + product.batch_number}
-                                    size={{ xs: 6, sm: 6, md: 2 }}
-                                    sx={{ cursor: "pointer", }}
-                                >
-                                    <ProductItem product={product}></ProductItem>
-                                </Grid>
-                            ))
+                            <>
+                                {/* Display child categories if parent is selected */}
+                                {selectedChildCategories && selectedChildCategories.length > 0 && (
+                                    <>
+                                        <Grid size={12} sx={{ mb: 2 }}>
+                                            <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                                                Subcategories
+                                            </Typography>
+                                        </Grid>
+                                        {selectedChildCategories.map((child) => (
+                                            <Grid
+                                                key={child.id}
+                                                size={{ xs: 6, sm: 4, md: 3, lg: 2 }}
+                                                sx={{ p: 1 }}
+                                            >
+                                                <CollectionItem
+                                                    collection={child}
+                                                    onClick={handleCollectionClick}
+                                                    hasChildren={child.children && child.children.length > 0}
+                                                />
+                                            </Grid>
+                                        ))}
+                                        <Grid size={12} sx={{ my: 2 }}>
+                                            <Divider />
+                                        </Grid>
+                                    </>
+                                )}
+
+                                {/* Display products */}
+                                {dataProducts?.map((product) => (
+                                    <Grid
+                                        key={product.id + product.batch_number}
+                                        size={{ xs: 6, sm: 6, md: 2 }}
+                                        sx={{ cursor: "pointer", }}
+                                    >
+                                        <ProductItem product={product}></ProductItem>
+                                    </Grid>
+                                ))}
+                            </>
                         )}
 
                         {/* Collections Grid - Displayed below featured items (Tab 0) when no specific collection is selected */}
@@ -323,6 +359,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                                         <CollectionItem
                                             collection={collection}
                                             onClick={handleCollectionClick}
+                                            hasChildren={collection.children && collection.children.length > 0}
                                         />
                                     </Grid>
                                 ))}

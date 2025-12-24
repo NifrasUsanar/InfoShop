@@ -138,7 +138,9 @@ class POSController extends Controller
             return redirect()->route('store'); // Adjust the route name as necessary
         }
         $categories = Collection::where('collection_type', 'category')->get();
-        $allCollections = Collection::all();
+        $allCollections = Collection::orderByRaw('CASE WHEN collection_type = "category" THEN 1 WHEN collection_type = "brand" THEN 2 WHEN collection_type = "tag" THEN 3 ELSE 4 END, parent_id IS NULL DESC, name ASC')
+            ->with('children')
+            ->get();
         $products = $this->getProducts();
         $miscSettings = Setting::where('meta_key', 'misc_settings')->first();
         $miscSettings = json_decode($miscSettings->meta_value, true);
@@ -183,7 +185,9 @@ class POSController extends Controller
         $currentStore = Store::find($sale->store_id);
 
         $categories = Collection::where('collection_type', 'category')->get();
-        $allCollections = Collection::all();
+        $allCollections = Collection::orderByRaw('CASE WHEN collection_type = "category" THEN 1 WHEN collection_type = "brand" THEN 2 WHEN collection_type = "tag" THEN 3 ELSE 4 END, parent_id IS NULL DESC, name ASC')
+            ->with('children')
+            ->get();
         $products = $this->getProducts();
         $miscSettings = Setting::where('meta_key', 'misc_settings')->first();
         $miscSettings = json_decode($miscSettings->meta_value, true);
