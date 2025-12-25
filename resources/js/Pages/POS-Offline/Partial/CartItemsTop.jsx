@@ -5,7 +5,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import FormDialog from '@/Pages/Contact/Partial/FormDialog';
-import { usePage } from "@inertiajs/react";
+import { useAppConfig } from "../contexts/AppConfigContext";
 import dayjs from 'dayjs';
 import MUIDatePicker from '@/Components/ui/MUIDatePicker';
 import MUITimePicker from '@/Components/ui/MUITimePicker';
@@ -13,7 +13,7 @@ import MUITimePicker from '@/Components/ui/MUITimePicker';
 import { SharedContext } from '@/Context/SharedContext';
 
 export default function CartItemsTop({ customers }) {
-  const return_sale = usePage().props.return_sale;
+  const { return_sale } = useAppConfig();
   const [open, setOpen] = useState(false);
   const [customerList, setCustomerList] = useState(customers)
   const [isTimeEditMode, setIsTimeEditMode] = useState(false);
@@ -55,7 +55,7 @@ export default function CartItemsTop({ customers }) {
       const initialCustomer = customerList.find(customer => customer.id === 1) || customerList[0];
       setSelectedCustomer(initialCustomer || null);
     }
-  }, [customers]);
+  }, [customerList]); // Depend on customerList instead of customers to prevent unnecessary updates
 
 
   const handleTimeEditClick = () => {
@@ -179,12 +179,14 @@ export default function CartItemsTop({ customers }) {
               return typeof option === 'string' ? option : option.name + ' | ' + parseFloat(option.balance).toFixed(2);
             }}
             renderOption={(props, option) => {
+              const { key, ...otherProps } = props;
+
               if (option.isCreateNew) {
                 return (
-                  <Box>
+                  <Box key={key}>
                     <Box
                       component="li"
-                      {...props}
+                      {...otherProps}
                       sx={{
                         color: 'primary.main',
                         fontWeight: 600,
@@ -206,7 +208,7 @@ export default function CartItemsTop({ customers }) {
                 );
               }
               return (
-                <Box component="li" {...props}>
+                <Box component="li" key={key} {...otherProps}>
                   {option.name} | {parseFloat(option.balance).toFixed(2)}
                 </Box>
               );

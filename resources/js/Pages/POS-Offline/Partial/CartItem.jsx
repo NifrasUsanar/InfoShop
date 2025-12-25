@@ -8,7 +8,7 @@ import { Avatar, Box, Typography, IconButton } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import QuantityInput from './QuantityInput';
 import CartItemModal from './CartItemModal';
-import { usePage } from "@inertiajs/react";
+import { useAppConfig } from "../contexts/AppConfigContext";
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 
@@ -19,9 +19,7 @@ import { useCurrencyFormatter } from '@/lib/currencyFormatter';
 
 export default function CartItems() {
   const formatCurrency = useCurrencyFormatter();
-  const return_sale = usePage().props.return_sale;
-  const edit_sale = usePage().props.edit_sale;
-  const sale_data = usePage().props.sale_data;
+  const { return_sale, edit_sale, sale_data } = useAppConfig();
 
   const { cartState, removeFromCart, emptyCart, emptyCartItemsOnly, addToCart } = useCart();
   const { setCartItemModalOpen, setSelectedCartItem, cartItemModalOpen } = useContext(SharedContext);
@@ -61,7 +59,8 @@ export default function CartItems() {
         addToCart(item, item.quantity);
       })
     }
-  }, [edit_sale, sale_data?.cart_snapshot])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edit_sale, sale_data?.cart_snapshot]) // emptyCartItemsOnly and addToCart are stable functions from context
 
   return (
     <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
@@ -104,13 +103,15 @@ export default function CartItems() {
               }
             />
 
-            <Box className="flex flex-row">
-              <div className="relative w-full flex flex-row">
-                <QuantityInput cartItem={{ ...item, cart_index: index }}></QuantityInput>
-                <IconButton aria-label="delete" color='error' sx={{ ml: '8px' }} onClick={() => removeFromCart(index)}>
-                  <DeleteIcon />
-                </IconButton>
-              </div>
+            <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1 }}>
+              <QuantityInput cartItem={{ ...item, cart_index: index }}></QuantityInput>
+              <IconButton
+                aria-label="delete"
+                color='error'
+                onClick={() => removeFromCart(index)}
+              >
+                <DeleteIcon />
+              </IconButton>
             </Box>
           </ListItem>
           <Divider variant="inset" component="li" />

@@ -5,6 +5,7 @@ import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import AddCardIcon from "@mui/icons-material/AddCard";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import PaymentIcon from '@mui/icons-material/Payment';
 import Grid from "@mui/material/Grid";
 
 import Menu from '@mui/material/Menu';
@@ -17,12 +18,13 @@ import { styled, alpha } from '@mui/material/styles';
 
 import { useSales as useCart } from "@/Context/SalesContext";
 import { SharedContext } from "@/Context/SharedContext";
-import { usePage, Link } from "@inertiajs/react";
+import { useAppConfig } from "../contexts/AppConfigContext";
 
 import HeldItemsModal from "./HeldItemsModal";
-import PaymentsCheckoutDialog from "@/Components/PaymentsCheckoutDialog";
+import CheckoutModal from "./CheckoutModal";
+// import PaymentsCheckoutDialog from "@/Components/PaymentsCheckoutDialog";
 import QuotationDialog from "./QuotationDialog";
-import CashCheckoutDialog from "./CashCheckoutDialog";
+// import CashCheckoutDialog from "./CashCheckoutDialog";
 import SaleTemplateDialog from "../SaleTemplate/SaleTemplateDialog";
 
 import Swal from "sweetalert2";
@@ -74,13 +76,13 @@ const StyledMenu = styled((props) => (
 }));
 
 export default function CartFooter() {
-    const return_sale = usePage().props.return_sale;
-    const edit_sale = usePage().props.edit_sale;
+    const { return_sale, edit_sale } = useAppConfig();
 
     const { cartState, holdCart, emptyCart } = useCart();
     const { selectedCustomer, saleDate, saleTime } = useContext(SharedContext);
     const [heldModalOpen, setHeldModalOpen] = useState(false);
-    const [paymentsModalOpen, setPaymentsModalOpen] = useState(false);
+    const [checkoutModalOpen, setCheckoutModalOpen] = useState(false);
+    // const [paymentsModalOpen, setPaymentsModalOpen] = useState(false);
     const [quotationModalOpen, setQuotationModalOpen] = useState(false);
     const [saleTemplateModalOpen, setSaleTemplateModalOpen] = useState(false);
 
@@ -124,14 +126,16 @@ export default function CartFooter() {
     };
 
     return (
-        <div className={'w-full pb-2'}>
+        <div className="w-full pb-4">
             <Grid
                 container
                 spacing={1}
-                size={12}
+                columns={12}
+                sx={{ margin: 0, width: '100%' }}
             >
+                {/* EMPTY Button - Desktop: 25% (3/12), Hidden on mobile */}
                 {!isMobile && (
-                    <Grid size={{ xs: 6, sm: 3 }}>
+                    <Grid size={{ sm: 3 }}>
                         <Button
                             variant="contained"
                             color="error"
@@ -148,6 +152,7 @@ export default function CartFooter() {
                     </Grid>
                 )}
 
+                {/* MORE/ACTIONS Button - Desktop: 25% (3/12), Mobile: 100% (12/12) */}
                 <Grid size={{ xs: 12, sm: 3 }}>
                     <Button
                         id="demo-customized-button"
@@ -167,17 +172,37 @@ export default function CartFooter() {
                             },
                         }}
                     >
-                        {isMobile ? "Actions" : "More"}
+                        {isMobile ? "ACTIONS" : "MORE"}
                     </Button>
-                    <StyledMenu
-                        id="demo-customized-menu"
-                        MenuListProps={{
-                            'aria-labelledby': 'demo-customized-button',
-                        }}
-                        anchorEl={anchorEl}
-                        open={open}
-                        onClose={handleClose}
+                </Grid>
+
+                {/* CHECKOUT Button - Desktop: 50% (6/12), Mobile: 100% (12/12) */}
+                <Grid size={{ xs: 12, sm: 6 }}>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<PaymentIcon />}
+                        disabled={
+                            cartState.length === 0 || selectedCustomer === null || !saleDate
+                        }
+                        onClick={() => setCheckoutModalOpen(true)}
+                        size="large"
+                        fullWidth
                     >
+                        CHECKOUT
+                    </Button>
+                </Grid>
+            </Grid>
+
+            <StyledMenu
+                id="demo-customized-menu"
+                MenuListProps={{
+                    'aria-labelledby': 'demo-customized-button',
+                }}
+                anchorEl={anchorEl}
+                open={open}
+                onClose={handleClose}
+            >
 
                         {isMobile ? (
                             <div>
@@ -189,7 +214,7 @@ export default function CartFooter() {
                                     <DeleteForeverIcon />
                                     EMPTY
                                 </MenuItem>
-                                <MenuItem
+                                {/* <MenuItem
                                     disableRipple
                                     disabled={cartState.length === 0}
                                     onClick={() => {
@@ -199,7 +224,7 @@ export default function CartFooter() {
                                 >
                                     <AddCardIcon />
                                     PAYMENT
-                                </MenuItem>
+                                </MenuItem> */}
                             </div>
                         ) : null}
 
@@ -230,48 +255,32 @@ export default function CartFooter() {
                             <ReceiptIcon />
                             QUOTATION
                         </MenuItem>
-                    </StyledMenu>
-                </Grid>
+            </StyledMenu>
 
-                {/* Show only for desktop, hide it for mobile */}
-                {!isMobile && (
-                    <Grid size={{ xs: 6, sm: 6 }}>
-                        <Button
-                            variant="contained"
-                            endIcon={<AddCardIcon />}
-                            disabled={
-                                cartState.length === 0 || selectedCustomer === null || !saleDate
-                            }
-                            onClick={() => setPaymentsModalOpen(true)}
-                            size="large"
-                            fullWidth
-                        >
-                            PAYMENTS
-                        </Button>
-                    </Grid>
-                )}
-            </Grid>
-
-            <Grid container mt={1}>
+            {/* <Grid container mt={1}>
                 <CashCheckoutDialog
                     disabled={
                         cartState.length === 0 || selectedCustomer === null || !saleDate
                     }
                 />
-            </Grid>
+            </Grid> */}
 
             <HeldItemsModal
                 modalOpen={heldModalOpen}
                 setModalOpen={setHeldModalOpen}
             />
-            <PaymentsCheckoutDialog
+            <CheckoutModal
+                open={checkoutModalOpen}
+                onClose={() => setCheckoutModalOpen(false)}
+            />
+            {/* <PaymentsCheckoutDialog
                 useCart={useCart}
                 open={paymentsModalOpen}
                 setOpen={setPaymentsModalOpen}
                 selectedContact={selectedCustomer}
                 is_sale={true}
                 formData={{ sale_date: saleDate, sale_time: saleTime }}
-            />
+            /> */}
             <QuotationDialog
                 useCart={useCart}
                 open={quotationModalOpen}

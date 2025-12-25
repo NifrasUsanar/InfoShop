@@ -119,7 +119,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/products/{product_id}/batches', [ProductController::class, 'getBatches'])->name('products.getBatches');
 
     Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
-    Route::get('/pos-offline', [POSController::class, 'offlineIndex'])->name('pos.offline');
+    // Standalone POS-Offline (React SPA)
+    Route::get('/pos-offline', function () {
+        return view('pos-offline');
+    })->name('pos.offline.standalone');
+    // Old Inertia POS-Offline (keep for reference, can be removed later)
+    Route::get('/pos-offline-inertia', [POSController::class, 'offlineIndex'])->name('pos.offline.inertia');
     Route::get('/pos/{sale_id}/return', [POSController::class, 'returnIndex'])->name('pos.return');
     Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
     Route::get('/pos/customer-display', [POSController::class, 'customerDisplay']);

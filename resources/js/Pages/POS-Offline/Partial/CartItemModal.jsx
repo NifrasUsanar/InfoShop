@@ -9,7 +9,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import InputAdornment from "@mui/material/InputAdornment";
-import { usePage } from "@inertiajs/react";
+import { useAppConfig } from "../contexts/AppConfigContext";
 
 import { useSales } from "@/Context/SalesContext";
 import { SharedContext } from "@/Context/SharedContext";
@@ -17,7 +17,8 @@ import Commission from "../ProductTypes/Commission";
 import { useCurrencyStore } from "@/stores/currencyStore";
 
 export default function CartItemModal() {
-    const { return_sale, cart_first_focus, misc_settings } = usePage().props ?? {};
+    const { return_sale, misc_settings } = useAppConfig();
+    const cart_first_focus = misc_settings?.cart_first_focus;
     const [showCost, setShowCost] = useState(false);
     const currencySymbol = useCurrencyStore((state) => state.settings.currency_symbol);
     const handleClickShowCost = () => setShowCost((show) => !show);

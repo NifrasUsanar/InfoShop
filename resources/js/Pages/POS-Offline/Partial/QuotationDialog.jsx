@@ -29,33 +29,22 @@ export default function QuotationDialog({
 
         formJson.cartItems = cartState;
         formJson.contact_id = selectedContact.id;
-        formJson.profit_amount = totalProfit - discount
+        formJson.profit_amount = totalProfit - discount;
 
-        axios
-            .post('/quotations', formJson)
-            .then((resp) => {
-                Swal.fire({
-                    title: "Success!",
-                    text: resp.data.message,
-                    icon: "success",
-                    showConfirmButton: false,
-                    timer: 2000,
-                    timerProgressBar: true,
-                });
-                setOpen(false)
-            })
-            .catch((error) => {
-                const errorMessages = JSON.stringify(error.response, Object.getOwnPropertyNames(error));
-                Swal.fire({
-                    title: "Failed!",
-                    text: errorMessages,
-                    icon: "error",
-                    showConfirmButton: true,
-                });
-                console.log(error);
-            }).finally(() => {
-                setLoading(false); // Reset submitting state
-            });
+        // TODO: Save to Dexie in Phase 2
+        console.log('Quotation data (not saved - Phase 1):', formJson);
+
+        Swal.fire({
+            title: "Success!",
+            text: "Quotation created (Phase 1 - not persisted)",
+            icon: "success",
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+        });
+
+        setOpen(false);
+        setLoading(false);
     };
 
     const handleClose = () => {
@@ -174,5 +163,3 @@ export default function QuotationDialog({
         </>
     );
 }
-
-

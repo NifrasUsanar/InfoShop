@@ -16,7 +16,7 @@ const QuantityInput = ({ cartItem }) => {
   useEffect(() => {
     setQuantity(cartItem.quantity);
     setInputValue(cartItem.quantity);
-  }, [cartState]);
+  }, [cartItem.quantity]); // Only update when THIS item's quantity changes, not entire cart
 
 
   const handleQuantityChange = (event) => {

@@ -1,27 +1,46 @@
 import React, { useContext, useState } from "react";
 import { Typography, Toolbar, Box, AppBar, Tab, Tabs } from "@mui/material";
+import { getProductsByCategory, getFeaturedProducts } from "../services/productsService";
 
-import axios from "axios";
-
-export default function POSBottomBar({ setProducts, drawerWidth, categories, setTemplates, onViewModeChange, tabValue, onTabChange }) {
+export default function POSBottomBar({
+    setProducts,
+    drawerWidth,
+    categories,
+    setTemplates,
+    onViewModeChange,
+    tabValue,
+    onTabChange,
+    allProducts = [],
+    allTemplates = []
+}) {
 
     const handleTabChange = async (event, newValue) => {
         onTabChange(newValue);
 
         if (newValue === 'template') {
+            // Phase 1: Use provided templates (will be from Dexie in Phase 2)
             setProducts([]);
-            const response = await axios.get(`/sale-templates`);
-            setTemplates(response.data);
+            setTemplates(allTemplates);
             if (onViewModeChange) onViewModeChange('products');
         }
         else {
+            // Phase 2: Use Dexie for filtering
+            setTemplates([]);
+
             try {
-                const response = await axios.post(`/pos/filter`, { category_id: newValue });
-                setTemplates([])
-                setProducts(response.data);
+                if (newValue === 0) {
+                    // Featured products from Dexie
+                    const featured = await getFeaturedProducts();
+                    setProducts(featured);
+                } else {
+                    // Filter by category from Dexie
+                    const filtered = await getProductsByCategory(newValue);
+                    setProducts(filtered);
+                }
+
                 if (onViewModeChange) onViewModeChange('products');
             } catch (error) {
-                console.error("Error fetching products:", error);
+                console.error('Error filtering products:', error);
             }
         }
     };

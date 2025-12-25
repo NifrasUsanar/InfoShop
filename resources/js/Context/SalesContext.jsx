@@ -9,8 +9,23 @@ const SalesProvider = ({ children, cartType = 'sales_cart', defaultCharges = [] 
   const [charges, setCharges] = useState([]);
   const [discount, setDiscount] = useState(0);
 
+  // Track previous defaultCharges to prevent infinite loops
+  const prevDefaultChargesRef = useRef();
+  const prevCartTypeRef = useRef();
+
   // Initialize charges from defaultCharges prop (no API calls)
   useEffect(() => {
+    // Check if defaultCharges or cartType actually changed
+    const chargesChanged = JSON.stringify(prevDefaultChargesRef.current) !== JSON.stringify(defaultCharges);
+    const cartTypeChanged = prevCartTypeRef.current !== cartType;
+
+    if (!chargesChanged && !cartTypeChanged) {
+      return; // Skip if nothing changed
+    }
+
+    prevDefaultChargesRef.current = defaultCharges;
+    prevCartTypeRef.current = cartType;
+
     const isReturn = cartType === 'sales_return_cart';
 
     // Normalize defaultCharges to always be an array

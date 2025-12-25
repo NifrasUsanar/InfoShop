@@ -10,32 +10,32 @@ import CloseIcon from "@mui/icons-material/Close";
 import PrintReceiptModal from "@/Components/PrintReceiptModal";
 import PercentIcon from '@mui/icons-material/Percent';
 import InputAdornment from '@mui/material/InputAdornment';
-import { router } from '@inertiajs/react';
 import axios from "axios";
 import Swal from "sweetalert2";
-import { usePage } from "@inertiajs/react";
+import { useAppConfig } from "../contexts/AppConfigContext";
 import { useState, useEffect, useContext } from 'react';
 
 import { useSales as useCart } from '@/Context/SalesContext';
 import { SharedContext } from "@/Context/SharedContext";
 import { useCurrencyFormatter, toNumeric } from "@/lib/currencyFormatter";
 import { useCurrencyStore } from "@/stores/currencyStore";
+import { useFirebase } from "../contexts/FirebaseContext";
 
 export default function CashCheckoutDialog({ disabled }) {
     const formatCurrency = useCurrencyFormatter();
     const currencySymbol = useCurrencyStore((state) => state.settings.currency_symbol);
-    const return_sale = usePage().props.return_sale;
-    const return_sale_id = usePage().props.sale_id;
-    const edit_sale = usePage().props.edit_sale;
-    const edit_sale_id = usePage().props.sale_id;
+    const { return_sale, edit_sale, sale_id, settings } = useAppConfig();
+    const return_sale_id = sale_id;
+    const edit_sale_id = sale_id;
 
     const { cartState, cartTotal, totalProfit, emptyCart, charges, totalChargeAmount, finalTotal, discount, setDiscount: setContextDiscount, calculateChargesWithDiscount } = useCart();
     const { selectedCustomer, saleDate, saleTime } = useContext(SharedContext);
+    const { createSale, isInitialized: firebaseInitialized } = useFirebase();
     const [loading, setLoading] = useState(false);
 
     const [showPrintModal, setShowPrintModal] = useState(false);
     const [receiptData, setReceiptData] = useState(null);
-    const autoOpenPrintSetting = usePage().props.settings?.auto_open_print_dialog ?? '1';
+    const autoOpenPrintSetting = settings?.auto_open_print_dialog ?? '1';
     const [openPrintDialog, setOpenPrintDialog] = useState(autoOpenPrintSetting === '1');
 
     const [amountReceived, setAmountReceived] = useState(0);
@@ -48,7 +48,8 @@ export default function CashCheckoutDialog({ disabled }) {
     // Initialize recalculated charges when dialog opens or when charges/cartTotal/discount change
     useEffect(() => {
         setRecalculatedCharges(calculateChargesWithDiscount(discount));
-    }, [charges, cartTotal, discount]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [charges, cartTotal, discount]); // calculateChargesWithDiscount is defined in this component and uses these dependencies
 
     const handleDiscountChange = (event) => {
         const inputDiscount = event.target.value;
@@ -72,7 +73,7 @@ export default function CashCheckoutDialog({ disabled }) {
         setOpen(false);
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         if (loading) return;
         setLoading(true);
@@ -106,48 +107,79 @@ export default function CashCheckoutDialog({ disabled }) {
         formJson.edit_sale_id = edit_sale_id;
         formJson.edit_sale = edit_sale;
 
-        axios.post('/pos/checkout', formJson)
-            .then((resp) => {
-                Swal.fire({
-                    title: "Success!",
-                    text: resp.data.message,
-                    icon: "success",
-                    showConfirmButton: false,
-                    timer: 2000,
-                    timerProgressBar: true,
-                });
-                emptyCart() //Clear the cart from the Context API
-                setAmountReceived(0)
-                setContextDiscount(0)
-                if (openPrintDialog && resp.data.receipt) {
-                    setReceiptData(resp.data.receipt);
-                    setShowPrintModal(true);
-                } else {
-                    router.visit('/receipt/' + resp.data.sale_id)
-                }
-                axios.get('/sale-notification/' + resp.data.sale_id)
-                    .then((resp) => {
-                        console.log("Notification sent successfully:", resp.data.success);
-                    })
-                    .catch((error) => {
-                        console.error("Failed to send notification:", error.response.data.error);
-                    });
-                setOpen(false)
-            })
-            .catch((error) => {
-                // console.error("Submission failed with errors:", error);
-                Swal.fire({
-                    title: "Failed!",
-                    text: error.response.data.error,
-                    icon: "error",
-                    showConfirmButton: true,
-                    // timer: 2000,
-                    // timerProgressBar: true,
-                });
-                console.log(error);
-            }).finally(() => {
-                setLoading(false); // Reset submitting state
+        // Generate invoice number (timestamp-based)
+        const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        formJson.invoice_number = invoiceNumber;
+
+        // Prepare sale data for Firebase (matching Laravel structure)
+        const saleData = {
+            invoice_number: invoiceNumber,
+            store_id: settings?.store_id || 1,
+            contact_id: formJson.contact_id || null,
+            sale_date: formJson.sale_date,
+            sale_time: formJson.sale_time,
+            discount: formJson.discount,
+            total_charge_amount: recalculatedCharges,
+            amount_received: formJson.amount_received,
+            net_total: formJson.net_total,
+            change_amount: formJson.change_amount,
+            profit_amount: formJson.profit_amount,
+            payment_method: formJson.payment_method,
+            payment_status: 'paid',
+            status: 'completed',
+            note: formJson.note || '',
+            return_sale: formJson.return_sale || false,
+            return_sale_id: formJson.return_sale_id || null,
+            edit_sale: formJson.edit_sale || false,
+            edit_sale_id: formJson.edit_sale_id || null,
+            items: formJson.cartItems,
+            charges: formJson.charges,
+            created_by: 'pos-offline',
+            syncedFrom: 'offline',
+        };
+
+        try {
+            // Save to Firebase
+            if (firebaseInitialized) {
+                console.log('💾 Saving sale to Firebase:', invoiceNumber);
+                await createSale(saleData);
+                console.log('✅ Sale saved to Firebase successfully');
+            } else {
+                console.warn('⚠️ Firebase not initialized, sale not saved');
+            }
+
+            // Show success message
+            Swal.fire({
+                title: "Success!",
+                text: `Sale ${invoiceNumber} completed successfully!`,
+                icon: "success",
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true,
             });
+
+            // Clear cart and close dialog
+            emptyCart();
+            setAmountReceived(0);
+            setContextDiscount(0);
+            setOpen(false);
+
+            // TODO: Optionally open print dialog if enabled
+            if (openPrintDialog) {
+                setReceiptData(saleData);
+                setShowPrintModal(true);
+            }
+        } catch (error) {
+            console.error('❌ Error saving sale:', error);
+            Swal.fire({
+                title: "Error!",
+                text: `Failed to save sale: ${error.message}`,
+                icon: "error",
+                confirmButtonText: "OK",
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const discountPercentage = () => {

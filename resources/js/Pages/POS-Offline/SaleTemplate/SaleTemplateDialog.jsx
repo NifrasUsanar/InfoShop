@@ -6,12 +6,9 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import { IconButton, TextField,  Grid, } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
-import { usePage } from "@inertiajs/react";
-import axios from "axios";
 import Swal from "sweetalert2";
 
 import { useSales } from "@/Context/SalesContext";
-import { name } from "dayjs/locale/en-gb";
 
 export default function SaleTemplateDialog({open, setOpen}) {
 
@@ -33,31 +30,25 @@ export default function SaleTemplateDialog({open, setOpen}) {
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        
-        // Handle form submission logic here
-        axios.post("/sale-templates", {
+
+        // TODO: Save to Dexie in Phase 2
+        console.log('Template data (not saved - Phase 1):', {
             cart_items: cartState,
             name: formState.name,
             note: formState.note,
-        })
-            .then((response) => {
-                Swal.fire({
-                    title: "Success!",
-                    text: response.data.message,
-                    icon: "success",
-                    showConfirmButton: false,
-                    timer: 2000,
-                    timerProgressBar: true,
-                });
+        });
 
-                handleClose();
-                emptyCart();
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-        // Close the dialog
-        // setOpen(false);
+        Swal.fire({
+            title: "Success!",
+            text: "Template saved (Phase 1 - not persisted)",
+            icon: "success",
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+        });
+
+        handleClose();
+        emptyCart();
     };
 
     return (

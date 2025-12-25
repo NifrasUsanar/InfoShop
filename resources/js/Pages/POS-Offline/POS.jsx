@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Head, Link, router } from "@inertiajs/react";
 import {
     AppBar,
     Alert,
@@ -13,14 +12,21 @@ import {
     Typography,
     Grid,
     Link as MuiLink,
+    Chip,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeIcon from "@mui/icons-material/Home";
 import WifiIcon from "@mui/icons-material/Wifi";
 import WifiOffIcon from "@mui/icons-material/WifiOff";
+import SyncIcon from "@mui/icons-material/Sync";
+import ReceiptIcon from "@mui/icons-material/Receipt";
 import { Folder, FolderOpen } from "lucide-react";
-import { Button } from "@mui/material";
+import { Button, CircularProgress, Tooltip } from "@mui/material";
+
+import { useNetworkStatus } from "./hooks/useNetworkStatus";
+import { getProductsByCollection, getAllProducts } from "./services/productsService";
+import { useSyncContext } from "./contexts/SyncContext";
 
 import ProductItem from "./Partial/ProductItem";
 import CartItems from "./Partial/CartItem";
@@ -28,6 +34,7 @@ import CartSummary from "./Partial/CartSummary";
 import CartFooter from "./Partial/CartFooter";
 import SearchBox from "./Partial/SearchBox";
 import CartIcon from "./Partial/CartIcon";
+import UnsyncedSalesDialog from "./Partial/UnsyncedSalesDialog";
 
 import { SalesProvider } from "@/Context/SalesContext";
 import CartItemsTop from "./Partial/CartItemsTop";
@@ -54,15 +61,18 @@ const DrawerFooter = styled("div")(({ theme }) => ({
     zIndex: "999",
 }));
 
-function POS({ products, customers, return_sale, categories, edit_sale, sale_data, default_charges, all_collections }) {
+function POS({ products, allProducts, customers, return_sale, categories, edit_sale, sale_data, default_charges, all_collections, onProductsUpdate }) {
     const cartType = edit_sale ? 'sale_edit_cart' : (return_sale ? 'sales_return_cart' : 'sales_cart');
     const [mobileOpen, setMobileOpen] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
-    const [dataProducts, setDataProducts] = useState(products);
+    const [dataProducts, setDataProducts] = useState(products); // Featured products for display
     const [templates, setTemplates] = useState([]);
     const [viewMode, setViewMode] = useState('products'); // 'products' or 'collections'
     const [selectedCollection, setSelectedCollection] = useState(null);
     const [selectedChildCategories, setSelectedChildCategories] = useState([]);
+    const [showUnsyncedSales, setShowUnsyncedSales] = useState(false);
+    const isOnline = useNetworkStatus();
+    const { syncState, startSync, resetSync } = useSyncContext();
 
     const handleDrawerClose = () => {
         setIsClosing(true);
@@ -90,7 +100,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
     }, [cartType])
 
     useEffect(() => {
-        if (edit_sale && !sale_data.cart_snapshot) {
+        if (edit_sale && sale_data && !sale_data.cart_snapshot) {
             Swal.fire({
                 title: 'Only recent sales can be edited',
                 text: 'Please select a recent sale to edit',
@@ -100,10 +110,10 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                 showCloseButton: false,
                 allowOutsideClick: false
             }).then(() => {
-                router.get("/sales")
+                window.location.href = "/sales";
             })
         }
-    })
+    }, [edit_sale, sale_data])
 
 
     // useEffect(() => {
@@ -114,13 +124,146 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
     //     console.log(e.key);
     // }
 
+    const handleSync = async () => {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+
+        if (!isOnline) {
+            Toast.fire({
+                icon: 'warning',
+                title: 'No Internet Connection',
+                text: 'Please connect to sync products',
+            });
+            return;
+        }
+
+        try {
+            const result = await startSync(async (freshProducts) => {
+                // Update parent component if callback provided (this handles allProducts and featuredProducts)
+                if (onProductsUpdate) {
+                    onProductsUpdate(freshProducts);
+                }
+
+                // Reset view to show featured products only
+                const featured = freshProducts.filter(p => p.is_featured === true || p.is_featured === 1);
+                setDataProducts(featured);
+                setSelectedCollection(null);
+                setSelectedChildCategories([]);
+            });
+
+            if (result.success) {
+                const { productCount, chargeCount, collectionCount, contactCount } = result;
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Sync Complete!',
+                    text: `Synced: ${productCount} products, ${chargeCount} charges, ${collectionCount} collections, ${contactCount} contacts`,
+                });
+            } else {
+                throw new Error(result.error || 'Sync failed');
+            }
+        } catch (error) {
+            console.error('Sync error:', error);
+            Toast.fire({
+                icon: 'error',
+                title: 'Sync Failed',
+                text: error.message || 'Failed to sync',
+            });
+        }
+    };
+
+    const handleResetSync = async () => {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+
+        if (!isOnline) {
+            Toast.fire({
+                icon: 'warning',
+                title: 'No Internet Connection',
+                text: 'Please connect to reset and sync',
+            });
+            return;
+        }
+
+        // Confirm reset
+        const result = await Swal.fire({
+            title: 'Reset Sync Data?',
+            text: 'This will clear all cached products and sync fresh data from the server.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, reset and sync',
+            cancelButtonText: 'Cancel',
+        });
+
+        if (!result.isConfirmed) {
+            return;
+        }
+
+        try {
+            Toast.fire({
+                icon: 'info',
+                title: 'Resetting...',
+                text: 'Clearing cached data',
+            });
+
+            const resetResult = await resetSync(async (freshProducts) => {
+                // Update parent component if callback provided (this handles allProducts and featuredProducts)
+                if (onProductsUpdate) {
+                    onProductsUpdate(freshProducts);
+                }
+
+                // Reset view to show featured products only
+                const featured = freshProducts.filter(p => p.is_featured === true || p.is_featured === 1);
+                setDataProducts(featured);
+                setSelectedCollection(null);
+                setSelectedChildCategories([]);
+            });
+
+            if (resetResult.success) {
+                const { productCount, chargeCount, collectionCount, contactCount } = resetResult;
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Reset Complete!',
+                    text: `Synced: ${productCount} products, ${chargeCount} charges, ${collectionCount} collections, ${contactCount} contacts`,
+                });
+            } else {
+                throw new Error(resetResult.error || 'Reset failed');
+            }
+        } catch (error) {
+            console.error('Reset error:', error);
+            Toast.fire({
+                icon: 'error',
+                title: 'Reset Failed',
+                text: error.message || 'Failed to reset',
+            });
+        }
+    };
+
     const handleCollectionClick = async (collection) => {
         try {
-            // Fetch products for this collection (parent or child)
-            const payload = { collection_id: collection.id };
-            const response = await axios.post(`/pos/filter`, payload);
+            // Filter from all products (not just featured)
+            const filtered = await getProductsByCollection(collection.id);
 
-            setDataProducts(response.data);
+            setDataProducts(filtered);
             setTemplates([]);
             setSelectedCollection(collection);
 
@@ -133,7 +276,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
 
             setViewMode('products');
         } catch (error) {
-            console.error("Error fetching products for collection:", error);
+            console.error('Error loading collection products:', error);
         }
     };
 
@@ -183,7 +326,6 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
 
     return (
         <SalesProvider cartType={cartType} defaultCharges={default_charges}>
-            <Head title="Point of Sale" />
             <Box sx={{ display: "flex" }}>
                 <CssBaseline />
                 <AppBar
@@ -208,11 +350,37 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                                 POS
                             </Typography>
                         </Box>
-                        {/* Product Search Box  */}
+                        {/* Product Search Box - searches all products */}
 
-                        <SearchBox></SearchBox>
+                        <SearchBox products={allProducts || products}></SearchBox>
 
-                        <Link href="/pos">
+                        {/* Sync Button */}
+                        <Tooltip title={isOnline ? "Sync Products" : "No Internet Connection"}>
+                            <span>
+                                <IconButton
+                                    color="inherit"
+                                    onClick={handleSync}
+                                    disabled={!isOnline || syncState.status === 'syncing'}
+                                    sx={{
+                                        ml: 1,
+                                        p: "10px",
+                                        color: "default",
+                                        "& .MuiSvgIcon-root": {
+                                            fontSize: 30,
+                                        },
+                                    }}
+                                    type="button"
+                                >
+                                    {syncState.status === 'syncing' ? (
+                                        <CircularProgress size={24} color="inherit" />
+                                    ) : (
+                                        <SyncIcon />
+                                    )}
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+
+                        <a href="/pos" style={{ textDecoration: 'none', color: 'inherit' }}>
                             <IconButton
                                 color="inherit"
                                 sx={{
@@ -228,9 +396,9 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                             >
                                 <WifiIcon />
                             </IconButton>
-                        </Link>
+                        </a>
 
-                        <Link href="/dashboard">
+                        <a href="/dashboard" style={{ textDecoration: 'none', color: 'inherit' }}>
                             <IconButton
                                 color="inherit"
                                 sx={{
@@ -245,7 +413,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                             >
                                 <HomeIcon />
                             </IconButton>
-                        </Link>
+                        </a>
 
                     </Toolbar>
                 </AppBar>
@@ -275,6 +443,11 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                                             e.preventDefault();
                                             setSelectedCollection(null);
                                             setSelectedChildCategories([]);
+                                            // Reset to featured products only (use current products prop)
+                                            if (!selectedCollection) {
+                                                // Already on home, no need to update
+                                                return;
+                                            }
                                             setDataProducts(products);
                                         }}
                                         sx={{ cursor: 'pointer', color: 'primary.main', display: 'flex', alignItems: 'center', gap: 0.5 }}
@@ -339,7 +512,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                                 {/* Display products */}
                                 {dataProducts?.map((product) => (
                                     <Grid
-                                        key={product.id + product.batch_number}
+                                        key={`${product.id}-${product.batch_id || product.batch_number}`}
                                         size={{ xs: 6, sm: 6, md: 2 }}
                                         sx={{ cursor: "pointer", }}
                                     >
@@ -388,6 +561,10 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                             color: '#856404',
                             boxShadow: '0 -1px 3px rgba(0,0,0,0.1)',
                             p: 1,
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
                         }}
                     >
                         <Alert
@@ -403,6 +580,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                                 fontWeight: 500,
                                 m: 0,
                                 p: 0,
+                                flex: 1,
                                 '& .MuiAlert-icon': {
                                     mr: 1.5,
                                     p: 0,
@@ -414,10 +592,109 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                                 },
                             }}
                         >
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                OFFLINE MODE - All data is stored locally on this device
-                            </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                    OFFLINE MODE - All data is stored locally on this device
+                                </Typography>
+
+                                {/* Sync Status Messages */}
+                                {syncState.status === 'syncing' && (
+                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', opacity: 0.9, fontWeight: 600 }}>
+                                        🔄 Syncing: {syncState.progress}% - {syncState.message}
+                                    </Typography>
+                                )}
+
+                                {syncState.status === 'success' && (
+                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', opacity: 0.9, color: '#155724', fontWeight: 600 }}>
+                                        ✓ {syncState.message}
+                                    </Typography>
+                                )}
+
+                                {syncState.status === 'error' && (
+                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', opacity: 0.9, color: '#721c24', fontWeight: 600 }}>
+                                        ✗ {syncState.message}
+                                    </Typography>
+                                )}
+
+                                {syncState.status === 'idle' && syncState.lastSyncedAt && (
+                                    <Typography variant="caption" sx={{ fontSize: '0.7rem', opacity: 0.8 }}>
+                                        Last synced: {new Date(syncState.lastSyncedAt).toLocaleString()} •
+                                        Local: {syncState.localProducts} products, {syncState.localCharges} charges, {syncState.localCollections} collections, {syncState.localContacts} contacts
+                                    </Typography>
+                                )}
+                            </Box>
                         </Alert>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 2 }}>
+                            {/* View Sales Button */}
+                            <Tooltip title="View unsynced sales pending sync to server">
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => setShowUnsyncedSales(true)}
+                                    startIcon={<ReceiptIcon />}
+                                    sx={{
+                                        borderColor: '#856404',
+                                        color: '#856404',
+                                        fontSize: '0.7rem',
+                                        py: 0.5,
+                                        px: 1,
+                                        minWidth: 'auto',
+                                        '&:hover': {
+                                            borderColor: '#533f03',
+                                            backgroundColor: 'rgba(133, 100, 4, 0.08)',
+                                        },
+                                    }}
+                                >
+                                    View Sales
+                                </Button>
+                            </Tooltip>
+
+                            {/* Reset Sync Button */}
+                            <Tooltip title="Clear cached data and sync fresh from server">
+                                <span>
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={handleResetSync}
+                                        disabled={!isOnline || syncState.status === 'syncing'}
+                                        startIcon={<SyncIcon />}
+                                        sx={{
+                                            borderColor: '#856404',
+                                            color: '#856404',
+                                            fontSize: '0.7rem',
+                                            py: 0.5,
+                                            px: 1,
+                                            minWidth: 'auto',
+                                            '&:hover': {
+                                                borderColor: '#533f03',
+                                                backgroundColor: 'rgba(133, 100, 4, 0.08)',
+                                            },
+                                            '&:disabled': {
+                                                borderColor: 'rgba(133, 100, 4, 0.3)',
+                                                color: 'rgba(133, 100, 4, 0.3)',
+                                            },
+                                        }}
+                                    >
+                                        Reset Sync
+                                    </Button>
+                                </span>
+                            </Tooltip>
+
+                            <Chip
+                                icon={isOnline ? <WifiIcon sx={{ fontSize: '16px' }} /> : <WifiOffIcon sx={{ fontSize: '16px' }} />}
+                                label={isOnline ? 'Connected' : 'No Internet'}
+                                size="small"
+                                sx={{
+                                    backgroundColor: isOnline ? '#d4edda' : '#f8d7da',
+                                    color: isOnline ? '#155724' : '#721c24',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem',
+                                    '& .MuiChip-icon': {
+                                        color: isOnline ? '#155724' : '#721c24',
+                                    },
+                                }}
+                            />
+                        </Box>
                     </AppBar>
                 </Box>
                 <Box
@@ -468,6 +745,12 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                     </Drawer>
                 </Box>
             </Box>
+
+            {/* Unsynced Sales Dialog */}
+            <UnsyncedSalesDialog
+                open={showUnsyncedSales}
+                onClose={() => setShowUnsyncedSales(false)}
+            />
 
         </SalesProvider>
     );

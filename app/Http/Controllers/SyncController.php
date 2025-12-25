@@ -7,16 +7,18 @@ use App\Models\ProductBatch;
 use App\Models\ProductStock;
 use App\Models\Contact;
 use App\Models\Charge;
+use App\Models\Collection;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class SyncController extends Controller
 {
-    private const ALLOWED_TABLES = ['products', 'contacts', 'charges', 'stock', 'sales'];
+    private const ALLOWED_TABLES = ['products', 'contacts', 'charges', 'collections', 'stock', 'sales'];
 
     /**
      * Health check
@@ -47,6 +49,7 @@ class SyncController extends Controller
             'products' => $this->getProducts($request),
             'contacts' => $this->getContacts($request),
             'charges' => $this->getCharges($request),
+            'collections' => $this->getCollections($request),
             'stock' => $this->getStock($request),
             'sales' => $this->getSales($request),
         };
@@ -106,7 +109,9 @@ class SyncController extends Controller
                     products.updated_at,
                     pb.updated_at,
                     COALESCE(product_stocks.updated_at, '1970-01-01')
-                ) AS last_modified")
+                ) AS last_modified"),
+                // Get first collection_id from pivot table
+                DB::raw("(SELECT collection_id FROM collection_product WHERE collection_product.product_id = products.id LIMIT 1) AS collection_id")
             )
             ->leftJoin('product_batches AS pb', 'products.id', '=', 'pb.product_id')
             ->leftJoin('product_stocks', function($join) use ($storeId) {
@@ -125,6 +130,12 @@ class SyncController extends Controller
         }
 
         $products = $query->get()->map(function ($product) {
+            // Convert image_url to storage URL
+            $imageUrl = $product->image_url;
+            if (!empty($imageUrl)) {
+                $imageUrl = Storage::url($imageUrl);
+            }
+
             return [
                 'id' => $product->id,
                 'store_id' => (string) $product->store_id,
@@ -132,13 +143,14 @@ class SyncController extends Controller
                 'description' => $product->description,
                 'sku' => $product->sku,
                 'barcode' => $product->barcode,
-                'image_url' => $product->image_url,
+                'image_url' => $imageUrl,
                 'unit' => $product->unit,
                 'alert_quantity' => (int) $product->alert_quantity,
                 'is_stock_managed' => (bool) $product->is_stock_managed,
                 'is_active' => (bool) $product->is_active,
                 'is_featured' => (bool) ($product->is_featured ?? 0),
                 'category_id' => $product->category_id,
+                'collection_id' => $product->collection_id,
                 'product_type' => $product->product_type,
                 'meta_data' => $product->meta_data,
                 'batch_id' => $product->batch_id,
@@ -148,6 +160,7 @@ class SyncController extends Controller
                 'discount' => (float) ($product->discount ?? 0),
                 'discount_percentage' => (float) ($product->discount_percentage ?? 0),
                 'quantity' => (float) $product->stock_quantity,
+                'stock_quantity' => (float) $product->stock_quantity,
                 'created_at' => $product->created_at instanceof Carbon
                     ? (int) ($product->created_at->getTimestamp() * 1000)
                     : (int) (Carbon::parse($product->created_at)->getTimestamp() * 1000),
@@ -246,6 +259,56 @@ class SyncController extends Controller
             'status' => 'success',
             'data' => $charges,
             'count' => $charges->count(),
+            'timestamp' => (int) (now()->getTimestamp() * 1000),
+        ]);
+    }
+
+    /**
+     * Get collections (categories, tags, brands)
+     */
+    private function getCollections(Request $request)
+    {
+        $storeId = $request->query('store_id', 1);
+        $lastSync = $this->parseTimestamp($request->query('last_sync'));
+
+        $query = Collection::query();
+
+        if ($lastSync) {
+            $query->whereRaw('updated_at >= ?', [$lastSync->toDateTimeString()]);
+        }
+
+        $collections = $query->with('children')->get()->map(function ($collection) use ($storeId) {
+            return [
+                'id' => $collection->id,
+                'store_id' => (string) $storeId,
+                'name' => $collection->name,
+                'description' => $collection->description,
+                'collection_type' => $collection->collection_type,
+                'parent_id' => $collection->parent_id,
+                'slug' => $collection->slug,
+                'children' => $collection->children ? $collection->children->map(function ($child) {
+                    return [
+                        'id' => $child->id,
+                        'name' => $child->name,
+                        'description' => $child->description,
+                        'collection_type' => $child->collection_type,
+                        'parent_id' => $child->parent_id,
+                        'slug' => $child->slug,
+                    ];
+                })->toArray() : [],
+                'created_at' => $collection->created_at instanceof Carbon
+                    ? (int) ($collection->created_at->getTimestamp() * 1000)
+                    : (int) (Carbon::parse($collection->created_at)->getTimestamp() * 1000),
+                'updated_at' => $collection->updated_at instanceof Carbon
+                    ? (int) ($collection->updated_at->getTimestamp() * 1000)
+                    : (int) (Carbon::parse($collection->updated_at)->getTimestamp() * 1000),
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $collections,
+            'count' => $collections->count(),
             'timestamp' => (int) (now()->getTimestamp() * 1000),
         ]);
     }

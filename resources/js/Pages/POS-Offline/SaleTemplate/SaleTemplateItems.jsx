@@ -3,7 +3,6 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardMedia from "@mui/material/CardMedia";
 import { Typography, Box,  Grid, IconButton } from "@mui/material";
-import { usePage } from "@inertiajs/react";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useSales as useCart } from "@/Context/SalesContext";
 import { SharedContext } from "@/Context/SharedContext";
@@ -48,33 +47,19 @@ export default function SaleTemplateItem({ templates, setTemplates }) {
             confirmButtonText: 'Yes, delete it!'
         }).then((result) => {
             if (result.isConfirmed) {
-                axios.delete(`/sale-templates/${template.id}`)
-                    .then(response => {
-                        if (response.data.success) {
-                            Swal.fire(
-                                'Deleted!',
-                                response.data.message,
-                                'success'
-                            )
-                            setTemplates(templates.filter(t => t.id !== template.id));
-                        } else {
-                            Swal.fire(
-                                'Error!',
-                                response.data.message,
-                                'error'
-                            )
-                        }
-                    })
-                    .catch(error => {
-                        Swal.fire(
-                            'Error!',
-                            error.message,
-                            'error'
-                        )
-                    })
+                // TODO: Delete from Dexie in Phase 2
+                console.log('Delete template (not saved - Phase 1):', template);
+
+                Swal.fire(
+                    'Deleted!',
+                    'Template deleted (Phase 1 - not persisted)',
+                    'success'
+                );
+
+                // Remove from local state
+                setTemplates(templates.filter(t => t.id !== template.id));
             }
         })
-
     }
     return (
 

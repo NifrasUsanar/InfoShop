@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import List from "@mui/material/List";
 import { ListItem, TextField, Divider, Typography, Button, Box, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem } from "@mui/material";
 import ListItemText from "@mui/material/ListItemText";
 import { useSales as useCart } from '@/Context/SalesContext';
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
-import axios from "axios";
 import { useCurrencyFormatter } from '@/lib/currencyFormatter';
 import { useCurrencyStore } from '@/stores/currencyStore';
+import { getAllCharges } from '../services/chargesService';
 
 export default function CartSummary() {
     const { cartState, cartTotal, totalQuantity, charges, totalChargeAmount, finalTotal, discount, calculateChargeAmountWithDiscount, addCharge, removeCharge } = useCart();
@@ -23,17 +23,28 @@ export default function CartSummary() {
     // Calculate final total reactively with discount
     const reactiveeFinalTotal = (cartTotal - discount) + recalculatedTotalCharges;
 
-    // Fetch active charges for the add dialog
-    useEffect(() => {
-        axios
-            .get('/api/charges/active')
-            .then((resp) => {
-                setAvailableCharges(resp.data);
-            })
-            .catch((error) => {
-                console.error('Failed to fetch charges:', error);
-            });
+    // Load charges function
+    const loadCharges = useCallback(async () => {
+        try {
+            const chargesFromDb = await getAllCharges();
+            setAvailableCharges(chargesFromDb);
+            console.log(`✅ Loaded ${chargesFromDb.length} active charges for cart`);
+        } catch (error) {
+            console.error('❌ Error loading charges:', error);
+            setAvailableCharges([]);
+        }
     }, []);
+
+    // Load active charges from Dexie on mount
+    useEffect(() => {
+        loadCharges();
+    }, [loadCharges]);
+
+    // Reload charges when dialog opens (in case they were synced)
+    const handleOpenDialog = useCallback(() => {
+        loadCharges(); // Refresh charges list
+        setOpenChargesDialog(true);
+    }, [loadCharges]);
 
     const getAvailableChargesToAdd = () => {
         const chargeIds = charges.map(c => c.id);
@@ -137,19 +148,17 @@ export default function CartSummary() {
             )}
 
             {/* Add Charges Button */}
-            {chargesAvailableToAdd.length > 0 && (
-                <Box sx={{ px: 2, py: 1, mb: 1 }}>
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={() => setOpenChargesDialog(true)}
-                        fullWidth
-                    >
-                        Add Charge
-                    </Button>
-                </Box>
-            )}
+            <Box sx={{ px: 2, py: 1, mb: 1 }}>
+                <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<AddIcon />}
+                    onClick={handleOpenDialog}
+                    fullWidth
+                >
+                    Add Charge
+                </Button>
+            </Box>
 
             {/* Total Charges */}
             {charges.length > 0 && (
@@ -193,30 +202,44 @@ export default function CartSummary() {
             <Dialog open={openChargesDialog} onClose={() => setOpenChargesDialog(false)}>
                 <DialogTitle>Add Charge/Tax</DialogTitle>
                 <DialogContent sx={{ minWidth: 300, pt: 2 }}>
-                    <TextField
-                        select
-                        fullWidth
-                        label="Select Charge"
-                        value={selectedCharge}
-                        onChange={(e) => setSelectedCharge(e.target.value)}
-                        size="small"
-                    >
-                        {chargesAvailableToAdd.map((charge) => (
-                            <MenuItem key={charge.id} value={charge.id}>
-                                {charge.name} ({charge.rate_type === 'percentage' ? `${charge.rate_value}%` : `${currencySettings.currency_symbol}${charge.rate_value}`})
-                            </MenuItem>
-                        ))}
-                    </TextField>
+                    {chargesAvailableToAdd.length > 0 ? (
+                        <TextField
+                            select
+                            fullWidth
+                            label="Select Charge"
+                            value={selectedCharge}
+                            onChange={(e) => setSelectedCharge(e.target.value)}
+                            size="small"
+                        >
+                            {chargesAvailableToAdd.map((charge) => (
+                                <MenuItem key={charge.id} value={charge.id}>
+                                    {charge.name} ({charge.rate_type === 'percentage' ? `${charge.rate_value}%` : `${currencySettings.currency_symbol}${charge.rate_value}`})
+                                </MenuItem>
+                            ))}
+                        </TextField>
+                    ) : (
+                        <Box sx={{ py: 2, textAlign: 'center' }}>
+                            <Typography variant="body2" color="text.secondary">
+                                {availableCharges.length === 0
+                                    ? 'No charges available. Please sync data first.'
+                                    : 'All available charges have been added.'}
+                            </Typography>
+                        </Box>
+                    )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setOpenChargesDialog(false)}>Cancel</Button>
-                    <Button
-                        onClick={handleAddCharge}
-                        variant="contained"
-                        disabled={!selectedCharge}
-                    >
-                        Add
+                    <Button onClick={() => setOpenChargesDialog(false)}>
+                        {chargesAvailableToAdd.length > 0 ? 'Cancel' : 'Close'}
                     </Button>
+                    {chargesAvailableToAdd.length > 0 && (
+                        <Button
+                            onClick={handleAddCharge}
+                            variant="contained"
+                            disabled={!selectedCharge}
+                        >
+                            Add
+                        </Button>
+                    )}
                 </DialogActions>
             </Dialog>
         </List>
