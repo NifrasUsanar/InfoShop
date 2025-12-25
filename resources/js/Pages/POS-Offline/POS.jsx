@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import {
     AppBar,
+    Alert,
     Box,
     Breadcrumbs,
     CssBaseline,
@@ -16,6 +17,7 @@ import {
 import { styled } from "@mui/material/styles";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import HomeIcon from "@mui/icons-material/Home";
+import WifiIcon from "@mui/icons-material/Wifi";
 import WifiOffIcon from "@mui/icons-material/WifiOff";
 import { Folder, FolderOpen } from "lucide-react";
 import { Button } from "@mui/material";
@@ -29,7 +31,6 @@ import CartIcon from "./Partial/CartIcon";
 
 import { SalesProvider } from "@/Context/SalesContext";
 import CartItemsTop from "./Partial/CartItemsTop";
-import POSBottomBar from "./Partial/POSBottomBar";
 import SaleTemplateItem from "./SaleTemplate/SaleTemplateItems";
 import CollectionItem from "./Partial/CollectionItem";
 import Swal from "sweetalert2";
@@ -62,7 +63,6 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
     const [viewMode, setViewMode] = useState('products'); // 'products' or 'collections'
     const [selectedCollection, setSelectedCollection] = useState(null);
     const [selectedChildCategories, setSelectedChildCategories] = useState([]);
-    const [tabValue, setTabValue] = useState(0);
 
     const handleDrawerClose = () => {
         setIsClosing(true);
@@ -134,15 +134,6 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
             setViewMode('products');
         } catch (error) {
             console.error("Error fetching products for collection:", error);
-        }
-    };
-
-    const handleViewModeChange = (mode) => {
-        setViewMode(mode);
-        // If switching view mode via bottom bar (tabs), clear selected collection and child categories
-        if (mode === 'products' || mode === 'collections') {
-            setSelectedCollection(null);
-            setSelectedChildCategories([]);
         }
     };
 
@@ -221,7 +212,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
 
                         <SearchBox></SearchBox>
 
-                        <Link href="/pos-offline">
+                        <Link href="/pos">
                             <IconButton
                                 color="inherit"
                                 sx={{
@@ -233,9 +224,9 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                                     },
                                 }}
                                 type="button"
-                                title="Offline Mode"
+                                title="Online Mode"
                             >
-                                <WifiOffIcon />
+                                <WifiIcon />
                             </IconButton>
                         </Link>
 
@@ -263,13 +254,14 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                     sx={{
                         flexGrow: 1,
                         p: 3,
+                        pb: 12,
                         width: { sm: `calc(100% - ${drawerWidth}px)` },
                     }}
                 >
                     <Toolbar />
 
                     {/* Product items area  */}
-                    <Grid container spacing={1} sx={{ mb: 8 }}>
+                    <Grid container spacing={1} sx={{ mb: 2 }}>
                         <SaleTemplateItem templates={templates} setTemplates={setTemplates} />
 
                         {/* Breadcrumb Navigation */}
@@ -283,9 +275,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                                             e.preventDefault();
                                             setSelectedCollection(null);
                                             setSelectedChildCategories([]);
-                                            if (tabValue === 0) {
-                                                setDataProducts(products);
-                                            }
+                                            setDataProducts(products);
                                         }}
                                         sx={{ cursor: 'pointer', color: 'primary.main', display: 'flex', alignItems: 'center', gap: 0.5 }}
                                     >
@@ -359,8 +349,8 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                             </>
                         )}
 
-                        {/* Collections Grid - Displayed below featured items (Tab 0) when no specific collection is selected */}
-                        {tabValue === 0 && !selectedCollection && (
+                        {/* Collections Grid - Displayed when no specific collection is selected */}
+                        {!selectedCollection && (
                             <>
                                 <Grid size={12} sx={{ mt: 4, mb: 2 }}>
                                     <Divider textAlign="left">
@@ -384,20 +374,51 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                                 ))}
                             </>
                         )}
-
-                        {/* Featured and categories */}
-                        {!return_sale && (
-                            <POSBottomBar
-                                drawerWidth={drawerWidth}
-                                categories={categories}
-                                setProducts={setDataProducts}
-                                setTemplates={setTemplates}
-                                onViewModeChange={handleViewModeChange}
-                                tabValue={tabValue}
-                                onTabChange={setTabValue}
-                            />
-                        )}
                     </Grid>
+
+                    {/* Offline Mode Indicator - Fixed Bottom Bar */}
+                    <AppBar
+                        position="fixed"
+                        sx={{
+                            top: 'auto',
+                            bottom: 0,
+                            left: 0,
+                            width: { sm: `calc(100% - ${drawerWidth}px)` },
+                            backgroundColor: '#fff3cd',
+                            color: '#856404',
+                            boxShadow: '0 -1px 3px rgba(0,0,0,0.1)',
+                            p: 1,
+                        }}
+                    >
+                        <Alert
+                            severity="warning"
+                            icon={<WifiOffIcon />}
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'flex-start',
+                                backgroundColor: 'transparent',
+                                color: '#856404',
+                                border: 'none',
+                                fontWeight: 500,
+                                m: 0,
+                                p: 0,
+                                '& .MuiAlert-icon': {
+                                    mr: 1.5,
+                                    p: 0,
+                                },
+                                '& .MuiAlert-message': {
+                                    p: 0,
+                                    ml: 0,
+                                    textAlign: 'left',
+                                },
+                            }}
+                        >
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                OFFLINE MODE - All data is stored locally on this device
+                            </Typography>
+                        </Alert>
+                    </AppBar>
                 </Box>
                 <Box
                     component="nav"

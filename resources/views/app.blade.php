@@ -11,6 +11,9 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+        <!-- PWA Meta Tags -->
+        <x-pwa-meta />
+
         <!-- Scripts -->
         @init
         @routes
@@ -24,5 +27,8 @@
         @inertia
         <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/1.0.3/numeral.min.js"></script>
+
+        <!-- PWA Service Worker Registration -->
+        <x-pwa-sw />
     </body>
 </html>

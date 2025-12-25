@@ -35,6 +35,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\DevDatabaseController;
 use App\Http\Controllers\ChargeController;
 use App\Http\Controllers\SyncController;
+use App\Helpers\PwaHelper;
 
 // Installer routes (must be before auth routes)
 require __DIR__ . '/installer.php';
@@ -46,6 +47,16 @@ Route::get('/', function () {
 Route::get('/editor', function () {
     return Inertia::render('BlockEditor/Editor');
 });
+
+// PWA Routes
+Route::get('/manifest.json', function () {
+    return response()->json(PwaHelper::getManifestData())
+        ->header('Content-Type', 'application/manifest+json');
+})->name('pwa.manifest');
+
+Route::get('/offline', function () {
+    return view('offline');
+})->name('pwa.offline');
 
 Route::get('/receipt/{id}', [SaleController::class, 'receipt'])->name('sales.receipt');
 Route::get('/api/receipt-text-raw/{id}', [SaleController::class, 'apiReceipt']);
@@ -108,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/products/{product_id}/batches', [ProductController::class, 'getBatches'])->name('products.getBatches');
 
     Route::get('/pos', [POSController::class, 'index'])->name('pos.index');
+    Route::get('/pos-offline', [POSController::class, 'offlineIndex'])->name('pos.offline');
     Route::get('/pos/{sale_id}/return', [POSController::class, 'returnIndex'])->name('pos.return');
     Route::post('/pos/checkout', [POSController::class, 'checkout'])->name('pos.checkout');
     Route::get('/pos/customer-display', [POSController::class, 'customerDisplay']);

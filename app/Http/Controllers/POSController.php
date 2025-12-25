@@ -178,6 +178,54 @@ class POSController extends Controller
         ]);
     }
 
+    public function offlineIndex()
+    {
+        $contacts = Contact::select('id', 'name', 'balance')->customers()->get();
+        $currentStore = Store::find(session('store_id', Auth::user()->store_id));
+
+        if (!$currentStore) {
+            return redirect()->route('store');
+        }
+        $categories = Collection::where('collection_type', 'category')->get();
+        $allCollections = Collection::orderByRaw('CASE WHEN collection_type = "category" THEN 1 WHEN collection_type = "brand" THEN 2 WHEN collection_type = "tag" THEN 3 ELSE 4 END, parent_id IS NULL DESC, name ASC')
+            ->with('children')
+            ->get();
+        $products = $this->getProducts();
+        $miscSettings = Setting::where('meta_key', 'misc_settings')->first();
+        $miscSettings = json_decode($miscSettings->meta_value, true);
+        $cart_first_focus = $miscSettings['cart_first_focus'] ?? 'quantity';
+
+        // Get default charges
+        $defaultCharges = Charge::where('is_active', true)
+            ->where('is_default', true)
+            ->get()
+            ->map(function($charge) {
+                return [
+                    'id' => $charge->id,
+                    'name' => $charge->name,
+                    'charge_type' => $charge->charge_type,
+                    'rate_value' => $charge->rate_value,
+                    'rate_type' => $charge->rate_type,
+                    'is_active' => $charge->is_active,
+                ];
+            })
+            ->toArray();
+
+        return Inertia::render('POS-Offline/POS', [
+            'products' => $products,
+            'urlImage' => url('/storage/'),
+            'customers' => $contacts,
+            'currentStore' => $currentStore->name,
+            'return_sale' => false,
+            'sale_id' => null,
+            'categories' => $categories,
+            'all_collections' => $allCollections,
+            'cart_first_focus' => $cart_first_focus,
+            'misc_settings' => $miscSettings,
+            'default_charges' => $defaultCharges
+        ]);
+    }
+
     public function editSale(Request $request, $sale_id)
     {
         $sale = Sale::findOrFail($sale_id);

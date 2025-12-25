@@ -1,0 +1,1 @@
+{!! \App\Helpers\PwaHelper::getMetaTags() !!}
