@@ -586,8 +586,8 @@ class SyncController extends Controller
      */
     private function createOrUpdateSale($saleData, $storeId)
     {
-        // Check if sale already exists by invoice_number
-        $existingSale = Sale::where('invoice_number', $saleData['invoice_number'])->first();
+        // Check if sale already exists by sync_id (Firebase invoice number)
+        $existingSale = Sale::where('sync_id', $saleData['invoice_number'])->first();
 
         if ($existingSale) {
             // Sale already synced, skip
@@ -650,7 +650,7 @@ class SyncController extends Controller
         $requestData = [
             'store_id' => $storeId, // Include store_id in request
             'created_by' => $saleData['created_by'] ?? 1, // Default to user ID 1 if not provided
-            'invoice_number' => $saleData['invoice_number'],
+            'sync_id' => $saleData['invoice_number'], // Map Firebase invoice to sync_id
             'contact_id' => $saleData['contact_id'] ?? null,
             'sale_date' => isset($saleData['sale_date'])
                 ? $this->parseTimestamp($saleData['sale_date'])->toDateString()

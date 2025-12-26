@@ -104,6 +104,7 @@ export default function UnsyncedSalesDialog({ open, onClose }) {
         PaperProps={{
           sx: {
             minHeight: isMobile ? '100vh' : '80vh',
+            pb: 0, // Remove bottom padding to eliminate empty footer
           },
         }}
       >
@@ -192,7 +193,6 @@ export default function UnsyncedSalesDialog({ open, onClose }) {
                   No more sales
                 </Typography>
               }
-              height={isMobile ? 'calc(100vh - 120px)' : '60vh'}
             >
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {displayedSales.map((sale) => (

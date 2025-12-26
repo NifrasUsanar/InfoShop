@@ -203,7 +203,7 @@ export default function CheckoutModal({ open, onClose }) {
 
     try {
       // Generate invoice number (timestamp-based)
-      const invoiceNumber = `INV-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const invoiceNumber = `INV-${Date.now()}`;
 
       // Prepare sale data for Firebase (matching Laravel structure)
       const saleDataRaw = {

@@ -221,7 +221,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
 
                         <SearchBox></SearchBox>
 
-                        <Link href="/pos-offline">
+                        <a href="/pos-offline">
                             <IconButton
                                 color="inherit"
                                 sx={{
@@ -237,7 +237,7 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
                             >
                                 <WifiOffIcon />
                             </IconButton>
-                        </Link>
+                        </a>
 
                         <Link href="/dashboard">
                             <IconButton

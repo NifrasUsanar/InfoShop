@@ -396,9 +396,9 @@ class POSController extends Controller
             'cart_snapshot' => json_encode($request->input('cartItems')),
         ];
 
-        // Add invoice_number if provided (for offline sync)
-        if ($request->has('invoice_number') && !empty($request->input('invoice_number'))) {
-            $saleData['invoice_number'] = $request->input('invoice_number');
+        // Add sync_id if provided (for offline sync - Firebase invoice number)
+        if ($request->has('sync_id') && !empty($request->input('sync_id'))) {
+            $saleData['sync_id'] = $request->input('sync_id');
         }
 
         if ($edit_sale && $edit_sale_id) {

@@ -674,17 +674,17 @@ class SaleController extends Controller
             }
 
             $query = Sale::where('store_id', $storeId)
-                ->whereNotNull('invoice_number')
                 ->orderBy('created_at', 'desc');
 
-            // Only exclude if we have invoice numbers to exclude
+            // Exclude sales by sync_id (Firebase invoice numbers)
             if (!empty($excludeInvoiceNumbers)) {
-                $query->whereNotIn('invoice_number', $excludeInvoiceNumbers);
+                $query->whereNotIn('sync_id', $excludeInvoiceNumbers);
             }
 
             $sales = $query->select([
                 'id',
                 'invoice_number',
+                'sync_id',
                 'contact_id',
                 'sale_date',
                 'sale_time',
