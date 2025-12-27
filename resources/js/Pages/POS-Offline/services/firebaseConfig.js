@@ -3,71 +3,134 @@ import {
   initializeFirestore,
   persistentLocalCache,
   persistentSingleTabManager,
-  disableNetwork,
-  enableNetwork,
+  getFirestore,
 } from 'firebase/firestore';
 import axios from 'axios';
 
-// Firebase configuration (loaded from backend)
+// Firebase configuration (loaded from cache or API)
 let firebaseConfig = null;
 let configPromise = null;
 
 let app = null;
 let _firestore = null;
 
+const FIREBASE_CONFIG_STORAGE_KEY = 'firebase_config_cache';
+
 /**
- * Fetch Firebase configuration from Laravel backend
- * Caches the config to avoid multiple API calls
+ * Get cached Firebase configuration from localStorage
  */
-async function fetchFirebaseConfig() {
+function getCachedFirebaseConfig() {
+  try {
+    const cached = localStorage.getItem(FIREBASE_CONFIG_STORAGE_KEY);
+    if (cached) {
+      const config = JSON.parse(cached);
+      console.log('[Firebase] Loaded config from localStorage cache');
+      return config;
+    }
+  } catch (error) {
+    console.warn('[Firebase] Failed to read cached config:', error.message);
+  }
+  return null;
+}
+
+/**
+ * Save Firebase configuration to localStorage for offline persistence
+ */
+function cacheFirebaseConfig(config) {
+  try {
+    localStorage.setItem(FIREBASE_CONFIG_STORAGE_KEY, JSON.stringify(config));
+    console.log('[Firebase] Config cached to localStorage');
+  } catch (error) {
+    console.warn('[Firebase] Failed to cache config to localStorage:', error.message);
+  }
+}
+
+/**
+ * Fetch Firebase configuration from Laravel backend and cache it
+ * Returns cached config immediately if available, fetches fresh version in background
+ */
+async function getFirebaseConfig() {
+  // Return cached config immediately if available
   if (firebaseConfig) {
     return firebaseConfig;
   }
 
-  // If already fetching, wait for the existing promise
-  if (configPromise) {
-    return configPromise;
+  const cachedConfig = getCachedFirebaseConfig();
+  if (cachedConfig) {
+    firebaseConfig = cachedConfig;
+    // Fetch fresh config in background (fire and forget)
+    fetchAndCacheFirebaseConfig().catch(err => {
+      console.warn('[Firebase] Background config fetch failed, using cached:', err.message);
+    });
+    return cachedConfig;
   }
 
-  configPromise = axios.get('/api/config/firebase')
-    .then(response => {
-      if (response.data.status === 'success' && response.data.config) {
-        firebaseConfig = response.data.config;
-        console.log('[Firebase] Config loaded from backend:', {
-          projectId: firebaseConfig.projectId,
-          authDomain: firebaseConfig.authDomain,
-        });
-        return firebaseConfig;
-      } else {
-        throw new Error(response.data.message || 'Failed to load Firebase config');
-      }
-    })
-    .catch(error => {
-      console.error('[Firebase] Failed to fetch config from backend:', error.message);
-      configPromise = null; // Reset so it can be retried
-      throw error;
+  // No cache, must fetch (blocking)
+  return fetchAndCacheFirebaseConfig();
+}
+
+/**
+ * Fetch Firebase configuration from backend and cache it
+ */
+async function fetchAndCacheFirebaseConfig() {
+  // If offline, skip API call and try cache immediately
+  if (!navigator.onLine) {
+    console.log('[Firebase] Offline detected, checking cache...');
+    const cachedConfig = getCachedFirebaseConfig();
+    if (cachedConfig) {
+      firebaseConfig = cachedConfig;
+      return cachedConfig;
+    }
+    throw new Error('Firebase config not available (offline and no cached config)');
+  }
+
+  try {
+    console.log('[Firebase] Fetching config from backend...');
+    const response = await axios.get('/api/config/firebase', {
+      timeout: 5000
     });
 
-  return configPromise;
+    if (response.data.status === 'success' && response.data.config) {
+      firebaseConfig = response.data.config;
+      cacheFirebaseConfig(firebaseConfig);
+      console.log('[Firebase] Config fetched and cached:', {
+        projectId: firebaseConfig.projectId,
+        authDomain: firebaseConfig.authDomain,
+      });
+      return firebaseConfig;
+    } else {
+      throw new Error(response.data.message || 'Invalid Firebase config response');
+    }
+  } catch (error) {
+    console.error('[Firebase] Failed to fetch config from backend:', error.message);
+
+    // Fallback to cached config
+    const cachedConfig = getCachedFirebaseConfig();
+    if (cachedConfig) {
+      firebaseConfig = cachedConfig;
+      console.log('[Firebase] Using cached config as fallback');
+      return cachedConfig;
+    }
+
+    throw new Error('Firebase config not available (offline and no cached config)');
+  }
 }
 
 /**
  * Initialize Firebase lazily (only when needed)
- * This prevents Firebase from initializing at app startup
- * Fetches configuration from Laravel backend
+ * Uses cached config if available (instant), fetches fresh config in background
  */
 export async function initializeFirebaseApp() {
   if (app) return app;
 
   try {
-    // Fetch config from backend
-    const config = await fetchFirebaseConfig();
+    const config = await getFirebaseConfig();
 
-    console.log('[Firebase] Initializing with config from backend');
+    console.log('[Firebase] Initializing with cached config');
     app = initializeApp(config);
     return app;
   } catch (error) {
-    console.warn('[Firebase] Initialization error:', error);
+    console.error('[Firebase] Initialization error:', error);
     return null;
   }
 }
@@ -80,29 +143,26 @@ export async function getFirestoreInstance() {
   if (_firestore) return _firestore;
 
   const firebaseApp = await initializeFirebaseApp();
-  if (firebaseApp) {
-    try {
-      console.log('[Firebase] Initializing Firestore with offline persistence...');
+  if (!firebaseApp) return null;
 
-      // Initialize Firestore with persistence for web
-      _firestore = initializeFirestore(firebaseApp, {
-        localCache: persistentLocalCache({
-          tabManager: persistentSingleTabManager()
-        })
-      });
+  try {
+    console.log('[Firebase] Initializing Firestore with offline persistence...');
 
-      console.log('[Firebase] Firestore initialized with persistent local cache');
-    } catch (error) {
-      console.warn('[Firebase] Error initializing Firestore with persistence:', error.message);
+    // Initialize Firestore with persistence for web
+    _firestore = initializeFirestore(firebaseApp, {
+      localCache: persistentLocalCache({
+        tabManager: persistentSingleTabManager()
+      })
+    });
 
-      // Fallback: Try without explicit persistence (uses default settings)
-      try {
-        const { getFirestore } = require('firebase/firestore');
-        _firestore = getFirestore(firebaseApp);
-        console.log('[Firebase] Firestore initialized with default settings');
-      } catch (fallbackError) {
-        console.error('[Firebase] Failed to initialize Firestore:', fallbackError);
-      }
+    console.log('[Firebase] Firestore initialized with persistent local cache');
+  } catch (error) {
+    // Check if already initialized (this is expected on page refresh)
+    if (error.message?.includes('initializeFirestore() has already been called')) {
+      console.log('[Firebase] Firestore already initialized, getting existing instance');
+      _firestore = getFirestore(firebaseApp);
+    } else {
+      console.error('[Firebase] Error initializing Firestore:', error.message);
     }
   }
 
@@ -121,7 +181,5 @@ export const firestore = {
 export const auth = {
   currentUser: null,
 };
-
-export { disableNetwork, enableNetwork };
 
 export default app;

@@ -90,7 +90,26 @@ self.addEventListener('fetch', (event) => {
     if (url.pathname === '/sw.js') {
         return;
     }
-    
+
+    // Only cache /pos-offline routes and its assets (PWA for standalone POS)
+    // Skip all other routes to avoid interfering with main infoshop app
+    const posOfflineRoutes = [
+        '/pos-offline',           // POS offline page
+        '/manifest.json',         // PWA manifest
+        '/offline',               // Offline fallback page
+        '/Infoshop-icon.png',     // App icon
+        '/css/custom.css',        // Global CSS
+        '/build/',                // Vite-built assets (JS, CSS)
+    ];
+
+    const isPosPosOfflineRoute = posOfflineRoutes.some(route =>
+        url.pathname === route || url.pathname.startsWith(route)
+    );
+
+    if (!isPosPosOfflineRoute) {
+        return;
+    }
+
     // Handle Inertia requests (AJAX navigations)
     if (request.headers.get('X-Inertia')) {
         event.respondWith(

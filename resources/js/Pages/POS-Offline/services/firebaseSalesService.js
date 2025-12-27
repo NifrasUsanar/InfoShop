@@ -36,34 +36,67 @@ export class FirebaseSalesService {
 
   /**
    * Create a new sale in Firebase
-   * Uses invoice_number as the document ID for easy lookup and deduplication
+   * Offline-first: Forces immediate resolution when offline, queues for background sync
    *
    * @param {Object} saleData - Sale data object (same structure as Laravel API)
    * @returns {Promise<string>} - Invoice number (document ID)
    */
   static async createSale(saleData) {
+    const invoiceNumber = saleData.invoice_number;
+    if (!invoiceNumber) {
+      throw new Error('invoice_number is required in sale data');
+    }
+
     try {
-      const invoiceNumber = saleData.invoice_number;
-      if (!invoiceNumber) {
-        throw new Error('invoice_number is required in sale data');
-      }
-
+      console.log('[Firebase] Step 1: Getting Firestore instance...');
       const fs = await this.getFirestore();
-      const docRef = doc(fs, 'sales', invoiceNumber);
+      console.log('[Firebase] Step 2: Firestore instance obtained');
 
-      // Use setDoc to create/overwrite with specific ID
-      await setDoc(docRef, {
+      const docRef = doc(fs, 'sales', invoiceNumber);
+      const isOnline = navigator.onLine;
+
+      console.log('[Firebase] Step 3: Creating sale (online: ' + isOnline + '):', invoiceNumber);
+
+      const saleDoc = {
         ...saleData,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-        synced: false, // Mark as not synced to Laravel yet
+        synced: false,
         syncedAt: null,
-      });
+      };
 
-      console.log('[Firebase] Sale created:', invoiceNumber);
+      if (!isOnline) {
+        console.log('[Firebase] Step 4A: Offline mode - initiating write with timeout...');
+
+        // Start the write (will queue to IndexedDB via persistence)
+        const writePromise = setDoc(docRef, saleDoc);
+
+        // Create timeout promise (500ms should be enough for local write)
+        const timeoutPromise = new Promise((resolve) => {
+          setTimeout(() => {
+            console.log('[Firebase] Step 5A: Timeout reached - assuming write queued locally');
+            resolve('timeout');
+          }, 500);
+        });
+
+        // Race: whichever completes first wins
+        const result = await Promise.race([writePromise, timeoutPromise]);
+
+        if (result === 'timeout') {
+          console.log('[Firebase] Step 6A: Write assumed queued to offline cache (will sync when online)');
+        } else {
+          console.log('[Firebase] Step 6A: Write completed to local cache');
+        }
+      } else {
+        console.log('[Firebase] Step 4B: Online mode - writing to Firebase Cloud...');
+        await setDoc(docRef, saleDoc);
+        console.log('[Firebase] Step 5B: Write completed to cloud');
+      }
+
+      console.log('[Firebase] Step 7: Sale created successfully:', invoiceNumber);
       return invoiceNumber;
     } catch (error) {
-      console.error('[Firebase] Error creating sale:', error);
+      console.error('[Firebase] ERROR at some step:', error);
       throw new Error(error.message || 'Failed to create sale in Firebase');
     }
   }
@@ -160,12 +193,23 @@ export class FirebaseSalesService {
     try {
       const fs = await this.getFirestore();
       const saleRef = doc(fs, 'sales', invoiceNumber);
+      const isOnline = navigator.onLine;
 
-      await updateDoc(saleRef, {
+      const updateData = {
         ...updates,
         updatedAt: Timestamp.now(),
-        synced: false, // Reset sync status when updating
-      });
+        synced: false,
+      };
+
+      if (!isOnline) {
+        console.log('[Firebase] Offline - updating sale with timeout:', invoiceNumber);
+        const updatePromise = updateDoc(saleRef, updateData);
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 500));
+        await Promise.race([updatePromise, timeoutPromise]);
+        console.log('[Firebase] Update queued locally');
+      } else {
+        await updateDoc(saleRef, updateData);
+      }
 
       console.log('[Firebase] Sale updated:', invoiceNumber);
     } catch (error) {
@@ -183,11 +227,22 @@ export class FirebaseSalesService {
     try {
       const fs = await this.getFirestore();
       const saleRef = doc(fs, 'sales', invoiceNumber);
-      
-      await updateDoc(saleRef, {
+      const isOnline = navigator.onLine;
+
+      const syncData = {
         synced: true,
         syncedAt: Timestamp.now(),
-      });
+      };
+
+      if (!isOnline) {
+        console.log('[Firebase] Offline - marking synced with timeout:', invoiceNumber);
+        const syncPromise = updateDoc(saleRef, syncData);
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 500));
+        await Promise.race([syncPromise, timeoutPromise]);
+        console.log('[Firebase] Sync mark queued locally');
+      } else {
+        await updateDoc(saleRef, syncData);
+      }
 
       console.log('[Firebase] Sale marked as synced:', invoiceNumber);
     } catch (error) {
@@ -205,7 +260,17 @@ export class FirebaseSalesService {
     try {
       const fs = await this.getFirestore();
       const saleRef = doc(fs, 'sales', invoiceNumber);
-      await deleteDoc(saleRef);
+      const isOnline = navigator.onLine;
+
+      if (!isOnline) {
+        console.log('[Firebase] Offline - deleting sale with timeout:', invoiceNumber);
+        const deletePromise = deleteDoc(saleRef);
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 500));
+        await Promise.race([deletePromise, timeoutPromise]);
+        console.log('[Firebase] Delete queued locally');
+      } else {
+        await deleteDoc(saleRef);
+      }
 
       console.log('[Firebase] Sale deleted:', invoiceNumber);
     } catch (error) {
@@ -232,7 +297,18 @@ export class FirebaseSalesService {
         });
       });
 
-      await batch.commit();
+      const isOnline = navigator.onLine;
+
+      if (!isOnline) {
+        console.log('[Firebase] Offline - batch syncing with timeout');
+        const commitPromise = batch.commit();
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve('timeout'), 500));
+        await Promise.race([commitPromise, timeoutPromise]);
+        console.log('[Firebase] Batch commit queued locally');
+      } else {
+        await batch.commit();
+      }
+
       console.log(`[Firebase] Batch marked ${invoiceNumbers.length} sales as synced`);
     } catch (error) {
       console.error('[Firebase] Error batch marking sales as synced:', error);

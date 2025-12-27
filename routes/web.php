@@ -48,7 +48,7 @@ Route::get('/editor', function () {
     return Inertia::render('BlockEditor/Editor');
 });
 
-// PWA Routes
+// PWA Routes (for standalone pos-offline app)
 Route::get('/manifest.json', function () {
     return response()->json(PwaHelper::getManifestData())
         ->header('Content-Type', 'application/manifest+json');

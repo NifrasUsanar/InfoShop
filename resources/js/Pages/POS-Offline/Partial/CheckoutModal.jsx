@@ -254,14 +254,15 @@ export default function CheckoutModal({ open, onClose }) {
 
       // Save to Firebase
       if (firebaseInitialized) {
-        console.log('💾 Saving sale to Firebase:', invoiceNumber);
+        console.log('💾 [CheckoutModal] Saving sale to Firebase:', invoiceNumber);
         await createSale(saleData);
-        console.log('✅ Sale saved to Firebase successfully');
+        console.log('✅ [CheckoutModal] createSale returned - showing success message');
       } else {
         console.warn('⚠️ Firebase not initialized, sale not saved');
       }
 
       // Show success message
+      console.log('🎉 [CheckoutModal] Displaying Swal success message');
       Swal.fire({
         title: "Success!",
         text: `Sale ${invoiceNumber} completed successfully!`,
@@ -279,13 +280,14 @@ export default function CheckoutModal({ open, onClose }) {
       onClose();
 
     } catch (error) {
-      console.error('Checkout error:', error);
+      console.error('❌ [CheckoutModal] Checkout error:', error);
       Swal.fire({
         icon: 'error',
         title: 'Checkout Failed',
         text: error.message || 'An error occurred during checkout',
       });
     } finally {
+      console.log('🔧 [CheckoutModal] Finally block - resetting isSubmitting');
       setIsSubmitting(false);
     }
   };

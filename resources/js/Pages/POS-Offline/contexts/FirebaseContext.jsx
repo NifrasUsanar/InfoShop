@@ -71,10 +71,13 @@ export const FirebaseProvider = ({ children }) => {
     try {
       console.log('[FirebaseContext] Creating sale:', saleData.invoice_number);
       const invoiceNumber = await FirebaseSalesService.createSale(saleData);
-      
-      // Reload counts after creating
-      await loadCounts();
-      
+
+      // Reload counts in background (fire and forget)
+      // Don't await to avoid blocking the payment completion
+      loadCounts().catch(err => {
+        console.warn('[FirebaseContext] Background count reload failed:', err);
+      });
+
       return invoiceNumber;
     } catch (err) {
       console.error('[FirebaseContext] Error creating sale:', err);
