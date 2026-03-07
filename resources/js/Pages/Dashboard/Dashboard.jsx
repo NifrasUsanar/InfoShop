@@ -83,28 +83,28 @@ export default function Dashboard({ data, logo, version, store_name }) {
                 <Grid size={12} spacing={{ xs: 0.5, sm: 1 }} flexDirection={'row'} container sx={{ mb: 2 }}>
                     {parseFloat(data.lowStock) != 0 && (
                         <Grid size={{ xs: 12, sm: 3 }}>
-                            <Link href={"/products?status=alert&per_page=" + data.lowStock}>
+                            <Link href={"/products?status=alert&per_page=" + parseInt(data.lowStock)}>
                                 <Alert severity="warning"><strong>{data.lowStock}</strong> Alert Products</Alert>
                             </Link>
                         </Grid>
                     )}
                     {parseFloat(data.outOfStock) != 0 && (
                         <Grid size={{ xs: 12, sm: 3 }}>
-                            <Link href={"/products?status=out_of_stock&per_page=" + data.outOfStock}>
+                            <Link href={"/products?status=out_of_stock&per_page=" + parseInt(data.outOfStock)}>
                                 <Alert severity="error"><strong>{data.outOfStock}</strong> Out of Stocks</Alert>
                             </Link>
                         </Grid>
                     )}
                     {parseFloat(data.pending_cheque_count) != 0 && (
                         <Grid size={{ xs: 12, sm: 3 }}>
-                            <Link href={"/cheques?status=pending&per_page=" + data.pending_cheque_count}>
+                            <Link href={"/cheques?status=pending&per_page=" + parseInt(data.pending_cheque_count)}>
                                 <Alert severity="primary"><strong>{data.pending_cheque_count}</strong> Pending Cheque/s</Alert>
                             </Link>
                         </Grid>
                     )}
                     {parseFloat(data.cheque_alert_count) != 0 && (
                         <Grid size={{ xs: 12, sm: 3 }}>
-                            <Link href={`/cheques?status=alert&per_page=${data.cheque_alert_count}`}>
+                            <Link href={`/cheques?status=alert&per_page=${parseInt(data.cheque_alert_count)}`}>
                                 <Alert severity="error"><strong>{data.cheque_alert_count}</strong> Alert Cheque/s</Alert>
                             </Link>
                         </Grid>

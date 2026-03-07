@@ -39,6 +39,19 @@ export default function FilterModal({ fields = [], filters = {}, handleFilterCha
         setModalOpen(false);
     };
 
+    const handleClearFilters = () => {
+        // Reset all filter fields to empty/null values
+        fields.forEach((field) => {
+            const event = {
+                target: {
+                    name: field.name,
+                    value: '',
+                }
+            };
+            handleFilterChange(event);
+        });
+    };
+
     // Count active filters
     const activeFiltersCount = fields.filter((field) => {
         const value = filters[field.name];
@@ -138,6 +151,28 @@ export default function FilterModal({ fields = [], filters = {}, handleFilterCha
             );
         }
 
+        if (type === 'date') {
+            return (
+                <Grid key={name} size={size}>
+                    <TextField
+                        value={value || ''}
+                        label={label}
+                        onChange={handleFilterChange}
+                        name={name}
+                        fullWidth
+                        size="small"
+                        margin="dense"
+                        type="date"
+                        slotProps={{
+                            inputLabel: {
+                                shrink: true,
+                            },
+                        }}
+                    />
+                </Grid>
+            );
+        }
+
         return null;
     };
 
@@ -168,6 +203,9 @@ export default function FilterModal({ fields = [], filters = {}, handleFilterCha
                     </Grid>
                 </DialogContent>
                 <DialogActions>
+                    <Button onClick={handleClearFilters} color="error" variant="outlined">
+                        Clear All
+                    </Button>
                     <Button onClick={handleCloseModal} color="inherit">
                         Close
                     </Button>

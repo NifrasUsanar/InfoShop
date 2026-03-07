@@ -48,6 +48,7 @@ class ProductController extends Controller
             'contacts.name as contact_name',
             'product_batches.discount',
             'product_batches.discount_percentage',
+            'product_stocks.updated_at',
         )
             ->leftJoin('products', 'products.id', '=', 'product_batches.product_id') // Join with product_batches using product_id
             ->leftJoin('product_stocks', 'product_batches.id', '=', 'product_stocks.batch_id') // Join with product_stocks using batch_id
@@ -77,6 +78,12 @@ class ProductController extends Controller
             $query->where('products.is_stock_managed', 1);
             $query->where('product_batches.is_active', 1);
         } else $query->where('product_batches.is_active', 1);
+
+        // Apply sleeping products filter - show products NOT updated since the specified date
+        if (!empty($filters['sleeping_date'])) {
+            $sleepingDate = $filters['sleeping_date'];
+            $query->where('product_stocks.updated_at', '<', $sleepingDate . ' 00:00:00');
+        }
 
         // Apply search query if provided
         if (!empty($filters['search_query'])) {
@@ -131,7 +138,7 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        $filters = $request->only(['store', 'search_query', 'status', 'alert_quantity', 'per_page', 'contact_id', 'sortBy']);
+        $filters = $request->only(['store', 'search_query', 'status', 'alert_quantity', 'per_page', 'contact_id', 'sortBy', 'sleeping_date']);
 
         $products = $this->getProducts($filters);
 
@@ -624,6 +631,21 @@ class ProductController extends Controller
             'success' => true,
             'is_featured' => (bool) $batch->is_featured,
             'message' => $batch->is_featured ? 'Product marked as featured' : 'Product removed from featured',
+        ], 200);
+    }
+
+    public function toggleActive(Request $request, $batch_id)
+    {
+        $batch = ProductBatch::findOrFail($batch_id);
+
+        $batch->update([
+            'is_active' => !$batch->is_active,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'is_active' => (bool) $batch->is_active,
+            'message' => $batch->is_active ? 'Product activated' : 'Product archived',
         ], 200);
     }
 

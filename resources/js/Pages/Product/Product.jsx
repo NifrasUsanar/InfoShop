@@ -20,7 +20,7 @@ import FindReplaceIcon from "@mui/icons-material/FindReplace";
 import HistoryIcon from '@mui/icons-material/History';
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
-import { Barcode } from 'lucide-react';
+import { Barcode, ArchiveX, ArchiveRestore } from 'lucide-react';
 import BatchModal from "./Partials/BatchModal";
 import QuantityModal from "./Partials/QuantityModal";
 import CustomPagination from "@/Components/CustomPagination";
@@ -36,11 +36,13 @@ import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import ProductsList from "./Partials/ProductsList";
 
-const productColumns = (handleProductEdit, onToggleFeatured, loadingBatchId) => [
+const productColumns = (handleProductEdit, onToggleFeatured, onToggleActive, loadingBatchId) => [
     {
         field: "image_url",
         headerName: "Image",
         width: 100,
+        filterable: false,
+        sortable: false,
         renderCell: (params) =>
             params.value ? ( // Check if params.value is not null
                 <img
@@ -164,6 +166,16 @@ const productColumns = (handleProductEdit, onToggleFeatured, loadingBatchId) => 
             </Button>
         ),
     },
+    {
+        field: "updated_at",
+        headerName: "Last Updated",
+        width: 200,
+        renderCell: (params) => {
+            if (!params.value) return "N/A";
+            const date = new Date(params.value);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        },
+    },
 
     {
         field: "action",
@@ -182,15 +194,33 @@ const productColumns = (handleProductEdit, onToggleFeatured, loadingBatchId) => 
                         flexWrap: "nowrap",
                     }}
                 >
-                    <Link href={`/product/${params.row.batch_id}/barcode`}>
+                    {/* <Link href={`/product/${params.row.batch_id}/barcode`}>
                         <QrCode2Icon color="primary" />
-                    </Link>
+                    </Link> */}
                     <Link href={`/product/${params.row.batch_id}/barcode-v2`}>
                         <Barcode size={24} stroke="#1976d2" />
                     </Link>
                     <Link href={`/quantity/${params.row.stock_id}/log`}>
                         <HistoryIcon color="primary" />
                     </Link>
+                    {params.row.is_active === 1 && (
+                        <IconButton
+                            size="small"
+                            onClick={() => onToggleActive(params.row.batch_id)}
+                            sx={{ cursor: 'pointer' }}
+                        >
+                            <ArchiveX size={24} stroke="#d32f2f" />
+                        </IconButton>
+                    )}
+                    {params.row.is_active === 0 && (
+                        <IconButton
+                            size="small"
+                            onClick={() => onToggleActive(params.row.batch_id)}
+                            sx={{ cursor: 'pointer' }}
+                        >
+                            <ArchiveRestore size={24} stroke="#4caf50" />
+                        </IconButton>
+                    )}
                 </Box>
             );
         },
@@ -245,6 +275,7 @@ export default function Product({ products, stores, contacts }) {
             sortBy: urlParams.get("sortBy") || "default",
             per_page: 100,
             contact_id: "",
+            sleeping_date: "",
         };
     });
 
@@ -289,6 +320,44 @@ export default function Product({ products, stores, contacts }) {
             Swal.fire({
                 icon: 'error',
                 title: error.response?.data?.message || 'Failed to toggle featured status',
+                position: 'bottom',
+                toast: true,
+                timer: 1500,
+                showConfirmButton: false,
+            });
+        } finally {
+            setLoadingBatchId(null);
+        }
+    };
+
+    const onToggleActive = async (batchId) => {
+        setLoadingBatchId(batchId);
+        try {
+            const response = await axios.post(`/productbatch/${batchId}/toggle-active`);
+
+            if (response.data.success) {
+                setDataProducts((prevData) => ({
+                    ...prevData,
+                    data: prevData.data.map((product) =>
+                        product.batch_id === batchId
+                            ? { ...product, is_active: response.data.is_active ? 1 : 0 }
+                            : product
+                    ),
+                }));
+
+                Swal.fire({
+                    icon: 'success',
+                    title: response.data.message,
+                    position: 'bottom',
+                    toast: true,
+                    timer: 1500,
+                    showConfirmButton: false,
+                });
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: error.response?.data?.message || 'Failed to toggle active status',
                 position: 'bottom',
                 toast: true,
                 timer: 1500,
@@ -381,6 +450,12 @@ export default function Product({ products, stores, contacts }) {
                                     size: { xs: 12, sm: 6, md: 6 },
                                     getOptionLabel: (option) => option.name + ' | ' + option.balance,
                                     getOptionValue: (option) => option.id
+                                },
+                                {
+                                    name: 'sleeping_date',
+                                    label: 'Sleeping Products Before',
+                                    type: 'date',
+                                    size: { xs: 12, sm: 6, md: 6 }
                                 }
                             ]}
                             filters={filters}
@@ -503,13 +578,18 @@ export default function Product({ products, stores, contacts }) {
                     >
                         <DataGrid
                             rows={dataProducts.data}
-                            columns={productColumns(handleProductEdit, onToggleFeatured, loadingBatchId)}
+                            columns={productColumns(handleProductEdit, onToggleFeatured, onToggleActive, loadingBatchId)}
                             getRowId={(row) =>
                                 row.id + row.batch_number + row.store_id
                             }
                             slotProps={{
                                 toolbar: {
                                     showQuickFilter: true,
+                                    csvOptions: {
+                                        fields: productColumns(handleProductEdit, onToggleFeatured, onToggleActive, loadingBatchId)
+                                            .filter(col => col.field !== 'image_url' && col.field !== 'valuation' && col.field !== 'action')
+                                            .map(col => col.field),
+                                    },
                                 },
                             }}
                             initialState={{
@@ -517,6 +597,7 @@ export default function Product({ products, stores, contacts }) {
                                     columnVisibilityModel: {
                                         cost: false,
                                         created_at: false,
+                                        updated_at: false,
                                     },
                                 },
                             }}

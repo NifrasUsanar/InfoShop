@@ -112,6 +112,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/checkBatch', [ProductController::class, 'checkBatch'])->name('products.checkbatch');
     Route::post('/productbatch/{id}', [ProductController::class, 'updateBatch'])->name('products.updatebatch');
     Route::post('/productbatch/{batch_id}/toggle-featured', [ProductController::class, 'toggleFeatured'])->name('products.toggle-featured');
+    Route::post('/productbatch/{batch_id}/toggle-active', [ProductController::class, 'toggleActive'])->name('products.toggle-active');
     Route::delete('/productbatch/{batch_id}', [ProductController::class, 'deleteBatch'])->name('products.delete-batch');
     Route::get('/getproducts/{store_id}', [ProductController::class, 'getProductsResponse'])->name('products.getproducts');
     Route::get('/product/{batch_id}/barcode', [ProductController::class, 'getBarcode'])->name('products.barcode');
