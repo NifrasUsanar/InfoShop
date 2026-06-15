@@ -17,7 +17,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'email' => ['required', 'email'],
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
             'device_name' => ['sometimes', 'string', 'max:255'],
         ]);
@@ -29,12 +29,24 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user = User::where('email', $request->input('email'))->first();
+        $usernameOrEmail = $request->input('email');
+
+        $user = User::where('email', $usernameOrEmail)
+            ->orWhere('user_name', $usernameOrEmail)
+            ->first();
 
         if (! $user || ! Hash::check($request->input('password'), $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'The provided credentials are incorrect.',
+            ], 401);
+        }
+
+        if (! $user->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your account is inactive. Please contact support.',
+            ], 403);
         }
 
         $deviceName = $request->input('device_name') ?: 'infopos-mobile';

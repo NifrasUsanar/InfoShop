@@ -50,7 +50,6 @@ class SyncController extends Controller
         'sales',      // Sales/invoices (read-only for display)
         'collections', // Collections (categories, brands, tags)
         'collection_product', // Collection-Product pivot table
-        'users',      // Users for approval workflow
     ];
 
     /**
@@ -116,7 +115,6 @@ class SyncController extends Controller
             'sales' => $this->getSales($request),
             'collections' => $this->getCollections($request),
             'collection_product' => $this->getCollectionProduct($request),
-            'users' => $this->getUsers($request),
         };
     }
 
@@ -135,69 +133,44 @@ class SyncController extends Controller
         $lastSync = $this->parseTimestamp($request->query('last_sync'));
 
         $query = Product::query()
-            ->select(
-                'products.id',
-                'products.name',
-                'products.description',
-                'products.sku',
-                'products.barcode',
-                'products.image_url',
-                'products.unit',
-                'products.brand_id',
-                'products.category_id',
-                'products.product_type',
-                'products.quantity',
-                'products.alert_quantity',
-                'products.is_stock_managed',
-                'products.is_active',
-                'products.is_featured',
-                'products.discount',
-                'products.meta_data',
-                'products.attachment_id',
-                'products.updated_at'
-            )
+            ->select([
+                'id', 'name', 'description', 'sku', 'barcode', 'image_url',
+                'unit', 'brand_id', 'category_id', 'product_type', 'quantity',
+                'alert_quantity', 'is_stock_managed', 'is_active', 'is_featured',
+                'discount', 'meta_data', 'attachment_id', 'updated_at',
+            ])
             ->where('is_active', 1);
 
         if ($lastSync) {
-            $query->whereRaw('products.updated_at >= ?', [$lastSync->toDateTimeString()]);
+            $query->where('updated_at', '>=', $lastSync);
         }
 
-        $products = $query->get()->map(function ($product) {
-            // Convert image_url to storage URL
-            $imageUrl = $product->image_url;
-            if (!empty($imageUrl)) {
-                $imageUrl = Storage::url($imageUrl);
-            }
-
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'description' => $product->description,
-                'sku' => $product->sku,
-                'barcode' => $product->barcode,
-                'image_url' => $imageUrl,
-                'unit' => $product->unit,
-                'brand_id' => $product->brand_id,
-                'category_id' => $product->category_id,
-                'product_type' => $product->product_type,
-                'quantity' => (float) $product->quantity,
-                'alert_quantity' => (int) $product->alert_quantity,
-                'is_stock_managed' => (bool) $product->is_stock_managed,
-                'is_active' => (bool) $product->is_active,
-                'is_featured' => (bool) $product->is_featured,
-                'discount' => (float) $product->discount,
-                'meta_data' => $product->meta_data,
-                'attachment_id' => $product->attachment_id,
-                'updated_at' => $product->updated_at instanceof Carbon
-                    ? $product->updated_at->toIso8601String()
-                    : Carbon::parse($product->updated_at)->toIso8601String(),
-            ];
-        });
+        $products = $query->get()->map(fn ($product) => [
+            'id'              => $product->id,
+            'name'            => $product->name,
+            'description'     => $product->description,
+            'sku'             => $product->sku,
+            'barcode'         => $product->barcode,
+            'image_url'       => $product->image_url ? Storage::url($product->image_url) : null,
+            'unit'            => $product->unit,
+            'brand_id'        => $product->brand_id,
+            'category_id'     => $product->category_id,
+            'product_type'    => $product->product_type,
+            'quantity'        => (float) $product->quantity,
+            'alert_quantity'  => (int) $product->alert_quantity,
+            'is_stock_managed' => (bool) $product->is_stock_managed,
+            'is_active'       => (bool) $product->is_active,
+            'is_featured'     => (bool) $product->is_featured,
+            'discount'        => (float) $product->discount,
+            'meta_data'       => $product->meta_data,
+            'attachment_id'   => $product->attachment_id,
+            'updated_at'      => $product->updated_at->toIso8601String(),
+        ]);
 
         return response()->json([
-            'status' => 'success',
-            'data' => $products,
-            'count' => $products->count(),
+            'status'    => 'success',
+            'data'      => $products,
+            'count'     => count($products),
             'timestamp' => now()->toIso8601String(),
         ]);
     }
@@ -217,51 +190,36 @@ class SyncController extends Controller
         $lastSync = $this->parseTimestamp($request->query('last_sync'));
 
         $query = ProductBatch::query()
-            ->select(
-                'product_batches.id AS batch_id',
-                'product_batches.product_id',
-                'product_batches.contact_id',
-                'product_batches.batch_number',
-                'product_batches.expiry_date',
-                'product_batches.cost',
-                'product_batches.price',
-                'product_batches.discount',
-                'product_batches.discount_percentage',
-                'product_batches.is_active',
-                'product_batches.is_featured',
-                'product_batches.updated_at'
-            )
+            ->select([
+                'id AS batch_id', 'product_id', 'contact_id', 'batch_number',
+                'expiry_date', 'cost', 'price', 'discount', 'discount_percentage',
+                'is_active', 'is_featured', 'updated_at',
+            ])
             ->where('is_active', 1);
 
         if ($lastSync) {
-            $query->whereRaw('product_batches.updated_at >= ?', [$lastSync->toDateTimeString()]);
+            $query->where('updated_at', '>=', $lastSync);
         }
 
-        $batches = $query->get()->map(function ($batch) {
-            return [
-                'batch_id' => $batch->batch_id,
-                'product_id' => $batch->product_id,
-                'contact_id' => $batch->contact_id,
-                'batch_number' => $batch->batch_number,
-                'expiry_date' => $batch->expiry_date
-                    ? Carbon::parse($batch->expiry_date)->toIso8601String()
-                    : null,
-                'cost' => (float) $batch->cost,
-                'price' => (float) $batch->price,
-                'discount' => (float) $batch->discount,
-                'discount_percentage' => (float) $batch->discount_percentage,
-                'is_active' => (bool) $batch->is_active,
-                'is_featured' => (bool) $batch->is_featured,
-                'updated_at' => $batch->updated_at instanceof Carbon
-                    ? $batch->updated_at->toIso8601String()
-                    : Carbon::parse($batch->updated_at)->toIso8601String(),
-            ];
-        });
+        $batches = $query->get()->map(fn ($batch) => [
+            'batch_id'            => $batch->batch_id,
+            'product_id'          => $batch->product_id,
+            'contact_id'          => $batch->contact_id,
+            'batch_number'        => $batch->batch_number,
+            'expiry_date'         => $batch->expiry_date ? Carbon::parse($batch->expiry_date)->toIso8601String() : null,
+            'cost'                => (float) $batch->cost,
+            'price'               => (float) $batch->price,
+            'discount'            => (float) $batch->discount,
+            'discount_percentage' => (float) $batch->discount_percentage,
+            'is_active'           => (bool) $batch->is_active,
+            'is_featured'         => (bool) $batch->is_featured,
+            'updated_at'          => $batch->updated_at->toIso8601String(),
+        ]);
 
         return response()->json([
-            'status' => 'success',
-            'data' => $batches,
-            'count' => $batches->count(),
+            'status'    => 'success',
+            'data'      => $batches,
+            'count'     => count($batches),
             'timestamp' => now()->toIso8601String(),
         ]);
     }
@@ -283,50 +241,29 @@ class SyncController extends Controller
         $lastSync = $this->parseTimestamp($request->query('last_sync'));
 
         $query = ProductStock::query()
-            ->select(
-                'product_stocks.id',
-                'product_stocks.batch_id',
-                'product_stocks.product_id',
-                'product_stocks.store_id',
-                'product_stocks.quantity',
-                'product_stocks.updated_at'
-            );
+            ->select(['id', 'batch_id', 'product_id', 'store_id', 'quantity', 'updated_at']);
 
-        // Filter by store if provided
         if ($storeId) {
             $query->where('store_id', $storeId);
         }
 
         if ($lastSync) {
-            $query->whereRaw('product_stocks.updated_at >= ?', [$lastSync->toDateTimeString()]);
+            $query->where('updated_at', '>=', $lastSync);
         }
 
-        // Log the query for debugging
-        \Log::debug('[SYNC] getStocksOnly query', [
-            'sql' => $query->toSql(),
-            'bindings' => $query->getBindings(),
-            'store_id' => $storeId,
-            'last_sync_param' => $request->query('last_sync'),
-            'last_sync_parsed' => $lastSync ? $lastSync->toDateTimeString() : null,
+        $stocks = $query->get()->map(fn ($stock) => [
+            'id'         => $stock->id,
+            'batch_id'   => $stock->batch_id,
+            'product_id' => $stock->product_id,
+            'store_id'   => $stock->store_id,
+            'quantity'   => (float) $stock->quantity,
+            'updated_at' => $stock->updated_at->toIso8601String(),
         ]);
 
-        $stocks = $query->get()->map(function ($stock) {
-            return [
-                'id' => $stock->id,
-                'batch_id' => $stock->batch_id,
-                'product_id' => $stock->product_id,
-                'store_id' => $stock->store_id,
-                'quantity' => (float) $stock->quantity,
-                'updated_at' => $stock->updated_at instanceof Carbon
-                    ? $stock->updated_at->toIso8601String()
-                    : Carbon::parse($stock->updated_at)->toIso8601String(),
-            ];
-        });
-
         return response()->json([
-            'status' => 'success',
-            'data' => $stocks,
-            'count' => $stocks->count(),
+            'status'    => 'success',
+            'data'      => $stocks,
+            'count'     => count($stocks),
             'timestamp' => now()->toIso8601String(),
         ]);
     }
@@ -494,29 +431,25 @@ class SyncController extends Controller
         $query = Charge::query()->where('is_active', 1);
 
         if ($lastSync) {
-            $query->whereRaw('updated_at >= ?', [$lastSync->toDateTimeString()]);
+            $query->where('updated_at', '>=', $lastSync);
         }
 
-        $charges = $query->get()->map(function ($charge) {
-            return [
-                'id' => $charge->id,
-                'name' => $charge->name,
-                'charge_type' => $charge->charge_type,
-                'rate_value' => (float) $charge->rate_value,
-                'rate_type' => $charge->rate_type,
-                'description' => $charge->description,
-                'is_active' => (bool) $charge->is_active,
-                'is_default' => (bool) $charge->is_default,
-                'updated_at' => $charge->updated_at instanceof Carbon
-                    ? $charge->updated_at->toIso8601String()
-                    : Carbon::parse($charge->updated_at)->toIso8601String(),
-            ];
-        });
+        $charges = $query->get()->map(fn ($charge) => [
+            'id'          => $charge->id,
+            'name'        => $charge->name,
+            'charge_type' => $charge->charge_type,
+            'rate_value'  => (float) $charge->rate_value,
+            'rate_type'   => $charge->rate_type,
+            'description' => $charge->description,
+            'is_active'   => (bool) $charge->is_active,
+            'is_default'  => (bool) $charge->is_default,
+            'updated_at'  => $charge->updated_at->toIso8601String(),
+        ]);
 
         return response()->json([
-            'status' => 'success',
-            'data' => $charges,
-            'count' => $charges->count(),
+            'status'    => 'success',
+            'data'      => $charges,
+            'count'     => count($charges),
             'timestamp' => now()->toIso8601String(),
         ]);
     }
@@ -540,31 +473,27 @@ class SyncController extends Controller
         $query = Collection::query();
 
         if ($lastSync) {
-            $query->whereRaw('updated_at >= ?', [$lastSync->toDateTimeString()]);
+            $query->where('updated_at', '>=', $lastSync);
         }
 
         if ($collectionType) {
             $query->where('collection_type', $collectionType);
         }
 
-        $collections = $query->get()->map(function ($collection) {
-            return [
-                'id' => $collection->id,
-                'collection_type' => $collection->collection_type,
-                'name' => $collection->name,
-                'slug' => $collection->slug,
-                'description' => $collection->description,
-                'parent_id' => $collection->parent_id,
-                'updated_at' => $collection->updated_at instanceof Carbon
-                    ? $collection->updated_at->toIso8601String()
-                    : Carbon::parse($collection->updated_at)->toIso8601String(),
-            ];
-        });
+        $collections = $query->get()->map(fn ($collection) => [
+            'id'              => $collection->id,
+            'collection_type' => $collection->collection_type,
+            'name'            => $collection->name,
+            'slug'            => $collection->slug,
+            'description'     => $collection->description,
+            'parent_id'       => $collection->parent_id,
+            'updated_at'      => $collection->updated_at->toIso8601String(),
+        ]);
 
         return response()->json([
-            'status' => 'success',
-            'data' => $collections,
-            'count' => $collections->count(),
+            'status'    => 'success',
+            'data'      => $collections,
+            'count'     => count($collections),
             'timestamp' => now()->toIso8601String(),
         ]);
     }
@@ -647,169 +576,101 @@ class SyncController extends Controller
         $syncId = $request->query('sync_id');
 
         $query = \App\Models\Sale::query()
-            ->with(['items', 'transactions'])
+            ->select([
+                'id', 'reference_id', 'invoice_number', 'sync_id', 'store_id',
+                'contact_id', 'created_at', 'updated_at', 'total_amount',
+                'total_charge_amount', 'discount', 'amount_received',
+                'profit_amount', 'status', 'payment_status', 'note',
+            ])
+            ->with(['items.product', 'transactions'])
             ->orderBy('created_at', 'desc');
 
-        // Filter by store
         if ($storeId) {
             $query->where('store_id', $storeId);
         }
 
-        // Filter by date range
         if ($dateFrom) {
-            $dateFromParsed = $this->parseTimestamp($dateFrom);
-            if ($dateFromParsed) {
-                $query->where('created_at', '>=', $dateFromParsed);
-            }
+            $parsed = $this->parseTimestamp($dateFrom);
+            if ($parsed) $query->where('created_at', '>=', $parsed);
         }
 
         if ($dateTo) {
-            $dateToParsed = $this->parseTimestamp($dateTo);
-            if ($dateToParsed) {
-                $query->where('created_at', '<=', $dateToParsed);
-            }
+            $parsed = $this->parseTimestamp($dateTo);
+            if ($parsed) $query->where('created_at', '<=', $parsed);
         }
 
-        // Filter by status
         if ($status) {
             $query->where('status', $status);
         }
 
-        // Filter by sync_id (for deduplication checks)
         if ($syncId) {
             $query->where('sync_id', $syncId);
         }
 
-        // Use Laravel's native pagination
         $paginator = $query->paginate($perPage, ['*'], 'page', $page);
 
-        // Transform the paginated data
-        $sales = $paginator->getCollection()->map(function ($sale) {
-                return [
-                    'sale_id' => $sale->id,
-                    'reference_id' => $sale->reference_id,
-                    'invoice_number' => $sale->invoice_number,
-                    'sync_id' => $sale->sync_id,
-                    'store_id' => $sale->store_id,
-                    'contact_id' => $sale->contact_id,
-                    'sale_date' => $sale->created_at instanceof Carbon
-                        ? $sale->created_at->toIso8601String()
-                        : Carbon::parse($sale->created_at)->toIso8601String(),
-                    'sale_time' => $sale->created_at instanceof Carbon
-                        ? $sale->created_at->format('H:i:s')
-                        : Carbon::parse($sale->created_at)->format('H:i:s'),
-                    'total_amount' => (float) $sale->total_amount,
-                    'total_charge_amount' => (float) ($sale->total_charge_amount ?? 0),
-                    'discount' => (float) ($sale->discount ?? 0),
-                    'amount_received' => (float) ($sale->amount_received ?? 0),
-                    'profit_amount' => (float) ($sale->profit_amount ?? 0),
-                    'status' => $sale->status,
-                    'payment_status' => $sale->payment_status,
-                    'note' => $sale->note,
-                    'updated_at' => $sale->updated_at instanceof Carbon
-                        ? $sale->updated_at->toIso8601String()
-                        : Carbon::parse($sale->updated_at)->toIso8601String(),
-                    // Related data
-                    'items' => $sale->items->map(function ($item) {
-                        return [
-                            'sale_item_id' => $item->id,
-                            'sale_id' => $item->sale_id,
-                            'item_type' => $item->item_type ?? 'product',
-                            'product_id' => $item->product_id,
-                            'batch_id' => $item->batch_id,
-                            'charge_id' => $item->charge_id,
-                            'description' => $item->description ?? $item->product?->name,
-                            'quantity' => (float) ($item->quantity ?? 0),
-                            'free_quantity' => (float) ($item->free_quantity ?? 0),
-                            'is_free' => (bool) ($item->is_free ?? false),
-                            'unit_price' => (float) ($item->unit_price ?? 0),
-                            'unit_cost' => (float) ($item->unit_cost ?? 0),
-                            'discount' => (float) ($item->discount ?? 0),
-                            'flat_discount' => (float) ($item->flat_discount ?? 0),
-                            'charge_type' => $item->charge_type,
-                            'rate_value' => $item->rate_value ? (float) $item->rate_value : null,
-                            'rate_type' => $item->rate_type,
-                            'base_amount' => $item->base_amount ? (float) $item->base_amount : null,
-                        ];
-                    }),
-                    'transactions' => $sale->transactions->map(function ($txn) {
-                        return [
-                            'transaction_id' => $txn->id,
-                            'sales_id' => $txn->sales_id,
-                            'store_id' => $txn->store_id,
-                            'contact_id' => $txn->contact_id,
-                            'transaction_date' => $txn->created_at instanceof Carbon
-                                ? $txn->created_at->toIso8601String()
-                                : Carbon::parse($txn->created_at)->toIso8601String(),
-                            'amount' => (float) $txn->amount,
-                            'payment_method' => $txn->payment_method,
-                            'transaction_type' => $txn->transaction_type,
-                            'note' => $txn->note,
-                        ];
-                    }),
-                ];
-            });
+        $sales = $paginator->getCollection()->map(fn ($sale) => [
+            'sale_id'             => $sale->id,
+            'reference_id'        => $sale->reference_id,
+            'invoice_number'      => $sale->invoice_number,
+            'sync_id'             => $sale->sync_id,
+            'store_id'            => $sale->store_id,
+            'contact_id'          => $sale->contact_id,
+            'sale_date'           => $sale->created_at->toIso8601String(),
+            'sale_time'           => $sale->created_at->format('H:i:s'),
+            'total_amount'        => (float) $sale->total_amount,
+            'total_charge_amount' => (float) ($sale->total_charge_amount ?? 0),
+            'discount'            => (float) ($sale->discount ?? 0),
+            'amount_received'     => (float) ($sale->amount_received ?? 0),
+            'profit_amount'       => (float) ($sale->profit_amount ?? 0),
+            'status'              => $sale->status,
+            'payment_status'      => $sale->payment_status,
+            'note'                => $sale->note,
+            'updated_at'          => $sale->updated_at->toIso8601String(),
+            'items'               => $sale->items->map(fn ($item) => [
+                'sale_item_id'  => $item->id,
+                'sale_id'       => $item->sale_id,
+                'item_type'     => $item->item_type ?? 'product',
+                'product_id'    => $item->product_id,
+                'batch_id'      => $item->batch_id,
+                'charge_id'     => $item->charge_id,
+                'description'   => $item->description ?? $item->product?->name,
+                'quantity'      => (float) ($item->quantity ?? 0),
+                'free_quantity' => (float) ($item->free_quantity ?? 0),
+                'is_free'       => (bool) ($item->is_free ?? false),
+                'unit_price'    => (float) ($item->unit_price ?? 0),
+                'unit_cost'     => (float) ($item->unit_cost ?? 0),
+                'discount'      => (float) ($item->discount ?? 0),
+                'flat_discount' => (float) ($item->flat_discount ?? 0),
+                'charge_type'   => $item->charge_type,
+                'rate_value'    => $item->rate_value ? (float) $item->rate_value : null,
+                'rate_type'     => $item->rate_type,
+                'base_amount'   => $item->base_amount ? (float) $item->base_amount : null,
+            ]),
+            'transactions'        => $sale->transactions->map(fn ($txn) => [
+                'transaction_id'   => $txn->id,
+                'sales_id'         => $txn->sales_id,
+                'store_id'         => $txn->store_id,
+                'contact_id'       => $txn->contact_id,
+                'transaction_date' => $txn->created_at->toIso8601String(),
+                'amount'           => (float) $txn->amount,
+                'payment_method'   => $txn->payment_method,
+                'transaction_type' => $txn->transaction_type,
+                'note'             => $txn->note,
+            ]),
+        ]);
 
         return response()->json([
-            'status' => 'success',
-            'data' => $sales,
+            'status'     => 'success',
+            'data'       => $sales,
             'pagination' => [
                 'current_page' => $paginator->currentPage(),
-                'per_page' => $paginator->perPage(),
-                'total' => $paginator->total(),
-                'last_page' => $paginator->lastPage(),
-                'has_more' => $paginator->hasMorePages(),
+                'per_page'     => $paginator->perPage(),
+                'total'        => $paginator->total(),
+                'last_page'    => $paginator->lastPage(),
+                'has_more'     => $paginator->hasMorePages(),
             ],
-            'timestamp' => now()->toIso8601String(),
-        ]);
-    }
-
-    /**
-     * Get users for approval workflow
-     * Returns user information for account approval via InstantDB
-     *
-     * Note:
-     * - User ID: returned as 'user_id' (required for approval)
-     * - Store ID: returned as 'store_id' (required for approval)
-     * - User Role: returned as 'user_role' field for $users in InstantDB
-     *
-     * Query params:
-     * - email (optional): Filter by specific user email
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    private function getUsers(Request $request)
-    {
-        $email = $request->query('email');
-
-        $query = \App\Models\User::query();
-
-        // Filter by email if provided
-        if ($email) {
-            $query->where('email', $email);
-        }
-
-        $users = $query->get()->map(function ($user) {
-            return [
-                'user_id' => $user->id,      // Explicit user_id from database
-                'name' => $user->name,
-                'email' => $user->email,
-                'user_name' => $user->user_name,
-                'store_id' => $user->store_id ?? null,  // Required for approval
-                'user_role' => $user->user_role,  // User role
-                'is_active' => (bool) ($user->is_active ?? true),
-                'updated_at' => $user->updated_at instanceof Carbon
-                    ? $user->updated_at->toIso8601String()
-                    : Carbon::parse($user->updated_at)->toIso8601String(),
-            ];
-        });
-
-        return response()->json([
-            'status' => 'success',
-            'data' => $users,
-            'count' => $users->count(),
-            'timestamp' => now()->toIso8601String(),
+            'timestamp'  => now()->toIso8601String(),
         ]);
     }
 
@@ -867,16 +728,35 @@ class SyncController extends Controller
                 $responseData = $response->getData(true);
 
                 if (isset($responseData['status']) && $responseData['status'] === 'success') {
+                    $saleId = $responseData['sale_id'] ?? null;
+
+                    // Fetch the server-generated invoice_number from the DB
+                    $invoiceNumber = null;
+                    if ($saleId) {
+                        $saleRecord = \App\Models\Sale::find($saleId);
+                        $invoiceNumber = $saleRecord?->invoice_number;
+                    }
+
                     $synced[] = [
                         'sync_id' => $syncId,
-                        'sale_id' => $responseData['sale_id'] ?? null,
-                        'invoice_number' => $responseData['invoice_number'] ?? null,
+                        'sale_id' => $saleId,
+                        'invoice_number' => $invoiceNumber,
                         'message' => $responseData['message'] ?? 'Sale created successfully'
                     ];
                 } else {
+                    // POSController returns {'error': '...'} on failure (not 'message')
+                    $errMsg = $responseData['error']
+                        ?? $responseData['message']
+                        ?? json_encode($responseData);
+
+                    \Log::warning('SyncController pushSales: checkout returned non-success', [
+                        'sync_id' => $syncId,
+                        'response' => $responseData,
+                    ]);
+
                     $errors[] = [
                         'sync_id' => $syncId,
-                        'error' => $responseData['message'] ?? 'Unknown error'
+                        'error' => $errMsg
                     ];
                 }
 

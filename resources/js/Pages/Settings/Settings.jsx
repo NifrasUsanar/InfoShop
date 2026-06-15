@@ -31,6 +31,7 @@ import TelegramSetting from "./Partials/TelegramSetting";
 import LoyaltyPointsSetting from "./Partials/LoyaltyPointsSetting";
 import CurrencySetting from "./Partials/CurrencySetting";
 import BarcodeTemplateEditor from "./Partials/BarcodeTemplateEditor";
+import MobileSetting from "./Partials/MobileSetting";
 
 const VisuallyHiddenInput = styled("input")({
     clip: "rect(0 0 0 0)",
@@ -262,6 +263,7 @@ export default function Setting({ settings }) {
                         <Tab label="MODULES" value="modules" />
                         <Tab label="MAIL" value="mail" />
                         <Tab label="TELEGRAM" value="telegram" />
+                        <Tab label="MOBILE" value="mobile" />
                     </Tabs>
                 </Box>
 
@@ -666,6 +668,9 @@ export default function Setting({ settings }) {
                 </TabPanel>
                 <TabPanel value={tabValue} index={'telegram'}>
                     <TelegramSetting handleSubmit={handleSubmit} settingFormData={settingFormData} handleChange={handleChange} setSettingFormData={setSettingFormData} settings={settings} />
+                </TabPanel>
+                <TabPanel value={tabValue} index={'mobile'}>
+                    <MobileSetting settings={settings} />
                 </TabPanel>
                 <TabPanel value={tabValue} index={'loyalty'}>
                     <LoyaltyPointsSetting handleSubmit={handleSubmit} settingFormData={settingFormData} handleChange={handleChange} setSettingFormData={setSettingFormData} settings={settings} />

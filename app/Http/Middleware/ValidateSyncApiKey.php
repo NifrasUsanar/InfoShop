@@ -21,7 +21,8 @@ class ValidateSyncApiKey
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $configuredKey = config('app.sync_api_key');
+        $configuredKey = \App\Models\Setting::where('meta_key', 'sync_api_key')->value('meta_value')
+            ?: config('app.sync_api_key');
         
         // If no API key is configured, deny access for security
         if (empty($configuredKey)) {

@@ -374,6 +374,18 @@ class SettingController extends Controller
         return response()->json(['message' => 'Setting has been updated successfully!'], 200);
     }
 
+    public function generateSyncKey()
+    {
+        $key = bin2hex(random_bytes(32));
+
+        Setting::updateOrCreate(
+            ['meta_key' => 'sync_api_key'],
+            ['meta_value' => $key]
+        );
+
+        return response()->json(['key' => $key]);
+    }
+
     public function updateModule($action, Request $request)
     {
         $module = $request->input('module');

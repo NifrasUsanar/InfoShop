@@ -560,7 +560,7 @@ class POSController extends Controller
                     }
                 }
 
-                if ($item['product_type'] == 'reload') {
+                if (($item['product_type'] ?? '') == 'reload') {
                     $validator = Validator::make($item, [
                         'account_number' => 'required', // Account number must be required when product type is reload
                     ]);

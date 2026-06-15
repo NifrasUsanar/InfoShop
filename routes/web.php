@@ -168,6 +168,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/settings/custom-css', [SettingController::class, 'customCSS']);
     Route::post('/settings/custom-css', [SettingController::class, 'updateCustomCSS']);
     Route::post('/settings/module/{action}', [SettingController::class, 'updateModule']);
+    Route::post('/settings/generate-sync-key', [SettingController::class, 'generateSyncKey']);
     Route::post('/settings/get-template', [SettingController::class, 'getTemplate'])->name('settings.gettemplate');
     Route::post('/settings/save-template', [SettingController::class, 'saveTemplate'])->name('settings.savetemplate');
 

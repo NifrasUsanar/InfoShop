@@ -23,33 +23,6 @@ Route::middleware('sync.api')->group(function () {
     Route::post('/sync/sales', [SyncController::class, 'pushSales']); // Push sales from mobile
 });
 
-// Firebase configuration endpoint for POS-Offline
-Route::get('/config/firebase', function () {
-    $config = config('services.firebase');
-
-    // Only return config if at least project_id is set
-    if (empty($config['project_id'])) {
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Firebase not configured. Please set FIREBASE_* variables in .env',
-            'config' => null,
-        ], 503);
-    }
-
-    return response()->json([
-        'status' => 'success',
-        'config' => [
-            'apiKey' => $config['api_key'],
-            'authDomain' => $config['auth_domain'],
-            'databaseURL' => $config['database_url'],
-            'projectId' => $config['project_id'],
-            'storageBucket' => $config['storage_bucket'],
-            'messagingSenderId' => $config['messaging_sender_id'],
-            'appId' => $config['app_id'],
-            'measurementId' => $config['measurement_id'],
-        ],
-    ]);
-});
 
 // Dedicated sync endpoints for POS Offline
 // Protected by X-API-Key header authentication
