@@ -12,6 +12,7 @@ use App\Models\Contact;
 use App\Models\Setting;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 use Exception;
 
 class InstallerService
@@ -42,6 +43,26 @@ class InstallerService
             ];
         }
 
+        // Check MySQL version (best-effort — may not be connectable before DB setup)
+        $requiredMysqlVersion = $requirements['mysql_version'] ?? '8.0';
+        $mysqlVersion = null;
+        if (extension_loaded('pdo_mysql')) {
+            try {
+                $pdo = new \PDO('mysql:host=127.0.0.1', '', '', [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_SILENT]);
+                $mysqlVersion = $pdo->getAttribute(\PDO::ATTR_SERVER_VERSION);
+            } catch (\Exception $e) {
+                $mysqlVersion = null;
+            }
+        }
+        $results['mysql'] = [
+            'name'     => 'MySQL Version',
+            'required' => '>= ' . $requiredMysqlVersion,
+            'current'  => $mysqlVersion ?? 'Not connected yet — verified during DB setup',
+            'status'   => $mysqlVersion
+                ? version_compare(preg_replace('/[^0-9.].*/', '', $mysqlVersion), $requiredMysqlVersion, '>=')
+                : null,
+        ];
+
         // Check folder permissions
         $permissions = config('installer.permissions');
         foreach ($permissions as $folder => $permission) {
@@ -62,64 +83,45 @@ class InstallerService
     public function testDatabaseConnection(array $credentials): array
     {
         try {
-            $driver = $credentials['driver'] ?? 'mysql';
-
-            if ($driver === 'sqlite') {
-                $dbPath = $credentials['database'] ?? database_path('database.sqlite');
-                
-                // Create SQLite file if it doesn't exist
-                if (!File::exists($dbPath)) {
-                    $directory = dirname($dbPath);
-                    if (!File::exists($directory)) {
-                        File::makeDirectory($directory, 0755, true);
-                    }
-                    File::put($dbPath, '');
-                }
-
-                // Test SQLite connection
-                $pdo = new \PDO("sqlite:" . $dbPath);
-                $pdo->exec('SELECT 1');
-
-                return [
-                    'success' => true,
-                    'message' => 'SQLite connection successful!',
-                ];
-            }
-
-            // MySQL connection test
-            $host = $credentials['host'] ?? 'localhost';
-            $port = $credentials['port'] ?? '3306';
+            $host     = $credentials['host']     ?? 'localhost';
+            $port     = $credentials['port']     ?? '3306';
             $database = $credentials['database'];
             $username = $credentials['username'];
-            $password = $credentials['password'];
+            $password = $credentials['password'] ?? '';
 
-            $dsn = "mysql:host={$host};port={$port};dbname={$database}";
+            $dsn = "mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4";
             $pdo = new \PDO($dsn, $username, $password);
             $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
-            // Check if InnoDB storage engine is available
-            $stmt = $pdo->query("SHOW ENGINES");
-            $engines = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            $innodbAvailable = false;
-
-            foreach ($engines as $engine) {
-                if (strtolower($engine['Engine']) === 'innodb' &&
-                    in_array(strtolower($engine['Support']), ['yes', 'default'])) {
-                    $innodbAvailable = true;
-                    break;
-                }
-            }
-
-            if (!$innodbAvailable) {
+            // Verify MySQL version
+            $mysqlVersion     = $pdo->getAttribute(\PDO::ATTR_SERVER_VERSION);
+            $requiredVersion  = config('installer.requirements.mysql_version', '8.0');
+            $cleanVersion     = preg_replace('/[^0-9.].*/', '', $mysqlVersion);
+            if (!version_compare($cleanVersion, $requiredVersion, '>=')) {
                 return [
                     'success' => false,
-                    'message' => 'InnoDB storage engine is not available. InnoDB is required for this application.',
+                    'message' => "MySQL {$requiredVersion}+ required. Your version: {$mysqlVersion}",
+                ];
+            }
+
+            // Check InnoDB is available
+            $stmt   = $pdo->query('SHOW ENGINES');
+            $engines = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $innodb = collect($engines)->contains(
+                fn ($e) => strtolower($e['Engine']) === 'innodb'
+                        && in_array(strtolower($e['Support']), ['yes', 'default'])
+            );
+
+            if (!$innodb) {
+                return [
+                    'success' => false,
+                    'message' => 'InnoDB storage engine is not available. InnoDB is required.',
                 ];
             }
 
             return [
                 'success' => true,
-                'message' => 'Database connection successful! InnoDB is available.',
+                'message' => "Connected! MySQL {$mysqlVersion} with InnoDB.",
             ];
         } catch (Exception $e) {
             return [
@@ -130,72 +132,82 @@ class InstallerService
     }
 
     /**
-     * Write production-ready environment file (all at once)
-     * This combines database config, app settings, and production flags
-     * into a single .env write to avoid triggering artisan serve restarts
+     * Step 3 — Write DB credentials to .env and reload the running process.
+     * Called when user clicks "Next" on the Database step.
      */
-    public function writeEnvironmentFile(array $data): bool
+    public function writeDatabaseEnv(array $data): void
     {
-        try {
-            $envPath = base_path('.env');
-            $envExamplePath = base_path('.env.example');
+        $envPath        = base_path('.env');
+        $envExamplePath = base_path('.env.example');
 
-            // Use .env.example as template if .env doesn't exist
-            if (!File::exists($envPath) && File::exists($envExamplePath)) {
-                File::copy($envExamplePath, $envPath);
-            }
-
-            $envContent = File::exists($envPath) ? File::get($envPath) : '';
-
-            // ===== DATABASE CONFIGURATION =====
-            $driver = $data['db_driver'] ?? 'mysql';
-
-            if ($driver === 'sqlite') {
-                $dbPath = $data['db_database'] ?? database_path('database.sqlite');
-                $envContent = $this->setEnvValue($envContent, 'DB_CONNECTION', 'sqlite');
-                $envContent = $this->setEnvValue($envContent, 'DB_DATABASE', $dbPath);
-                // Remove MySQL-specific variables for SQLite
-                $envContent = $this->setEnvValue($envContent, 'DB_HOST', '');
-                $envContent = $this->setEnvValue($envContent, 'DB_PORT', '');
-                $envContent = $this->setEnvValue($envContent, 'DB_USERNAME', '');
-                $envContent = $this->setEnvValue($envContent, 'DB_PASSWORD', '');
-            } else {
-                $envContent = $this->setEnvValue($envContent, 'DB_CONNECTION', $driver);
-                $envContent = $this->setEnvValue($envContent, 'DB_HOST', $data['db_host']);
-                $envContent = $this->setEnvValue($envContent, 'DB_PORT', $data['db_port'] ?? '3306');
-                $envContent = $this->setEnvValue($envContent, 'DB_DATABASE', $data['db_database']);
-                $envContent = $this->setEnvValue($envContent, 'DB_USERNAME', $data['db_username']);
-                $envContent = $this->setEnvValue($envContent, 'DB_PASSWORD', $data['db_password'] ?? '');
-                $envContent = $this->setEnvValue($envContent, 'DB_ENGINE', 'InnoDB');
-            }
-
-            // ===== APPLICATION CONFIGURATION =====
-            $envContent = $this->setEnvValue($envContent, 'APP_NAME', $data['app_name'] ?? 'InfoShop');
-            $envContent = $this->setEnvValue($envContent, 'APP_URL', $data['app_url'] ?? 'http://localhost');
-            $envContent = $this->setEnvValue($envContent, 'APP_TIMEZONE', $data['app_timezone'] ?? 'UTC');
-
-            // ===== PRODUCTION ENVIRONMENT SETTINGS =====
-            // Set to production immediately (no separate call later)
-            $envContent = $this->setEnvValue($envContent, 'APP_ENV', 'production');
-            $envContent = $this->setEnvValue($envContent, 'APP_DEBUG', 'false');
-
-            // ===== SESSION & CACHE CONFIGURATION =====
-            // Use database-backed sessions and cache for production
-            $envContent = $this->setEnvValue($envContent, 'SESSION_DRIVER', 'database');
-            $envContent = $this->setEnvValue($envContent, 'CACHE_STORE', 'database');
-
-            // Write ALL configuration at once
-            File::put($envPath, $envContent);
-
-            // Generate application key if not exists
-            if (strpos($envContent, 'APP_KEY=') === false || strpos($envContent, 'APP_KEY=base64:') === false) {
-                Artisan::call('key:generate', ['--force' => true]);
-            }
-
-            return true;
-        } catch (Exception $e) {
-            throw new Exception('Failed to write environment file: ' . $e->getMessage());
+        if (!File::exists($envPath) && File::exists($envExamplePath)) {
+            File::copy($envExamplePath, $envPath);
         }
+
+        $envContent = File::exists($envPath) ? File::get($envPath) : '';
+        $envContent = $this->setEnvValue($envContent, 'DB_CONNECTION', 'mysql');
+        $envContent = $this->setEnvValue($envContent, 'DB_HOST',       $data['db_host']);
+        $envContent = $this->setEnvValue($envContent, 'DB_PORT',       $data['db_port'] ?? '3306');
+        $envContent = $this->setEnvValue($envContent, 'DB_DATABASE',   $data['db_database']);
+        $envContent = $this->setEnvValue($envContent, 'DB_USERNAME',   $data['db_username']);
+        $envContent = $this->setEnvValue($envContent, 'DB_PASSWORD',   $data['db_password'] ?? '');
+        $envContent = $this->setEnvValue($envContent, 'DB_ENGINE',     'InnoDB');
+        File::put($envPath, $envContent);
+
+        if (strpos($envContent, 'APP_KEY=base64:') === false) {
+            Artisan::call('key:generate', ['--force' => true]);
+        }
+
+        // Update in-memory config + OS env so the current process uses the new DB
+        config([
+            'database.default'                          => 'mysql',
+            'database.connections.mysql.host'           => $data['db_host'],
+            'database.connections.mysql.port'           => $data['db_port'] ?? '3306',
+            'database.connections.mysql.database'       => $data['db_database'],
+            'database.connections.mysql.username'       => $data['db_username'],
+            'database.connections.mysql.password'       => $data['db_password'] ?? '',
+            'database.connections.mysql.charset'        => 'utf8mb4',
+            'database.connections.mysql.collation'      => 'utf8mb4_unicode_ci',
+            'database.connections.mysql.prefix'         => '',
+            'database.connections.mysql.prefix_indexes' => true,
+            'database.connections.mysql.strict'         => true,
+            'database.connections.mysql.engine'         => 'InnoDB',
+        ]);
+
+        DB::purge('mysql');
+        DB::setDefaultConnection('mysql');
+
+        foreach ([
+            'DB_CONNECTION' => 'mysql',
+            'DB_HOST'       => $data['db_host'],
+            'DB_PORT'       => $data['db_port'] ?? '3306',
+            'DB_DATABASE'   => $data['db_database'],
+            'DB_USERNAME'   => $data['db_username'],
+            'DB_PASSWORD'   => $data['db_password'] ?? '',
+        ] as $key => $value) {
+            putenv("{$key}={$value}");
+            $_ENV[$key] = $_SERVER[$key] = $value;
+        }
+    }
+
+    /**
+     * Step 4 — Write app settings (name, URL, timezone) to .env.
+     * Called when user clicks "Next" on the Settings step.
+     */
+    public function writeAppEnv(array $data): void
+    {
+        $envPath    = base_path('.env');
+        $envContent = File::exists($envPath) ? File::get($envPath) : '';
+        $envContent = $this->setEnvValue($envContent, 'APP_NAME',     $data['app_name']     ?? 'InfoShop');
+        $envContent = $this->setEnvValue($envContent, 'APP_URL',      $data['app_url']      ?? 'http://localhost');
+        $envContent = $this->setEnvValue($envContent, 'APP_TIMEZONE', $data['app_timezone'] ?? 'UTC');
+        File::put($envPath, $envContent);
+
+        config([
+            'app.name'     => $data['app_name'],
+            'app.url'      => $data['app_url'],
+            'app.timezone' => $data['app_timezone'],
+        ]);
     }
 
     /**
@@ -220,6 +232,26 @@ class InstallerService
             // Non-critical error, log it but don't fail installation
             logger()->warning('Failed to finalize installation: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Write database-backed drivers to .env after migrations have created the tables
+     */
+    private function switchToProductionDrivers(): void
+    {
+        $envPath = base_path('.env');
+        $envContent = File::get($envPath);
+
+        // Production environment — only set AFTER migrations have created the tables
+        $envContent = $this->setEnvValue($envContent, 'APP_ENV', 'production');
+        $envContent = $this->setEnvValue($envContent, 'APP_DEBUG', 'false');
+
+        // Database-backed drivers — tables now exist so these are safe
+        $envContent = $this->setEnvValue($envContent, 'SESSION_DRIVER', 'database');
+        $envContent = $this->setEnvValue($envContent, 'CACHE_STORE', 'database');
+        $envContent = $this->setEnvValue($envContent, 'QUEUE_CONNECTION', 'database');
+
+        File::put($envPath, $envContent);
     }
 
     /**
@@ -254,12 +286,14 @@ class InstallerService
             // Clear config cache first so new .env values are loaded
             Artisan::call('config:clear', ['--no-interaction' => true]);
 
-            // Run migrations BEFORE transaction - migration can drop/create tables
-            // Using --no-interaction to prevent hanging on user input
+            // Run migrations — tables (sessions, cache, jobs, etc.) are created here
             Artisan::call('migrate:fresh', [
                 '--force' => true,
                 '--no-interaction' => true,
             ]);
+
+            // Switch to database-backed session/cache/queue NOW that tables exist
+            $this->switchToProductionDrivers();
 
             // Now start transaction for seeding operations
             DB::beginTransaction();
@@ -276,11 +310,8 @@ class InstallerService
             // Create admin user
             $admin = $this->createAdminUser($data['admin'], $store->id);
 
-            // Seed default settings
+            // Seed default settings (includes installed_at marker inside the transaction)
             $this->seedDefaultSettings($data['store']['name'], $data['currency']);
-
-            // Mark installation as complete
-            File::put(storage_path('installed'), date('Y-m-d H:i:s'));
 
             DB::commit();
 
@@ -306,9 +337,7 @@ class InstallerService
      */
     private function seedRolesAndPermissions(): void
     {
-        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin']);
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $userRole = Role::firstOrCreate(['name' => 'user']);
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
             'pos', 'products', 'inventory', 'sales', 'customers', 'vendors',
@@ -318,12 +347,20 @@ class InstallerService
         ];
 
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
 
-        $superAdminRole->givePermissionTo(Permission::all());
-        $adminRole->givePermissionTo($permissions);
-        $userRole->givePermissionTo(['products', 'pos']);
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin', 'guard_name' => 'web']);
+        $adminRole      = Role::firstOrCreate(['name' => 'admin',       'guard_name' => 'web']);
+        $userRole       = Role::firstOrCreate(['name' => 'user',        'guard_name' => 'web']);
+
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $superAdminRole->syncPermissions(Permission::all());
+        $adminRole->syncPermissions($permissions);
+        $userRole->syncPermissions(['products', 'pos']);
+
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
     }
 
     /**
@@ -395,6 +432,7 @@ class InstallerService
         ];
 
         $settings = [
+            ['meta_key' => 'installed_at', 'meta_value' => now()->toDateTimeString()],
             ['meta_key' => 'shop_name', 'meta_value' => $shopName],
             ['meta_key' => 'shop_logo', 'meta_value' => $defaults['shop_logo']],
             ['meta_key' => 'sale_receipt_note', 'meta_value' => $defaults['sale_receipt_note']],
@@ -451,6 +489,10 @@ EOT;
      */
     public function isInstalled(): bool
     {
-        return File::exists(storage_path('installed'));
+        try {
+            return DB::table('settings')->where('meta_key', 'installed_at')->exists();
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 }

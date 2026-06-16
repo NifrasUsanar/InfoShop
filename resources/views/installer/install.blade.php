@@ -7,6 +7,23 @@
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
     <h2 class="text-2xl font-bold text-gray-900 mb-6">Ready to Install</h2>
 
+    @if(session('error'))
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p class="text-sm text-red-700">{{ session('error') }}</p>
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p class="text-sm font-medium text-red-800 mb-2">Please fix the following errors:</p>
+            <ul class="list-disc list-inside text-sm text-red-700 space-y-1">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <form id="installForm" method="POST" action="{{ route('installer.process') }}" class="space-y-6">
         @csrf
 
@@ -26,19 +43,8 @@
             </div>
         </div>
 
-        <!-- Hidden fields populated from sessionStorage -->
-        <input type="hidden" name="db_driver" id="db_driver">
-        <input type="hidden" name="db_host" id="db_host">
-        <input type="hidden" name="db_port" id="db_port">
-        <input type="hidden" name="db_database" id="db_database">
-        <input type="hidden" name="db_username" id="db_username">
-        <input type="hidden" name="db_password" id="db_password">
-
-        <input type="hidden" name="app_name" id="app_name">
-        <input type="hidden" name="app_url" id="app_url">
-        <input type="hidden" name="app_env" id="app_env">
-        <input type="hidden" name="app_timezone" id="app_timezone">
-
+        <!-- DB and app settings are already in .env from steps 3 & 4 -->
+        <!-- Only store, currency, and admin data is needed here -->
         <input type="hidden" name="store_name" id="store_name">
         <input type="hidden" name="store_address" id="store_address">
         <input type="hidden" name="store_contact" id="store_contact">
@@ -83,10 +89,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     const btnText = document.getElementById('btnText');
 
-    // Populate form from sessionStorage
+    // Populate form from sessionStorage (db/app settings already in .env)
     const fields = [
-        'db_driver', 'db_host', 'db_port', 'db_database', 'db_username', 'db_password',
-        'app_name', 'app_url', 'app_env', 'app_timezone',
         'store_name', 'store_address', 'store_contact', 'sale_prefix',
         'currency_symbol', 'currency_code', 'symbol_position', 'decimal_separator',
         'thousands_separator', 'decimal_places', 'negative_format', 'show_currency_code',
@@ -110,11 +114,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Validate required fields before submit
     form.addEventListener('submit', function(e) {
         const requiredFields = {
-            'db_driver': 'Database Driver',
-            'db_database': 'Database Name',
-            'app_name': 'App Name',
-            'app_url': 'App URL',
-            'app_timezone': 'Timezone',
             'store_name': 'Store Name',
             'store_address': 'Store Address',
             'admin_name': 'Admin Name',

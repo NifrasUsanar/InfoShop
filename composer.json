@@ -37,10 +37,7 @@
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
-        },
-        "files": [
-            "app/Helpers/PwaHelper.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
@@ -50,6 +47,15 @@
     "scripts": {
         "dev": [
             "npm run dev:all"
+        ],
+        "dev:install": [
+            "@installer:reset",
+            "npm run dev:all"
+        ],
+        "installer:reset": [
+            "@php -r \"copy('.env.example', '.env'); echo 'Copied .env.example to .env' . PHP_EOL;\"",
+            "@php artisan key:generate --ansi",
+            "@php -r \"file_exists('storage/installed') && unlink('storage/installed'); echo 'Removed storage/installed' . PHP_EOL;\""
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

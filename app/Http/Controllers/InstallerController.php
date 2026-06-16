@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\InstallerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use DateTimeZone;
 
 class InstallerController extends Controller
@@ -46,8 +47,43 @@ class InstallerController extends Controller
      */
     public function database()
     {
-        $drivers = config('installer.database_drivers');
-        return view('installer.database', compact('drivers'));
+        return view('installer.database');
+    }
+
+    /**
+     * Save DB credentials to .env (called when user clicks Next on step 3)
+     */
+    public function saveDatabase(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'host'     => 'required',
+            'database' => 'required',
+            'username' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        // Verify connection is actually working before saving
+        $test = $this->installer->testDatabaseConnection($request->all());
+        if (!$test['success']) {
+            return back()->with('db_error', $test['message'])->withInput();
+        }
+
+        try {
+            $this->installer->writeDatabaseEnv([
+                'db_host'     => $request->host,
+                'db_port'     => $request->port ?? '3306',
+                'db_database' => $request->database,
+                'db_username' => $request->username,
+                'db_password' => $request->password ?? '',
+            ]);
+        } catch (\Exception $e) {
+            return back()->with('db_error', 'Failed to save database config: ' . $e->getMessage())->withInput();
+        }
+
+        return redirect()->route('installer.settings');
     }
 
     /**
@@ -57,10 +93,9 @@ class InstallerController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'driver' => 'required|in:mysql,sqlite',
-                'database' => 'required_if:driver,mysql,sqlite',
-                'host' => 'required_if:driver,mysql',
-                'username' => 'required_if:driver,mysql',
+                'database' => 'required',
+                'host' => 'required',
+                'username' => 'required',
             ]);
 
             if ($validator->fails()) {
@@ -88,13 +123,39 @@ class InstallerController extends Controller
     public function settings()
     {
         try {
-            // Get all available timezones
             $timezones = DateTimeZone::listIdentifiers();
-
             return view('installer.settings', compact('timezones'));
         } catch (\Exception $e) {
             return back()->with('error', 'Failed to load settings: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Save app settings to .env (called when user clicks Next on step 4)
+     */
+    public function saveSettings(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'app_name'     => 'required|string|max:255',
+            'app_url'      => 'required|url',
+            'app_timezone' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator)->withInput();
+        }
+
+        try {
+            $this->installer->writeAppEnv([
+                'app_name'     => $request->app_name,
+                'app_url'      => $request->app_url,
+                'app_timezone' => $request->app_timezone,
+            ]);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to save app settings: ' . $e->getMessage())->withInput();
+        }
+
+        return redirect()->route('installer.store');
     }
 
     /**
@@ -131,19 +192,12 @@ class InstallerController extends Controller
      */
     public function processInstallation(Request $request)
     {
-        // Validate request
+        if ($this->installer->isInstalled()) {
+            return redirect('/login')->with('error', 'Application is already installed.');
+        }
+
+        // Validate request — DB and app settings are already in .env from earlier steps
         $validator = Validator::make($request->all(), [
-            // Database
-            'db_driver' => 'required|in:mysql,sqlite',
-            'db_database' => 'required',
-            'db_host' => 'required_if:db_driver,mysql',
-            'db_username' => 'required_if:db_driver,mysql',
-
-            // Application
-            'app_name' => 'required|string|max:255',
-            'app_url' => 'required|url',
-            'app_timezone' => 'required|string',
-
             // Store
             'store_name' => 'required|string|max:255',
             'store_address' => 'required|string',
@@ -151,14 +205,14 @@ class InstallerController extends Controller
             'sale_prefix' => 'required|string|max:10',
 
             // Currency
-            'currency_symbol' => 'required|string|max:10',
-            'currency_code' => 'required|string|max:10',
-            'symbol_position' => 'required|in:before,after',
-            'decimal_separator' => 'required|in:.,\,',
-            'thousands_separator' => 'required|in:",",.," "',
-            'decimal_places' => 'required|in:0,2,3',
-            'negative_format' => 'required|in:minus,parentheses',
-            'show_currency_code' => 'required|in:yes,no',
+            'currency_symbol'     => 'required|string|max:10',
+            'currency_code'       => 'required|string|max:10',
+            'symbol_position'     => ['required', Rule::in(['before', 'after'])],
+            'decimal_separator'   => ['required', Rule::in(['.', ','])],
+            'thousands_separator' => ['required', Rule::in([',', '.', ' '])],
+            'decimal_places'      => ['required', Rule::in(['0', '2', '3'])],
+            'negative_format'     => ['required', Rule::in(['minus', 'parentheses'])],
+            'show_currency_code'  => ['required', Rule::in(['yes', 'no'])],
 
             // Admin
             'admin_name' => 'required|string|max:255',
@@ -174,30 +228,7 @@ class InstallerController extends Controller
         }
 
         try {
-            // Write environment file (ALL production-ready settings at once)
-            $this->installer->writeEnvironmentFile([
-                'db_driver' => $request->db_driver,
-                'db_host' => $request->db_host,
-                'db_port' => $request->db_port ?? '3306',
-                'db_database' => $request->db_database,
-                'db_username' => $request->db_username,
-                'db_password' => $request->db_password,
-                'app_name' => $request->app_name,
-                'app_url' => $request->app_url,
-                'app_timezone' => $request->app_timezone,
-            ]);
-        } catch (\Exception $e) {
-            logger()->error('Installation: Failed to write environment file', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            return back()
-                ->with('error', 'Failed to write environment file: ' . $e->getMessage())
-                ->withInput();
-        }
-
-        try {
-            // Run installation (migrations + seeding + data setup)
+            // Run installation — .env already written by database/settings steps
             $result = $this->installer->runInstallation([
                 'store' => [
                     'name' => $request->store_name,

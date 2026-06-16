@@ -8,7 +8,9 @@ Route::prefix('install')->name('installer.')->group(function () {
     Route::get('/requirements', [InstallerController::class, 'requirements'])->name('requirements');
     Route::get('/database', [InstallerController::class, 'database'])->name('database');
     Route::post('/database/test', [InstallerController::class, 'testDatabase'])->name('database.test');
+    Route::post('/database/save', [InstallerController::class, 'saveDatabase'])->name('database.save');
     Route::get('/settings', [InstallerController::class, 'settings'])->name('settings');
+    Route::post('/settings/save', [InstallerController::class, 'saveSettings'])->name('settings.save');
     Route::get('/store', [InstallerController::class, 'store'])->name('store');
     Route::get('/admin', [InstallerController::class, 'admin'])->name('admin');
     Route::get('/install', [InstallerController::class, 'install'])->name('install');

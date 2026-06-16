@@ -7,7 +7,11 @@
 <div x-data="settingsData()" class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
     <h2 class="text-2xl font-bold text-gray-900 mb-6">Application Settings</h2>
 
-    <form @submit.prevent="submitForm()" class="space-y-6">
+    <form @submit.prevent="submitForm()" method="POST" action="{{ route('installer.settings.save') }}" id="settingsForm" class="space-y-6">
+        @csrf
+        <input type="hidden" name="app_name"     id="f_app_name">
+        <input type="hidden" name="app_url"      id="f_app_url">
+        <input type="hidden" name="app_timezone" id="f_app_timezone">
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Application Name</label>
             <input type="text" x-model="app_name" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="InfoShop">
@@ -125,11 +129,17 @@ function settingsData() {
         },
         
         submitForm() {
-            sessionStorage.setItem('app_name', this.app_name);
-            sessionStorage.setItem('app_url', this.app_url);
-            sessionStorage.setItem('app_env', this.app_env);
+            // Also keep in sessionStorage for back-navigation UX
+            sessionStorage.setItem('app_name',     this.app_name);
+            sessionStorage.setItem('app_url',      this.app_url);
+            sessionStorage.setItem('app_env',      this.app_env);
             sessionStorage.setItem('app_timezone', this.app_timezone);
-            window.location.href = '{{ route('installer.store') }}';
+
+            // Populate hidden fields and submit real form to write .env
+            document.getElementById('f_app_name').value     = this.app_name;
+            document.getElementById('f_app_url').value      = this.app_url;
+            document.getElementById('f_app_timezone').value = this.app_timezone;
+            document.getElementById('settingsForm').submit();
         }
     }
 }

@@ -32,6 +32,38 @@
         </div>
     </div>
 
+    <!-- MySQL Version -->
+    @php $mysql = $requirements['mysql'] ?? null; @endphp
+    @if($mysql)
+    <div class="mb-8">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">MySQL Version</h3>
+        <div class="bg-gray-50 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="font-medium text-gray-900">{{ $mysql['name'] }}</p>
+                    <p class="text-sm text-gray-600">Required: {{ $mysql['required'] }}</p>
+                </div>
+                <div class="flex items-center">
+                    <span class="mr-3 text-gray-600">{{ $mysql['current'] }}</span>
+                    @if($mysql['status'] === null)
+                        <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"></path>
+                        </svg>
+                    @elseif($mysql['status'])
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    @else
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- PHP Extensions -->
     <div class="mb-8">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">PHP Extensions</h3>
@@ -78,7 +110,9 @@
     </div>
 
     @php
+        $mysqlOk = ($requirements['mysql']['status'] ?? null) !== false; // null = unknown (not blocking), false = failed
         $allRequirementsMet = $requirements['php']['status'] &&
+            $mysqlOk &&
             collect($requirements['extensions'])->every(fn($ext) => $ext['status']) &&
             collect($requirements['permissions'])->every(fn($perm) => $perm['status']);
     @endphp

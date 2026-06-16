@@ -12,6 +12,7 @@ return [
     */
     'requirements' => [
         'php_version' => '8.2',
+        'mysql_version' => '8.0',
         'extensions' => [
             'bcmath',
             'ctype',
@@ -20,6 +21,7 @@ return [
             'mbstring',
             'openssl',
             'pdo',
+            'pdo_mysql',
             'tokenizer',
             'xml',
             'curl',
@@ -52,7 +54,6 @@ return [
     */
     'database_drivers' => [
         'mysql' => 'MySQL',
-        'sqlite' => 'SQLite',
     ],
 
     /*

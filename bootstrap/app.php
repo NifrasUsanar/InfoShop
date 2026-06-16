@@ -31,5 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // No .env / APP_KEY → redirect to installer instead of showing an error page
+        $exceptions->render(function (\Illuminate\Encryption\MissingAppKeyException $e, \Illuminate\Http\Request $request) {
+            return redirect()->to('/install');
+        });
     })->create();

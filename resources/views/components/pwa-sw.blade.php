@@ -1,1 +1,0 @@
-{!! \App\Helpers\PwaHelper::getServiceWorkerScript() !!}
