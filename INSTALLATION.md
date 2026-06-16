@@ -1,102 +1,118 @@
 # Install On cPanel Shared Hosting
 
-To install InfoShop on cPanel shared hosting, access cPanel, and follow the installation prompts for seamless setup.
+To install InfoShop on cPanel shared hosting, upload the release package and follow the installation wizard at `/install`.
 
 ---
 
-## TIPS
+## Requirements
 
-Recommended steps below 👇
-
----
-
-## Follow These Instructions
-
-1. Zip your project folder.
-
-2. Login to your cPanel.
-
-3. Go to the File Manager option and select it.
-
-4. Ensure you're in the root folder (public_html), then click "Upload".
-
-5. Select your zip folder and wait for the upload to complete. If the upload area is green, then go back to home.
-
-6. Unzip the uploaded folder.
-
-7. Select all files and directory move to the root folder.
-
-8. Go back to cPanel and navigate to Database (MySQL Databases).
-
-9. Create a database and add (create if non exist) a DB user.
-
-10. You can then run your domain in any browser after that:
-    `https://your-domain.com/install`
-
-11. **Step 1 - Welcome**
-    Press the "Get Started" button that appears on the screen.
-
-12. **Step 2 - Server Requirements**
-    Check if all requirements are met (green checkmarks). If any requirement is red, contact your hosting provider to enable it. Then press the "Next" button.
-
-13. **Step 3 - Database Configuration**
-    Then fill up the database connection form with:
-    - Database Driver (MySQL or SQLite)
-    - Database Host (localhost)
-    - Database Name (the one you created)
-    - Username (the one you created)
-    - Password (the one you created)
-    
-    Click "Test Database Connection" to verify. Then press the "Next" button.
-
-14. **Step 4 - Application Settings**
-    Fill out the form with:
-    - Application Name
-    - Application URL
-    - Timezone
-    
-    Then press the "Next" button.
-
-15. **Step 5 - Store Information & Currency**
-    Fill out the form with:
-    - Store Name
-    - Store Address
-    - Contact Number
-    - Currency Symbol
-    - Currency Code
-    - Currency Settings (Position, Separators, Decimal Places)
-    
-    Then press the "Next" button.
-
-16. **Step 6 - Create Admin Account**
-    Fill out the form with:
-    - Full Name
-    - Username
-    - Email Address
-    - Password
-    - Confirm Password
-    
-    Then press the "Next" button.
-
-17. **Step 7 - Installation**
-    Wait for the installation to complete. Do not refresh or close the browser. The progress will show when it's done.
-
-18. **Step 8 - Complete**
-    Click on the "Go to Login" button to complete the installation process and access your dashboard.
+- PHP 8.2 or higher
+- MySQL 5.7 or higher
+- Extensions: `pdo_mysql`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath`, `gd`, `zip`, `curl`
 
 ---
 
-## UNNECESSARY ERROR
+## Steps
 
-### If no uploaded image is visible
+### 1. Upload the Application
 
-1. Go to File Manager and navigate to the root folder
-2. Find and delete the `storage/links` folder if it exists
-3. Then go to your URL:
-   `https://your-domain.com/storagelink`
+1. Download the latest release ZIP from the releases page.
+2. Log in to cPanel and open **File Manager**.
+3. Navigate to `public_html` (or your target subdomain folder).
+4. Click **Upload** and select the ZIP file. Wait for the upload to complete.
+5. Right-click the uploaded ZIP and select **Extract**.
+6. Move all extracted files into the root folder (`public_html`) if they are inside a subfolder.
 
-This will create the storage link automatically and images will be visible.
+### 2. Create a MySQL Database
+
+1. In cPanel, go to **MySQL Databases**.
+2. Create a new database.
+3. Create a database user and assign it to the database with **All Privileges**.
+4. Note the database name, username, and password — you will need them during installation.
+
+### 3. Run the Installer
+
+Open your domain in a browser:
+
+```
+https://your-domain.com/install
+```
+
+Follow the wizard steps:
+
+**Step 1 - Welcome**
+Press **Get Started**.
+
+**Step 2 - Server Requirements**
+All items should show green checkmarks. If any are red, contact your hosting provider to enable the missing PHP extension. Press **Next** when ready.
+
+**Step 3 - Database Configuration**
+Fill in your MySQL credentials:
+- Host (usually `localhost`)
+- Database Name
+- Username
+- Password
+- Port (default `3306`)
+
+Click **Test Connection** to verify the connection. If successful, press **Next** — credentials are saved to `.env` at this step.
+
+**Step 4 - Application Settings**
+Fill in:
+- Application Name
+- Application URL (e.g. `https://your-domain.com`)
+- Timezone
+
+Press **Next** — these settings are saved to `.env` at this step.
+
+**Step 5 - Store Information & Currency**
+Fill in:
+- Store Name
+- Store Address
+- Contact Number
+- Currency Symbol
+- Currency Code
+- Currency position, separators, and decimal places
+
+Press **Next**.
+
+**Step 6 - Create Admin Account**
+Fill in:
+- Full Name
+- Username
+- Email Address
+- Password
+- Confirm Password
+
+Press **Next**.
+
+**Step 7 - Install**
+The installer will run migrations and set up roles and permissions. Do not refresh or close the browser during this step. Press **Install** to begin.
+
+**Step 8 - Complete**
+Click **Go to Login** to access your dashboard.
 
 ---
 
-**Installation is now complete! You can login with the credentials you created in Step 6.**
+## Troubleshooting
+
+### Images not showing after installation
+
+1. In cPanel File Manager, navigate to the root folder.
+2. Delete the `storage/links` folder if it exists.
+3. Then visit:
+   ```
+   https://your-domain.com/storagelink
+   ```
+   This recreates the storage symlink and images will appear.
+
+### Reinstalling
+
+If you need to reinstall, visit:
+```
+https://your-domain.com/install/reset
+```
+This resets the installation state so the wizard can run again.
+
+---
+
+**Installation complete. Log in with the admin credentials you created in Step 6.**

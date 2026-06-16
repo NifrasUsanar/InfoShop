@@ -4,12 +4,27 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
+        type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -41,7 +56,7 @@ jobs:
 
       - name: Create release package
         run: |
-          VERSION=${{ github.ref_name }}
+          VERSION=${{ steps.version.outputs.tag }}
           zip -r infoshop-${VERSION}.zip . \
             --exclude "*.git*" \
             --exclude ".github/*" \
@@ -58,7 +73,7 @@ jobs:
 
       - name: Generate version.json
         run: |
-          VERSION=${{ github.ref_name }}
+          VERSION=${{ steps.version.outputs.tag }}
           VERSION_NUMBER=${VERSION#v}
           cat > version.json << EOF
           {
@@ -75,9 +90,10 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: InfoShop ${{ github.ref_name }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: InfoShop ${{ steps.version.outputs.tag }}
           files: |
-            infoshop-${{ github.ref_name }}.zip
+            infoshop-${{ steps.version.outputs.tag }}.zip
             version.json
           generate_release_notes: true
           draft: false
