@@ -1,0 +1,86 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, zip, gd, curl, bcmath
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies & build assets
+        run: |
+          npm ci
+          npm run build
+
+      - name: Copy .env.example to .env and generate key
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Create release package
+        run: |
+          VERSION=${{ github.ref_name }}
+          zip -r infoshop-${VERSION}.zip . \
+            --exclude "*.git*" \
+            --exclude ".github/*" \
+            --exclude "node_modules/*" \
+            --exclude "tests/*" \
+            --exclude ".env" \
+            --exclude "storage/logs/*.log" \
+            --exclude "storage/framework/cache/*" \
+            --exclude "storage/framework/sessions/*" \
+            --exclude "storage/framework/views/*" \
+            --exclude "*.zip"
+          echo "Package created: infoshop-${VERSION}.zip"
+          ls -lh infoshop-${VERSION}.zip
+
+      - name: Generate version.json
+        run: |
+          VERSION=${{ github.ref_name }}
+          VERSION_NUMBER=${VERSION#v}
+          cat > version.json << EOF
+          {
+            "version": "${VERSION_NUMBER}",
+            "tag": "${VERSION}",
+            "download_url": "https://github.com/${{ github.repository }}/releases/download/${VERSION}/infoshop-${VERSION}.zip",
+            "released_at": "$(date -u +%Y-%m-%d)",
+            "min_php": "8.2",
+            "changelog": "${{ github.event.head_commit.message }}"
+          }
+          EOF
+          cat version.json
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: InfoShop ${{ github.ref_name }}
+          files: |
+            infoshop-${{ github.ref_name }}.zip
+            version.json
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

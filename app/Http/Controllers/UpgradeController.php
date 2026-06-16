@@ -32,7 +32,9 @@ class UpgradeController extends Controller
      */
     public function showMaintenance()
     {
-        return Inertia::render('Maintenance/Maintenance');
+        return Inertia::render('Maintenance/Maintenance', [
+            'pageLabel' => 'Maintenance',
+        ]);
     }
 
     /**
