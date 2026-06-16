@@ -221,25 +221,6 @@ function POS({ products, customers, return_sale, categories, edit_sale, sale_dat
 
                         <SearchBox></SearchBox>
 
-                        {/* Offline button hidden for now */}
-                        {/* <a href="/pos-offline">
-                            <IconButton
-                                color="inherit"
-                                sx={{
-                                    ml: 0,
-                                    p: "10px",
-                                    color: "default",
-                                    "& .MuiSvgIcon-root": {
-                                        fontSize: 30,
-                                    },
-                                }}
-                                type="button"
-                                title="Offline Mode"
-                            >
-                                <WifiOffIcon />
-                            </IconButton>
-                        </a> */}
-
                         <Link href="/dashboard">
                             <IconButton
                                 color="inherit"
