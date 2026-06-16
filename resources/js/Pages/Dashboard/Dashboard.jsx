@@ -15,7 +15,7 @@ import {
     IconButton
 } from "@mui/material";
 import dayjs from "dayjs";
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent } from "@/Components/ui/card"
 
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import PaidIcon from "@mui/icons-material/Paid";

@@ -5,7 +5,7 @@ import {
     CardDescription,
     CardHeader,
     CardTitle,
-} from "@/components/ui/card"
+} from "@/Components/ui/card"
 import { ChartLine, Package, PackageCheck, User } from "lucide-react"
 import { usePage } from "@inertiajs/react"
 import { useCurrencyFormatter } from "@/lib/currencyFormatter"

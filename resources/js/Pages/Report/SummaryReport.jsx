@@ -9,8 +9,8 @@ import dayjs from "dayjs";
 import numeral from "numeral";
 import { TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis, Legend } from "recharts";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/Card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/Chart";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/Components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/Components/ui/chart";
 
 export default function SalesReport({ stores, report }) {
     const [dataReport, setDataReport] = useState(report);
