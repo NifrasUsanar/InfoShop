@@ -154,6 +154,12 @@ class InstallerService
         $envContent = $this->setEnvValue($envContent, 'DB_ENGINE',     'InnoDB');
         File::put($envPath, $envContent);
 
+        // Clear cached config file immediately after writing .env
+        $configCachePath = base_path('bootstrap/cache/config.php');
+        if (File::exists($configCachePath)) {
+            File::delete($configCachePath);
+        }
+
         if (strpos($envContent, 'APP_KEY=base64:') === false) {
             Artisan::call('key:generate', ['--force' => true]);
         }
@@ -203,6 +209,12 @@ class InstallerService
         $envContent = $this->setEnvValue($envContent, 'APP_TIMEZONE', $data['app_timezone'] ?? 'UTC');
         File::put($envPath, $envContent);
 
+        // Clear cached config file immediately after writing .env
+        $configCachePath = base_path('bootstrap/cache/config.php');
+        if (File::exists($configCachePath)) {
+            File::delete($configCachePath);
+        }
+
         config([
             'app.name'     => $data['app_name'],
             'app.url'      => $data['app_url'],
@@ -211,16 +223,16 @@ class InstallerService
     }
 
     /**
-     * Finalize installation with cache clears and storage link
+     * Finalize installation with storage link and cache clears
      */
     private function finalizeInstallation(): void
     {
         try {
-            // Clear cache with --no-interaction to prevent hanging
-            Artisan::call('cache:clear', ['--no-interaction' => true]);
-            Artisan::call('config:clear', ['--no-interaction' => true]);
-            Artisan::call('route:clear', ['--no-interaction' => true]);
-            Artisan::call('view:clear', ['--no-interaction' => true]);
+            // Mark as installed first, before artisan calls
+            DB::table('settings')->insert([
+                'meta_key'   => 'installed_at',
+                'meta_value' => now()->toDateTimeString(),
+            ]);
 
             // Create storage link (non-critical, wrapped in try-catch)
             try {
@@ -228,31 +240,18 @@ class InstallerService
             } catch (Exception $e) {
                 logger()->warning('Failed to create storage link: ' . $e->getMessage());
             }
+
+            // Clear cache with --no-interaction to prevent hanging
+            Artisan::call('cache:clear', ['--no-interaction' => true]);
+            Artisan::call('config:clear', ['--no-interaction' => true]);
+            Artisan::call('route:clear', ['--no-interaction' => true]);
+            Artisan::call('view:clear', ['--no-interaction' => true]);
         } catch (Exception $e) {
             // Non-critical error, log it but don't fail installation
             logger()->warning('Failed to finalize installation: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Write database-backed drivers to .env after migrations have created the tables
-     */
-    private function switchToProductionDrivers(): void
-    {
-        $envPath = base_path('.env');
-        $envContent = File::get($envPath);
-
-        // Production environment — only set AFTER migrations have created the tables
-        $envContent = $this->setEnvValue($envContent, 'APP_ENV', 'production');
-        $envContent = $this->setEnvValue($envContent, 'APP_DEBUG', 'false');
-
-        // Database-backed drivers — tables now exist so these are safe
-        $envContent = $this->setEnvValue($envContent, 'SESSION_DRIVER', 'database');
-        $envContent = $this->setEnvValue($envContent, 'CACHE_STORE', 'database');
-        $envContent = $this->setEnvValue($envContent, 'QUEUE_CONNECTION', 'database');
-
-        File::put($envPath, $envContent);
-    }
 
     /**
      * Set environment variable value
@@ -292,9 +291,6 @@ class InstallerService
                 '--no-interaction' => true,
             ]);
 
-            // Switch to database-backed session/cache/queue NOW that tables exist
-            $this->switchToProductionDrivers();
-
             // Now start transaction for seeding operations
             DB::beginTransaction();
 
@@ -315,11 +311,8 @@ class InstallerService
 
             DB::commit();
 
-            // Clear caches and create storage link
+            // Clear caches, create storage link, and mark as installed
             $this->finalizeInstallation();
-
-            // Create .htaccess file for URL rewriting
-            $this->createHtaccessFile();
 
             return [
                 'success' => true,
@@ -432,7 +425,6 @@ class InstallerService
         ];
 
         $settings = [
-            ['meta_key' => 'installed_at', 'meta_value' => now()->toDateTimeString()],
             ['meta_key' => 'shop_name', 'meta_value' => $shopName],
             ['meta_key' => 'shop_logo', 'meta_value' => $defaults['shop_logo']],
             ['meta_key' => 'sale_receipt_note', 'meta_value' => $defaults['sale_receipt_note']],
@@ -454,34 +446,6 @@ class InstallerService
         $settings[] = ['meta_key' => 'barcode_template', 'meta_value' => $barcodeTemplate];
 
         Setting::insert($settings);
-    }
-
-    /**
-     * Create .htaccess file for URL rewriting
-     */
-    private function createHtaccessFile(): void
-    {
-        try {
-            $htaccessPath = base_path('.htaccess');
-
-            // Only create if it doesn't exist
-            if (File::exists($htaccessPath)) {
-                return;
-            }
-
-            $htaccessContent = <<<'EOT'
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteCond %{REQUEST_URI} !/public
-    RewriteRule ^(.*)$ public/$1 [L]
-</IfModule>
-EOT;
-
-            File::put($htaccessPath, $htaccessContent);
-        } catch (Exception $e) {
-            // Non-critical error, log but don't fail installation
-            logger()->warning('Failed to create .htaccess file: ' . $e->getMessage());
-        }
     }
 
     /**

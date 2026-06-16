@@ -4,8 +4,7 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        <!-- <link rel="icon" type="image/x-icon" href="{{asset('infoshop-icon.png')}}"> -->
-        <link rel="icon" type="image/x-icon" href="{{ asset('' . \App\Models\Setting::where('meta_key', 'app_icon')->value('meta_value') ?? 'infoshop-icon.png') }}">
+        <link rel="icon" type="image/x-icon" href="{{ asset(\App\Models\Setting::where('meta_key', 'app_icon')->value('meta_value') ?? 'infoshop-icon.png') }}">
         <title inertia>{{ config('app.name', 'InfoShop') }}</title>
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

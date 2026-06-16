@@ -19,7 +19,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Register middleware aliases
         $middleware->alias([
-            'check.installed' => \App\Http\Middleware\CheckInstalled::class,
             'sync.api' => \App\Http\Middleware\ValidateSyncApiKey::class,
         ]);
 
@@ -31,8 +30,5 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // No .env / APP_KEY → redirect to installer instead of showing an error page
-        $exceptions->render(function (\Illuminate\Encryption\MissingAppKeyException $e, \Illuminate\Http\Request $request) {
-            return redirect()->to('/install');
-        });
+        //
     })->create();
