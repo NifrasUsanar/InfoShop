@@ -92,6 +92,10 @@ function AuthenticatedLayout({ header, children, ...props }) {
         return pathname === baseHref || pathname.startsWith(baseHref);
     };
 
+    const canAccess = (permission) => {
+        return user.user_role === 'super-admin' || permissions.includes(permission);
+    };
+
     const NavItem = ({ href, icon: Icon, label, open, selected, onClick, icontype }) => (
         <Link preserveScroll href={href}>
             <ListItem disablePadding sx={{ display: "block" }}>
@@ -165,7 +169,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     selected={isSelected("/dashboard")}
                 />
 
-                {permissions.includes("pos") && (
+                {canAccess("pos") && (
                     <NavItem
                         href="/pos"
                         icon={PointOfSaleIcon}
@@ -174,7 +178,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/pos")}
                     />
                 )}
-                {permissions.includes("products") && (
+                {canAccess("products") && (
                     <NavItem
                         href="/products"
                         icon={InventoryIcon}
@@ -184,7 +188,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     />
                 )}
 
-                {permissions.includes("sales") && (
+                {canAccess("sales") && (
                     <NavItem
                         href="/sales"
                         icon={PaidIcon}
@@ -201,7 +205,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     selected={isSelected("/reports/dailycash")}
                 />
 
-                {permissions.includes("customers") && (
+                {canAccess("customers") && (
                     <NavItem
                         href="/customers"
                         icon={CustomerIcon}
@@ -210,7 +214,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/customers")}
                     />
                 )}
-                {permissions.includes("vendors") && (
+                {canAccess("vendors") && (
                     <NavItem
                         href="/vendors"
                         icon={VendorIcon}
@@ -220,7 +224,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     />
                 )}
 
-                {(permissions.includes("inventory") && modules.includes("Inventory")) && (
+                {(canAccess("inventory") && modules.includes("Inventory")) && (
                     <NavItem
                         href="/inventory"
                         icon={faBoxesStacked}
@@ -232,7 +236,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                 )}
 
 
-                {permissions.includes("collections") && (
+                {canAccess("collections") && (
                     <NavItem
                         href="/collections"
                         icon={AccountTreeIcon}
@@ -242,7 +246,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     />
                 )}
 
-                {permissions.includes("expenses") && (
+                {canAccess("expenses") && (
                     <NavItem
                         href="/expenses"
                         icon={AccountBalanceWalletIcon}
@@ -252,7 +256,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     />
                 )}
 
-                {permissions.includes("charges") && (
+                {canAccess("charges") && (
                     <NavItem
                         href="/charges"
                         icon={faPercent}
@@ -263,7 +267,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     />
                 )}
 
-                {permissions.includes("quotations") && (
+                {canAccess("quotations") && (
                     <NavItem
                         href="/quotations"
                         icon={faFileInvoice}
@@ -274,7 +278,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     />
                 )}
 
-                {(permissions.includes("reloads") && modules.includes("Reloads")) && (
+                {(canAccess("reloads") && modules.includes("Reloads")) && (
                     <NavItem
                         href="/reloads"
                         icon={PhoneForwardedIcon}
@@ -284,7 +288,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     />
                 )}
 
-                {(permissions.includes("cheques") && modules.includes("Cheques")) && (
+                {(canAccess("cheques") && modules.includes("Cheques")) && (
                     <NavItem
                         href="/cheques?status=pending"
                         icon={faMoneyCheck}
@@ -294,7 +298,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/cheques")}
                     />
                 )}
-                {permissions.includes("sold-items") && (
+                {canAccess("sold-items") && (
                     <NavItem
                         href="/sold-items"
                         icon={ShoppingCartCheckoutIcon}
@@ -303,7 +307,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/sold-items")}
                     />
                 )}
-                {permissions.includes("purchases") && (
+                {canAccess("purchases") && (
                     <NavItem
                         href="/purchases"
                         icon={AddShoppingCartIcon}
@@ -312,7 +316,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/purchases")}
                     />
                 )}
-                {permissions.includes("payments") && (
+                {canAccess("payments") && (
                     <NavItem
                         href="/payments/sales"
                         icon={PaymentsIcon}
@@ -321,7 +325,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/payments")}
                     />
                 )}
-                {permissions.includes("stores") && (
+                {canAccess("stores") && (
                     <NavItem
                         href="/stores"
                         icon={StoreIcon}
@@ -330,7 +334,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/stores")}
                     />
                 )}
-                {permissions.includes("employees") && (
+                {canAccess("employees") && (
                     <NavItem
                         href="/employees"
                         icon={BadgeIcon}
@@ -339,7 +343,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/employees")}
                     />
                 )}
-                {permissions.includes("payroll") && (
+                {canAccess("payroll") && (
                     <NavItem
                         href="/payroll"
                         icon={ReceiptIcon}
@@ -348,7 +352,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/payroll")}
                     />
                 )}
-                {permissions.includes("media") && (
+                {canAccess("media") && (
                     <NavItem
                         href="/media"
                         icon={PermMediaIcon}
@@ -357,7 +361,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                         selected={isSelected("/media")}
                     />
                 )}
-                {permissions.includes("settings") && (
+                {canAccess("settings") && (
                     <NavItem
                         href="/settings"
                         icon={SettingsIcon}
@@ -373,7 +377,7 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     open={open}
                     selected={isSelected("/profile")}
                 />
-                {user.user_role == "admin" && (
+                {(user.user_role === "admin" || user.user_role === "super-admin") && (
                     <>
                         <ListItemButton onClick={handleCollapse}>
                             <ListItemIcon>
