@@ -7,13 +7,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/Table"
 
 import {
   Card,
   CardContent,
   CardHeader,
-} from "@/components/ui/card"
+} from "@/components/ui/Card"
 
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout"
 import { Head } from "@inertiajs/react";

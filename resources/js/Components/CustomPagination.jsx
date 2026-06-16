@@ -6,7 +6,7 @@ import {
     Pagination,
     PaginationContent,
     PaginationItem,
-} from "@/components/ui/pagination";
+} from "@/components/ui/Pagination";
 import {
     Select,
     SelectContent,
