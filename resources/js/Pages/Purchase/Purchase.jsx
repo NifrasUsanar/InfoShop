@@ -161,9 +161,7 @@ export default function Purchases({ purchases, contacts }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                justifyContent={'end'}
-                sx={{ width: "100%" }}
+                sx={{ alignItems: "center", justifyContent: "end", width: "100%" }}
             >
                 <FormControl sx={{ minWidth: "240px" }}>
                     <Select2
@@ -191,7 +189,7 @@ export default function Purchases({ purchases, contacts }) {
                         name="status"
                         select
                         fullWidth
-                        size="large"
+                        size="small"
                     >
                         <MenuItem value={"all"}>All</MenuItem>
                         <MenuItem value={"completed"}>Completed</MenuItem>
@@ -205,7 +203,7 @@ export default function Purchases({ purchases, contacts }) {
                         name="start_date"
                         placeholder="Start Date"
                         fullWidth
-                        size="large"
+                        size="small"
                         type="date"
                         slotProps={{
                             inputLabel: {
@@ -223,7 +221,7 @@ export default function Purchases({ purchases, contacts }) {
                         name="end_date"
                         placeholder="End Date"
                         fullWidth
-                        size="large"
+                        size="small"
                         type="date"
                         slotProps={{
                             inputLabel: {
@@ -258,7 +256,7 @@ export default function Purchases({ purchases, contacts }) {
                     />
                 </Box>
             </Grid>
-            <Grid size={12} container justifyContent={"end"}>
+            <Grid size={12} container sx={{ justifyContent: "end" }}>
                 <CustomPagination
                     refreshTable={refreshPurchases}
                     setSearchTerms={setSearchTerms}

@@ -120,8 +120,7 @@ const InventoryPurchase = ({ inventory_items, stores }) => {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%" }}
+                sx={{ alignItems: "center", width: "100%" }}
                 size={12}
             >
                 <Grid size={3}>
@@ -130,7 +129,7 @@ const InventoryPurchase = ({ inventory_items, stores }) => {
                         label="Store"
                         variant="outlined"
                         select
-                        size="large"
+                        size="small"
                         name="store_id"
                         value={purchaseForm.store_id}
                         onChange={(e) => setPurchaseForm({ ...purchaseForm, store_id: e.target.value })}
@@ -150,7 +149,7 @@ const InventoryPurchase = ({ inventory_items, stores }) => {
                         variant="outlined"
                         name="transaction_date"
                         type="date"
-                        size="large"
+                        size="small"
                         value={purchaseForm.transaction_date}
                         onChange={(e) => setPurchaseForm({ ...purchaseForm, transaction_date: e.target.value })}
                         slotProps={{
@@ -323,4 +322,3 @@ const InventoryPurchase = ({ inventory_items, stores }) => {
 };
 
 export default InventoryPurchase;
-

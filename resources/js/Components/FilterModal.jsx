@@ -189,7 +189,6 @@ export default function FilterModal({ fields = [], filters = {}, handleFilterCha
                             borderRadius: '4px',
                             padding: '8px',
                         }}
-                        fullWidth
                     >
                         <TuneIcon />
                     </IconButton>

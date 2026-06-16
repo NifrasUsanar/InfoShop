@@ -118,9 +118,11 @@ export default function ChargeDialog({
             maxWidth="sm"
             open={open}
             onClose={handleClose}
-            PaperProps={{
-                component: "form",
-                onSubmit: handleSubmit,
+            slotProps={{
+                paper: {
+                    component: "form",
+                    onSubmit: handleSubmit,
+                }
             }}
         >
             <DialogTitle>

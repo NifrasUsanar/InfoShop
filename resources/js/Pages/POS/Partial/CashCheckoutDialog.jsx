@@ -182,9 +182,11 @@ export default function CashCheckoutDialog({ disabled }) {
                 open={open}
                 onClose={handleClose}
                 aria-labelledby="alert-dialog-title"
-                PaperProps={{
-                    component: 'form',
-                    onSubmit: handleSubmit,
+                slotProps={{
+                    paper: {
+                        component: 'form',
+                        onSubmit: handleSubmit,
+                    }
                 }}
                 fullScreen={isMobile}
             >
@@ -245,7 +247,7 @@ export default function CashCheckoutDialog({ disabled }) {
                         label="Discount"
                         variant="outlined"
                         value={discount}
-                        sx={{ mt: "1.5rem", input: { textAlign: "center", fontSize: '2rem' }, }}
+                        sx={{ mt: "1.5rem", mb: "2rem", input: { textAlign: "center", fontSize: '2rem' }, }}
                         onChange={handleDiscountChange}
                         onFocus={event => {
                             event.target.select();

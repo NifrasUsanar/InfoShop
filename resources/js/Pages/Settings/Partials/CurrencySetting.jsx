@@ -36,7 +36,7 @@ export default function CurrencySetting({ handleSubmit, settingFormData, handleC
                 <Grid
                     container
                     spacing={2}
-                    width={{ xs: "100%", sm: "60%" }}
+                    sx={{ width: { xs: "100%", sm: "60%" } }}
                 >
                     <Paper elevation={3} sx={{ padding: 3, marginBottom: 2, width: '100%' }}>
                         <Grid
@@ -169,8 +169,7 @@ export default function CurrencySetting({ handleSubmit, settingFormData, handleC
 
                     <Grid
                         size={12}
-                        justifyContent={"end"}
-                        sx={{ display: "flex" }}
+                        sx={{ display: "flex", justifyContent: "end" }}
                     >
                         <Button
                             type="submit"

@@ -206,9 +206,7 @@ export default function ChargesIndex({
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%" }}
-                justifyContent={"end"}
+                sx={{ alignItems: "center", width: "100%", justifyContent: "end" }}
                 size={12}
             >
                 <Grid size={{ xs: 12, sm: "auto" }}>
@@ -244,7 +242,7 @@ export default function ChargesIndex({
                 />
             </Box>
 
-            <Grid size={12} container justifyContent={"end"} spacing={2} alignItems={"center"}>
+            <Grid size={12} container spacing={2} sx={{ justifyContent: "end", alignItems: "center" }}>
                 <CustomPagination
                     refreshTable={(url) => {
                         router.get(url, searchTerms, {

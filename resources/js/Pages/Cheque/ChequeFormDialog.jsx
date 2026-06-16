@@ -107,9 +107,11 @@ export default function ChequeFormDialog({
                 open={open}
                 onClose={handleClose}
                 aria-labelledby="alert-dialog-title"
-                PaperProps={{
-                    component: "form",
-                    onSubmit: handleSubmit,
+                slotProps={{
+                    paper: {
+                        component: "form",
+                        onSubmit: handleSubmit,
+                    }
                 }}
             >
                 <DialogTitle id="alert-dialog-title">

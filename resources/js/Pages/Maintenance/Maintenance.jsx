@@ -45,7 +45,7 @@ export default function Maintenance() {
                                     icon={<CloudUploadIcon />}
                                     iconPosition="start"
                                     label={
-                                        <span className="hidden sm:inline">System Update (V2)</span>
+                                        <span className="hidden sm:inline">System Update</span>
                                     }
                                     sx={{
                                         minWidth: 'auto',

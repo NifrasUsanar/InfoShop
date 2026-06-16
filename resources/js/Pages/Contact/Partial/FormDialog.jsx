@@ -46,7 +46,14 @@ export default function FormDialog({
                 type: contact.type || "", // Update type if available
             });
         }
-        else setFormData([])
+        else setFormData({
+            name: "",
+            email: "",
+            phone: "",
+            address: "",
+            whatsapp: '',
+            type: contactType,
+        })
     }, [contact]); // Dependency array includes contact
 
     const handleSubmit = (event) => {
@@ -74,7 +81,14 @@ export default function FormDialog({
                     toast: true,
                 });
                 handleClose(); // Close dialog on success
-                setFormData([])
+                setFormData({
+                    name: "",
+                    email: "",
+                    phone: "",
+                    address: "",
+                    whatsapp: '',
+                    type: contactType,
+                })
                 onSuccess(response.data.data);
             })
             .catch((error) => {
@@ -101,9 +115,11 @@ export default function FormDialog({
             <Dialog
                 open={open}
                 onClose={handleClose}
-                PaperProps={{
-                    component: "form",
-                    onSubmit: handleSubmit,
+                slotProps={{
+                    paper: {
+                        component: "form",
+                        onSubmit: handleSubmit,
+                    }
                 }}
             >
                 <DialogTitle>Contact Information</DialogTitle>

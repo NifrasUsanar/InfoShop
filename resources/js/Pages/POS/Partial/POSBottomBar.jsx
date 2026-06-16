@@ -34,7 +34,7 @@ export default function POSBottomBar({ setProducts, drawerWidth, categories, set
                 variant="scrollable"
                 scrollButtons
                 textColor="inherit"
-                TabIndicatorProps={{ style: { backgroundColor: 'white' } }}
+                slotProps={{ indicator: { style: { backgroundColor: 'white' } } }}
             >
                 <Tab label="Featured" value={0} />
                 <Tab label="Group Items" value={'template'} />

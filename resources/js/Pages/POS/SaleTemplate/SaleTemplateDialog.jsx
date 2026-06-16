@@ -137,7 +137,7 @@ export default function SaleTemplateDialog({open, setOpen}) {
                     </Grid>
                 </DialogContent>
                 <DialogActions>
-                    <Grid container spacing={1} size={12} justifyContent={'center'} width={'100%'}>
+                    <Grid container spacing={1} size={12} sx={{ justifyContent: 'center', width: '100%' }}>
                         <Grid size={{ xs: 12, sm: 12 }}>
                             <Button
                                 variant="contained"

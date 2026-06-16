@@ -123,9 +123,11 @@ export default function AddToPurchase({
                 open={addToPurchaseOpen}
                 onClose={handleClose}
                 aria-labelledby="alert-dialog-title"
-                PaperProps={{
-                    component: "form",
-                    onSubmit: handleAddToCartSubmit,
+                slotProps={{
+                    paper: {
+                        component: "form",
+                        onSubmit: handleAddToCartSubmit,
+                    }
                 }}
             >
                 <DialogTitle id="alert-dialog-title">

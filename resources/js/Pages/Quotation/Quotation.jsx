@@ -161,9 +161,7 @@ export default function Quotation({ quotations }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%" }}
-                justifyContent={"end"}
+                sx={{ alignItems: "center", width: "100%", justifyContent: "end" }}
                 size={12}
             >
                 <Grid size={{ xs: 12, sm: 3 }}>
@@ -198,14 +196,14 @@ export default function Quotation({ quotations }) {
                     hideFooter
                 />
             </Box>
-            <Grid size={12} container justifyContent={"end"}>
+            <Grid size={12} container sx={{ justifyContent: "end" }}>
                 <TextField
                     label="Per page"
                     value={searchTerms.per_page}
                     onChange={handleFilterChange}
                     name="per_page"
                     select
-                    size="large"
+                    size="small"
                     sx={{ minWidth: "100px" }}
                 >
                     <MenuItem value={100}>100</MenuItem>

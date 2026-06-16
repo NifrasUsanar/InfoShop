@@ -109,9 +109,11 @@ export default function UserRoleDialog({ open, handleClose, user_role }) {
       onClose={handleClose}
       maxWidth={'sm'}
       fullWidth={true}
-      PaperProps={{
-        component: 'form',
-        onSubmit: handleSubmit,
+      slotProps={{
+        paper: {
+          component: 'form',
+          onSubmit: handleSubmit,
+        }
       }}
       fullScreen={isMobile}
     >

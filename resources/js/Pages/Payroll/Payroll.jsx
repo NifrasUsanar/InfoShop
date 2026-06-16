@@ -138,7 +138,7 @@ export default function Payroll({ salaries, employees, stores }) {
     return (
         <AuthenticatedLayout>
             <Head title="Salaries" />
-            <Grid container spacing={2} alignItems="center" sx={{ width: "100%" }} justifyContent={'end'}>
+            <Grid container spacing={2} sx={{ alignItems: "center", width: "100%", justifyContent: 'end' }}>
 
                 <Grid size={{ xs: 12, sm: 3 }}>
 
@@ -219,7 +219,7 @@ export default function Payroll({ salaries, employees, stores }) {
                     hideFooter
                 />
             </Box>
-            <Grid container justifyContent={"end"}>
+            <Grid container sx={{ justifyContent: "end" }}>
                 <CustomPagination
                     refreshTable={refreshSalaries}
                     setSearchTerms={setSearchTerms}

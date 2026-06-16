@@ -105,9 +105,11 @@ export default function EmployeeDialog({
                 open={open}
                 onClose={handleClose}
                 aria-labelledby="alert-dialog-title"
-                PaperProps={{
-                    component: "form",
-                    onSubmit: handleSubmit,
+                slotProps={{
+                    paper: {
+                        component: "form",
+                        onSubmit: handleSubmit,
+                    }
                 }}
             >
                 <DialogTitle>{employee?'UPDATE EMPLOYEE':'ADD EMPLOYEE'}</DialogTitle>

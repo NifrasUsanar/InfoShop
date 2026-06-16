@@ -68,9 +68,11 @@ export default function SalaryFormDialog({ open, setOpen, employee, stores, refr
         <Dialog
             open={open}
             onClose={() => setOpen(false)}
-            PaperProps={{
-                component: "form",
-                onSubmit: handleSubmit,
+            slotProps={{
+                paper: {
+                    component: "form",
+                    onSubmit: handleSubmit,
+                }
             }}
         >
             <DialogTitle>Salary Information</DialogTitle>

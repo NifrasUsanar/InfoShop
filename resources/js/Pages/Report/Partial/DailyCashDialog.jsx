@@ -92,9 +92,11 @@ export default function DailyCashDialog({
                 open={open}
                 onClose={handleClose}
                 aria-labelledby="transaction-dialog-title"
-                PaperProps={{
-                    component: "form",
-                    onSubmit: handleSubmit,
+                slotProps={{
+                    paper: {
+                        component: "form",
+                        onSubmit: handleSubmit,
+                    }
                 }}
             >
                 <DialogTitle id="transaction-dialog-title">
@@ -114,7 +116,7 @@ export default function DailyCashDialog({
                 </IconButton>
                 <DialogContent>
                     <Grid container spacing={2}>
-                        <Grid item size={4}>
+                        <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                                 fullWidth
                                 type="number"
@@ -144,7 +146,7 @@ export default function DailyCashDialog({
                             />
                         </Grid>
 
-                        <Grid item size={4}>
+                        <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                                 label="Date"
                                 name="transaction_date"
@@ -161,7 +163,7 @@ export default function DailyCashDialog({
                             />
                         </Grid>
 
-                        <Grid item size={4}>
+                        <Grid size={{ xs: 12, sm: 4 }}>
                             <TextField
                                 select
                                 label="Transaction Type"
@@ -196,7 +198,7 @@ export default function DailyCashDialog({
                             </TextField>
                         </Grid>
 
-                        <Grid container size={12}>
+                        <Grid size={12}>
                             <TextField
                                 fullWidth
                                 variant="outlined"

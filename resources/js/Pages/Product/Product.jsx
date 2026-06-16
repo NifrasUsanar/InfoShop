@@ -423,14 +423,13 @@ export default function Product({ products, stores, contacts }) {
             <Grid
                 container
                 spacing={1}
-                alignItems="center"
+                sx={{ alignItems: "center" }}
             >
                 <Grid
                     size={12}
                     spacing={1}
                     container
-                    alignItems={"center"}
-                    justifyContent={{ xs: "center", sm: "end" }}
+                    sx={{ alignItems: "center", justifyContent: { xs: "center", sm: "end" } }}
                 >
                     <Grid size={{ xs: 12, sm: "auto", md: "auto" }} className="mr-2 w-full" >
                         <FilterModal
@@ -613,8 +612,7 @@ export default function Product({ products, stores, contacts }) {
                     size={12}
                     spacing={2}
                     container
-                    justifyContent={"end"}
-                    alignItems={"center"}
+                    sx={{ justifyContent: "end", alignItems: "center" }}
                 >
                     <Chip
                         size="large"

@@ -226,9 +226,7 @@ export default function Employee({ employees, stores, }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%" }}
-                justifyContent={"end"}
+                sx={{ alignItems: "center", width: "100%", justifyContent: "end" }}
                 size={12}
             >
 
@@ -312,7 +310,7 @@ export default function Employee({ employees, stores, }) {
                     hideFooter
                 />
             </Box>
-            <Grid size={12} container justifyContent={"end"} spacing={2} alignItems={"center"}>
+            <Grid size={12} container spacing={2} sx={{ justifyContent: "end", alignItems: "center" }}>
                 <Chip size="large" label={'Total Balance:' + numeral(totalEmployees).format('0,0')} color="primary" />
                 <CustomPagination
                     refreshTable={refreshEmployees}

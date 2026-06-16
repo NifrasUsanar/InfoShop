@@ -87,9 +87,11 @@ export default function UserFormDialog({ open, handleClose, user, stores, roles 
       <Dialog
         open={open}
         onClose={handleClose}
-        PaperProps={{
-          component: 'form',
-          onSubmit: handleSubmit,
+        slotProps={{
+          paper: {
+            component: 'form',
+            onSubmit: handleSubmit,
+          }
         }}
       >
         <DialogTitle>User Information</DialogTitle>

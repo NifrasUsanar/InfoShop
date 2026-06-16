@@ -90,9 +90,11 @@ export default function FormDialog({ open, handleClose, store }) {
         onClose={handleClose}
         fullWidth={true}
         maxWidth={"sm"}
-        PaperProps={{
-          component: 'form',
-          onSubmit: handleSubmit,
+        slotProps={{
+          paper: {
+            component: 'form',
+            onSubmit: handleSubmit,
+          }
         }}
       >
         <DialogTitle>Store Information</DialogTitle>

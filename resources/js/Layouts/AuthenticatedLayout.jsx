@@ -442,11 +442,13 @@ function AuthenticatedLayout({ header, children, ...props }) {
                     <Grid
                         container
                         spacing={2}
-                        alignItems={{ sm: "center", xs: "start" }}
-                        justifyContent={"space-between"}
-                        width={"100%"}
-                        display={"flex"}
-                        flexDirection={{ xs: "column", sm: "row" }}
+                        sx={{
+                            alignItems: { sm: "center", xs: "start" },
+                            justifyContent: "space-between",
+                            width: "100%",
+                            display: "flex",
+                            flexDirection: { xs: "column", sm: "row" },
+                        }}
                     >
                         <Typography
                             variant="h5"

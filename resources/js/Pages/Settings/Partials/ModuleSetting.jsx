@@ -36,7 +36,7 @@ const App = ({ handleSubmit, settingFormData, setSettingFormData, settings }) =>
         >
             <Grid container spacing={2} size={12} width={'100%'}>
                 {modules_list.map((module) => (
-                    <Grid size={{ xs: 6, sm: 3, md: 2 }} key={module} justifyContent={'center'}>
+                    <Grid size={{ xs: 6, sm: 3, md: 2 }} key={module} sx={{ justifyContent: 'center' }}>
                         <Card>
                             <CardContent>
                                 <p className='text-lg'>{module}</p>

@@ -107,9 +107,7 @@ export default function Reload({ reloads, transactionType }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%" }}
-                justifyContent={"center"}
+                sx={{ alignItems: "center", width: "100%", justifyContent: "center" }}
                 size={12}
             >
                 <Grid size={{ xs: 12, sm: 4 }}>
@@ -177,7 +175,7 @@ export default function Reload({ reloads, transactionType }) {
                     hideFooter
                 />
             </Box>
-            <Grid size={12} spacing={2} container justifyContent={'end'}>
+            <Grid size={12} spacing={2} container sx={{ justifyContent: 'end' }}>
                 <Chip size="large" label={`Total Commission: ${numeral(totalCommission).format('0,0.00')}`} color="primary" />
                 <CustomPagination
                     data={reloads || {}}

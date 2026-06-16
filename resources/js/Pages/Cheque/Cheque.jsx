@@ -152,8 +152,7 @@ export default function Cheque({ cheques, stores }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                justifyContent={"center"}
+                sx={{ alignItems: "center", justifyContent: "center" }}
                 size={12}
             >
                 {/* Store */}
@@ -161,7 +160,7 @@ export default function Cheque({ cheques, stores }) {
                     <TextField
                         label="Store"
                         name="store"
-                        size="large"
+                        size="small"
                         placeholder="Search by store"
                         value={searchTerms.store}
                         onChange={handleSearchChange}
@@ -190,7 +189,7 @@ export default function Cheque({ cheques, stores }) {
                     <TextField
                         label="Direction"
                         name="direction"
-                        size="large"
+                        size="small"
                         value={searchTerms.direction}
                         onChange={handleSearchChange}
                         fullWidth
@@ -212,7 +211,7 @@ export default function Cheque({ cheques, stores }) {
                     <TextField
                         label="Status"
                         name="status"
-                        size="large"
+                        size="small"
                         placeholder="Search by status"
                         value={searchTerms.status}
                         onChange={handleSearchChange}
@@ -236,7 +235,7 @@ export default function Cheque({ cheques, stores }) {
                 <Grid size={{ xs: 12, sm: 3 }}>
                     <TextField
                         label="Search Query"
-                        size="large"
+                        size="small"
                         name="search_query"
                         placeholder="Search by cheque number, payee, or bank"
                         value={searchTerms.search_query}
@@ -256,7 +255,7 @@ export default function Cheque({ cheques, stores }) {
                         label="Start Date"
                         name="start_date"
                         type="date"
-                        size="large"
+                        size="small"
                         value={searchTerms.start_date}
                         onChange={handleSearchChange}
                         fullWidth
@@ -274,7 +273,7 @@ export default function Cheque({ cheques, stores }) {
                         label="End Date"
                         name="end_date"
                         type="date"
-                        size="large"
+                        size="small"
                         value={searchTerms.end_date}
                         onChange={handleSearchChange}
                         fullWidth
@@ -312,7 +311,7 @@ export default function Cheque({ cheques, stores }) {
                     hideFooter
                 />
             </Box>
-            <Grid size={12} spacing={2} container justifyContent={"end"} alignItems={"center"}>
+            <Grid size={12} spacing={2} container sx={{ justifyContent: "end", alignItems: "center" }}>
                 <Chip size="large" label={`Total Amount: ${numeral(totalAmount).format('0,0.00')}`} color="primary" />
                 <CustomPagination
                     refreshTable={refreshCheques}

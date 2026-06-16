@@ -127,9 +127,7 @@ const Inventory = ({ inventory_items, stores }) => {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%" }}
-                justifyContent={"end"}
+                sx={{ alignItems: "center", width: "100%", justifyContent: "end" }}
                 size={12}
             >
 
@@ -187,7 +185,7 @@ const Inventory = ({ inventory_items, stores }) => {
                     hideFooter
                 />
             </Box>
-            <Grid size={12} container justifyContent={"end"}>
+            <Grid size={12} container sx={{ justifyContent: "end" }}>
                 {/* <Chip size="large" label={'Total:' + numeral(totalExpense).format('0,0')} color="primary" /> */}
                 <CustomPagination
                     refreshTable={refreshInventoryItems}
@@ -216,4 +214,3 @@ const Inventory = ({ inventory_items, stores }) => {
 };
 
 export default Inventory;
-

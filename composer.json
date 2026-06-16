@@ -9,7 +9,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "inertiajs/inertia-laravel": "2.0",
+        "inertiajs/inertia-laravel": "3.0",
         "kreait/firebase-php": "^7.24",
         "laravel-notification-channels/telegram": "^5.0",
         "laravel/framework": "^11.9",

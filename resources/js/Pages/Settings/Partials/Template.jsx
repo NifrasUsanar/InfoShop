@@ -57,8 +57,7 @@ const Template = () => {
             <Grid
                 container
                 spacing={2}
-                width={{ xs: "100%", sm: "80%" }}
-                flexDirection={'column'}
+                sx={{ width: { xs: "100%", sm: "80%" }, flexDirection: 'column' }}
             >
                 <Grid container size={12} spacing={2}>
                     <Paper sx={{ padding: { xs: '0.5rem', sm: "1rem" }, marginBottom: "1rem", width: '100%' }}>
@@ -84,8 +83,7 @@ const Template = () => {
                 </Grid>
                 <Grid
                     size={12}
-                    justifyContent={"end"}
-                    sx={{ display: "flex" }}
+                    sx={{ display: "flex", justifyContent: "end" }}
                 >
                     <Button
                         type="submit"

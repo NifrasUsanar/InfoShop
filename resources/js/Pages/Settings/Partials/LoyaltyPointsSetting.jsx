@@ -37,8 +37,7 @@ const LoyaltyPointsSetting = ({ handleSubmit, settingFormData, handleChange, set
                 <Grid
                     container
                     spacing={2}
-                    width={{ xs: "100%", sm: "60%" }}
-                    flexDirection={'column'}
+                    sx={{ width: { xs: "100%", sm: "60%" }, flexDirection: 'column' }}
                 >
                     <Grid container size={12} spacing={2}>
                         <Paper sx={{ padding: { xs: '0.5rem', sm: "1rem" }, marginBottom: "1rem", width: '100%' }}>
@@ -87,10 +86,9 @@ const LoyaltyPointsSetting = ({ handleSubmit, settingFormData, handleChange, set
 
                             <Grid
                                 size={12}
-                                justifyContent={"end"}
-                                sx={{ display: "flex", mt: 1 }}
                                 spacing={1}
                                 container
+                                sx={{ justifyContent: "end", display: "flex", mt: 1 }}
                             >
                                 <Button
                                     type="submit"
@@ -111,4 +109,3 @@ const LoyaltyPointsSetting = ({ handleSubmit, settingFormData, handleChange, set
 };
 
 export default LoyaltyPointsSetting;
-

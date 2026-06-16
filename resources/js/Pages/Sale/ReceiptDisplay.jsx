@@ -276,9 +276,8 @@ export function ReceiptDisplay({
                                         Receipt No:{receiptNo}
                                     </Typography>
                                     <Typography
-                                        sx={styles.receiptTopText}
+                                        sx={{ ...styles.receiptTopText, textAlign: 'start' }}
                                         color="black"
-                                        textAlign={"start"}
                                     >
                                         Date:
                                         {dayjs(sale.created_at).format(
@@ -291,9 +290,8 @@ export function ReceiptDisplay({
                             {credit_sale && (
                                 <>
                                     <Typography
-                                        sx={styles.receiptTopText}
+                                        sx={{ ...styles.receiptTopText, textAlign: 'start' }}
                                         color="black"
-                                        textAlign={"start"}
                                     >
                                         Print date:
                                         {dayjs(sale.created_at).format(

@@ -115,11 +115,9 @@ export default function Store({ stores, current_store_id, message }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                justifyContent={"end"}
-                sx={{ width: "100%", mt: 2 }}
+                sx={{ alignItems: "center", justifyContent: "end", width: "100%", mt: 2 }}
             >
-                <Grid size={4} container justifyContent="end">
+                <Grid size={4} container sx={{ justifyContent: "end" }}>
                     <Button
                         variant="contained"
                         startIcon={<AddIcon />}
@@ -137,8 +135,8 @@ export default function Store({ stores, current_store_id, message }) {
                 spacing={2}
             >
                 {stores.map((store) => (
-                  <Grid size={{xs:12, sm:6, md:3}} display={'flex'}> 
-                    <Card key={store.id} variant="outlined" sx={{ width: "100%", height: "100%" }}>
+                  <Grid key={store.id} size={{xs:12, sm:6, md:3}} sx={{ display: 'flex' }}>
+                    <Card variant="outlined" sx={{ width: "100%", height: "100%" }}>
                         <CardContent>
                             <Typography
                                 color="primary"

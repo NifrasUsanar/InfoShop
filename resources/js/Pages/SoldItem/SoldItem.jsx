@@ -165,9 +165,7 @@ export default function SoldItem({ sold_items, contacts }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                justifyContent={"end"}
-                sx={{ width: "100%" }}
+                sx={{ alignItems: "center", justifyContent: "end", width: "100%" }}
                 size={12}
             >
 
@@ -194,7 +192,7 @@ export default function SoldItem({ sold_items, contacts }) {
                         label="Start Date"
                         name="start_date"
                         placeholder="Start Date"
-                        size="large"
+                        size="small"
                         fullWidth
                         type="date"
                         slotProps={{
@@ -213,7 +211,7 @@ export default function SoldItem({ sold_items, contacts }) {
                         name="end_date"
                         placeholder="End Date"
                         fullWidth
-                        size="large"
+                        size="small"
                         type="date"
                         slotProps={{
                             inputLabel: {
@@ -230,7 +228,7 @@ export default function SoldItem({ sold_items, contacts }) {
                     <TextField
                         label="Item type"
                         name="item_type"
-                        size="large"
+                        size="small"
                         fullWidth
                         slotProps={{
                             inputLabel: {
@@ -254,7 +252,7 @@ export default function SoldItem({ sold_items, contacts }) {
                         label="Search"
                         name="query"
                         placeholder="Search"
-                        size="large"
+                        size="small"
                         fullWidth
                         slotProps={{
                             inputLabel: {
@@ -322,7 +320,7 @@ export default function SoldItem({ sold_items, contacts }) {
                     hideFooter
                 />
             </Box>
-            <Grid size={12} spacing={2} container justifyContent={"end"}>
+            <Grid size={12} spacing={2} container sx={{ justifyContent: "end" }}>
                 <Chip size="large" label={'Total results : ' + dataSoldItems.total} color="primary" />
                 <Chip size="large" label={'Total Quantity : ' + dataSoldItems.data.reduce((sum, item) => sum + item.quantity, 0)} color="primary" />
 

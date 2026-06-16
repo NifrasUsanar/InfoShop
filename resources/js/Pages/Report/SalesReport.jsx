@@ -115,16 +115,14 @@ export default function SalesReport({ stores, report }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%", mt: "1rem" }}
-                justifyContent={"center"}
+                sx={{ alignItems: "center", width: "100%", mt: "1rem", justifyContent: "center" }}
                 size={12}
             >
                 <Grid size={{ xs: 12, sm: 3 }}>
                     <TextField
                         label="Store"
                         name="store"
-                        size="large"
+                        size="small"
                         fullWidth
                         select
                         slotProps={{
@@ -150,7 +148,7 @@ export default function SalesReport({ stores, report }) {
                         label="Start Date"
                         name="start_date"
                         placeholder="Start Date"
-                        size="large"
+                        size="small"
                         fullWidth
                         type="date"
                         slotProps={{
@@ -170,7 +168,7 @@ export default function SalesReport({ stores, report }) {
                         name="end_date"
                         placeholder="End Date"
                         fullWidth
-                        size="large"
+                        size="small"
                         type="date"
                         slotProps={{
                             inputLabel: {
@@ -194,7 +192,7 @@ export default function SalesReport({ stores, report }) {
                 </Grid>
             </Grid>
 
-            <Grid container width={'100%'} justifyContent={'center'} sx={{ mt: 2 }}>
+            <Grid container sx={{ width: '100%', justifyContent: 'center', mt: 2 }}>
                 <Paper sx={{ width: { xs: '94vw', sm: '100%' }, overflow: 'hidden', maxWidth: '820px' }} >
                     <TableContainer component={Paper} sx={{ width: '100%', overflow: 'auto', height: 'auto' }}>
                         <Table aria-label="customized table">

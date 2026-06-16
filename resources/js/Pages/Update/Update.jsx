@@ -81,7 +81,7 @@ export default function Update() {
             }
         >
             <Head title="Update" />
-            <Grid justifyContent={'center'} alignItems={'center'} container flexDirection={'column'}>
+            <Grid container sx={{ justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
                 <Grid spacing={2} size={6}>
                   {/* Dropzone area */}
                 <div

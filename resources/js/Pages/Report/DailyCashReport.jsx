@@ -69,10 +69,8 @@ export default function DailyReport({ logs, stores, users }) {
                 <Grid
                     container
                     spacing={2}
-                    alignItems="center"
-                    justifyContent={"center"}
                     size={12}
-                    sx={{ mb: 1 }}
+                    sx={{ alignItems: "center", justifyContent: "center", mb: 1 }}
                 >
                     <Grid size={{ xs: 12, sm: 4, md: 2 }}>
                         <DatePicker

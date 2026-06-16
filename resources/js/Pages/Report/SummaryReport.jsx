@@ -50,9 +50,7 @@ export default function SalesReport({ stores, report }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%", mt: "1rem" }}
-                justifyContent={"center"}
+                sx={{ alignItems: "center", width: "100%", mt: "1rem", justifyContent: "center" }}
                 size={12}
             >
                 <Grid size={{ xs: 12, sm: 3 }}>
@@ -128,7 +126,7 @@ export default function SalesReport({ stores, report }) {
             </Grid>
 
             {/* Tables and Charts Grid */}
-            <Grid container width={'100%'} justifyContent={'center'} spacing={2} sx={{ mt: 2, display: 'flex', alignItems: 'stretch' }}>
+            <Grid container spacing={2} sx={{ width: '100%', justifyContent: 'center', mt: 2, display: 'flex', alignItems: 'stretch' }}>
                 {/* Sales Section */}
                 <Grid size={{ xs: 12, md: 4 }} sx={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
                     <TableContainer component={Paper} sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -231,7 +229,7 @@ export default function SalesReport({ stores, report }) {
             </Grid>
 
             {/* Charts Section - Separate Row */}
-            <Grid container width={'100%'} justifyContent={'center'} sx={{ mt: 4 }} spacing={2}>
+            <Grid container spacing={2} sx={{ width: '100%', justifyContent: 'center', mt: 4 }}>
                 {/* Sales Chart */}
                 <Grid size={{ xs: 12, md: 4 }}>
                     <Card>

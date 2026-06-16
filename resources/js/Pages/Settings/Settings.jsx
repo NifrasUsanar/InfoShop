@@ -285,7 +285,7 @@ export default function Setting({ settings }) {
                         >
                             <Grid
                                 container
-                                width={{ xs: "100%", sm: "60%" }}
+                                sx={{ width: { xs: "100%", sm: "60%" } }}
                             >
                                 <Paper sx={{ padding: { xs: '0.5rem', sm: "1rem" }, marginBottom: "1rem", width: '100%' }}>
                                     <Grid size={12} container spacing={2}>
@@ -374,8 +374,7 @@ export default function Setting({ settings }) {
                                 </Paper>
                                 <Grid
                                     size={12}
-                                    justifyContent={"end"}
-                                    sx={{ display: "flex" }}
+                                    sx={{ display: "flex", justifyContent: "end" }}
                                 >
                                     <Button
                                         type="submit"
@@ -411,7 +410,7 @@ export default function Setting({ settings }) {
                             <Grid
                                 container
                                 spacing={2}
-                                width={{ xs: "100%", sm: "60%" }}
+                                sx={{ width: { xs: "100%", sm: "60%" } }}
                             >
                                 <Paper elevation={3} sx={{ padding: 3, marginBottom: 2 }}>
                                     <Grid
@@ -525,8 +524,7 @@ export default function Setting({ settings }) {
                                 </Paper>
                                 <Grid
                                     size={12}
-                                    justifyContent={"end"}
-                                    sx={{ display: "flex" }}
+                                    sx={{ display: "flex", justifyContent: "end" }}
                                 >
                                     <Button
                                         type="submit"
@@ -554,7 +552,7 @@ export default function Setting({ settings }) {
                     >
                         <Grid
                             container
-                            width={{ xs: "100%", sm: "60%" }}
+                            sx={{ width: { xs: "100%", sm: "60%" } }}
                         >
                             <form
                                 encType="multipart/form-data"

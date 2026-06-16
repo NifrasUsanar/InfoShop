@@ -105,9 +105,11 @@ export default function EmployeeBalanceDialog({ open, setOpen, employee, stores,
         <Dialog
             open={open}
             onClose={handleClose}
-            PaperProps={{
-                component: "form",
-                onSubmit: handleSubmit,
+            slotProps={{
+                paper: {
+                    component: "form",
+                    onSubmit: handleSubmit,
+                }
             }}
         >
             <DialogTitle>Employee Balance Update</DialogTitle>

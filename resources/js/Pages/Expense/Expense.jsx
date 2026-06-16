@@ -143,9 +143,7 @@ export default function Expense({ expenses, stores }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%" }}
-                justifyContent={"end"}
+                sx={{ alignItems: "center", width: "100%", justifyContent: "end" }}
                 size={12}
             >
 
@@ -153,7 +151,7 @@ export default function Expense({ expenses, stores }) {
                     <TextField
                         label="Search..."
                         name="search_query"
-                        size="large"
+                        size="small"
                         placeholder="Start typing..."
                         value={searchTerms.search_query}
                         onChange={handleSearchChange}
@@ -166,7 +164,7 @@ export default function Expense({ expenses, stores }) {
                         name="start_date"
                         placeholder="Start Date"
                         fullWidth
-                        size="large"
+                        size="small"
                         type="date"
                         slotProps={{
                             inputLabel: {
@@ -184,7 +182,7 @@ export default function Expense({ expenses, stores }) {
                     <TextField
                         label="End Date"
                         name="end_date"
-                        size="large"
+                        size="small"
                         placeholder="End Date"
                         fullWidth
                         type="date"
@@ -224,7 +222,7 @@ export default function Expense({ expenses, stores }) {
                     hideFooter
                 />
             </Box>
-            <Grid size={12} container justifyContent={"end"} spacing={2} alignItems={"center"}>
+            <Grid size={12} container spacing={2} sx={{ justifyContent: "end", alignItems: "center" }}>
                 <Chip size="large" label={'Total:' + numeral(totalExpense).format('0,0')} color="primary" />
                 <CustomPagination
                     refreshTable={refreshExpenses}

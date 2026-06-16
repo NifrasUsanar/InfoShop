@@ -67,7 +67,7 @@ export default function CartItems() {
     <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
       {cartState.map((item, index) => (
         <React.Fragment key={index}>
-          <ListItem alignItems="center" sx={{ padding: { sm: 0.5, xs: 0 }, paddingY: 0.5 }}>
+          <ListItem sx={{ alignItems: "center", padding: { sm: 0.5, xs: 0 }, paddingY: 0.5 }}>
             <ListItemAvatar onClick={(e) => handleClick(e, item)} className='cursor-pointer'>
               <Avatar variant="rounded" sx={{ width: 50, height: 50 }} alt={item.name} src={item.image_url ? item.image_url : productplaceholder} />
             </ListItemAvatar>

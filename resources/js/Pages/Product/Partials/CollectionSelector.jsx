@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Autocomplete, TextField, Box, Typography } from '@mui/material';
+import { Autocomplete, TextField, Box, Typography, Chip } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import QuickAddCollectionDialog from './QuickAddCollectionDialog';
 
@@ -78,11 +78,13 @@ export default function CollectionSelector({
                 isOptionEqualToValue={(option, value) => option.id === value.id}
                 fullWidth
                 renderOption={(props, option) => {
+                    const { key, ...otherProps } = props;
                     if (option.isCreateNew) {
                         return (
                             <Box
+                                key={key}
                                 component="li"
-                                {...props}
+                                {...otherProps}
                                 sx={{
                                     color: 'primary.main',
                                     fontWeight: 600,
@@ -100,7 +102,7 @@ export default function CollectionSelector({
                         );
                     }
                     return (
-                        <Box component="li" {...props}>
+                        <Box key={key} component="li" {...otherProps}>
                             {option.label}
                         </Box>
                     );
@@ -114,26 +116,21 @@ export default function CollectionSelector({
                     />
                 )}
                 renderTags={(value, getTagProps) =>
-                    value.map((option, index) => (
-                        <span
-                            key={option.id}
-                            {...getTagProps({ index })}
-                            className="inline-flex items-center px-2 py-1 mr-1 mb-1 text-xs font-medium rounded-md bg-blue-100 text-blue-800"
-                        >
-                            {option.label}
-                            <button
-                                type="button"
-                                onClick={() => {
+                    value.map((option, index) => {
+                        const { key, ...tagProps } = getTagProps({ index });
+                        return (
+                            <Chip
+                                key={key || option.id}
+                                label={option.label}
+                                {...tagProps}
+                                onDelete={() => {
                                     onCollectionChange(
                                         selectedCollections.filter(c => c.id !== option.id)
                                     );
                                 }}
-                                className="ml-1 text-blue-600 hover:text-blue-800"
-                            >
-                                ×
-                            </button>
-                        </span>
-                    ))
+                            />
+                        );
+                    })
                 }
             />
 

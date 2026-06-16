@@ -159,8 +159,7 @@ export default function CartItemModal() {
                         {formState.stock_quantity && formState.product_type !== "reload" &&
                             formState.stock_quantity !== "" ? (
                             <Chip
-                                inert
-                                disableElevation={true}
+                                variant="outlined"
                                 color={
                                     parseFloat(formState.stock_quantity) <= 0
                                         ? "error"
@@ -645,7 +644,7 @@ export default function CartItemModal() {
 
                 </DialogContent>
                 <DialogActions>
-                    <Grid container spacing={1} size={12} justifyContent={'center'} width={'100%'}>
+                    <Grid container spacing={1} size={12} sx={{ justifyContent: 'center', width: '100%' }}>
 
 
                         {formState.quantity > 0 && (

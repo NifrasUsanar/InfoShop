@@ -188,9 +188,7 @@ export default function Payment({ payments, transactionType, contacts, selected_
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%" }}
-                justifyContent={"end"}
+                sx={{ alignItems: "center", width: "100%", justifyContent: "end" }}
                 size={12}
             >
 
@@ -203,7 +201,7 @@ export default function Payment({ payments, transactionType, contacts, selected_
                         name="payment_type"
                         fullWidth
                         select
-                        size="large"
+                        size="small"
                     >
                         <MenuItem value={"sales"}>Sales Payment</MenuItem>
                         <MenuItem value={"purchases"}>
@@ -237,7 +235,7 @@ export default function Payment({ payments, transactionType, contacts, selected_
                         onChange={handleSearchChange}
                         required
                         name="payment_method"
-                        size="large"
+                        size="small"
                         select
                         fullWidth
                     >
@@ -300,7 +298,7 @@ export default function Payment({ payments, transactionType, contacts, selected_
                     hideFooter
                 />
             </Box>
-            <Grid size={12} container justifyContent={"end"} spacing={2} alignItems={"center"}>
+            <Grid size={12} container spacing={2} sx={{ justifyContent: "end", alignItems: "center" }}>
                 <Chip size="large" label={'Total: ' + formatCurrency(totalAmount, false)} color="primary" />
                 <CustomPagination
                     refreshTable={refreshPayments}

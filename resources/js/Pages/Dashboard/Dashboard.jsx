@@ -21,7 +21,7 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import PaidIcon from "@mui/icons-material/Paid";
 import PaymentsIcon from "@mui/icons-material/Payments";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import BuildIcon from "@mui/icons-material/Build";
 import ShoppingCartCheckoutIcon from '@mui/icons-material/ShoppingCartCheckout';
 import axios, { Axios } from "axios";
 import numeral from "numeral";
@@ -80,7 +80,7 @@ export default function Dashboard({ data, logo, version, store_name }) {
 
             {(auth.user_role == "admin" || auth.user_role == "super-admin") && (
 
-                <Grid size={12} spacing={{ xs: 0.5, sm: 1 }} flexDirection={'row'} container sx={{ mb: 2 }}>
+                <Grid size={12} spacing={{ xs: 0.5, sm: 1 }} container sx={{ flexDirection: 'row', mb: 2 }}>
                     {parseFloat(data.lowStock) != 0 && (
                         <Grid size={{ xs: 12, sm: 3 }}>
                             <Link href={"/products?status=alert&per_page=" + parseInt(data.lowStock)}>
@@ -128,9 +128,8 @@ export default function Dashboard({ data, logo, version, store_name }) {
                             <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
                                 <Grid
                                     container
-                                    display="flex"
                                     spacing={2}
-                                    width={"100%"}
+                                    sx={{ display: "flex", width: "100%" }}
                                 >
                                     <Grid size={6}>
                                         <MUIDatePicker name="start_date" label="Start Date" value={startDate} onChange={setStartDate} />
@@ -229,7 +228,7 @@ export default function Dashboard({ data, logo, version, store_name }) {
             </Grid>
 
             <Box sx={{ justifyContent: 'center', alignItems: 'center', position: 'fixed', backgroundColor: '#c9c9c9', bottom: '2px', right: '6px', padding: '10px', paddingRight: 2 }}>
-                <Grid container spacing={1} alignItems={'center'}>
+                <Grid container spacing={1} sx={{ alignItems: 'center' }}>
                     <Grid>
                         <a href="/clear-cache" title="Refresh cache">
                             <IconButton>
@@ -245,16 +244,11 @@ export default function Dashboard({ data, logo, version, store_name }) {
                         </a>
                     </Grid>
                     <Grid>
-                        <IconButton onClick={() => {
-                            const password = prompt("Enter password:");
-                            if (password === "infomax2025") {
-                                window.location.href = "/update";
-                            } else {
-                                alert("Wrong password!");
-                            }
-                        }}>
-                            <CloudUploadIcon />
-                        </IconButton>
+                        <a href="/maintenance" title="Maintenance">
+                            <IconButton>
+                                <BuildIcon />
+                            </IconButton>
+                        </a>
                     </Grid>
                     <Grid>
                         VERSION {version}

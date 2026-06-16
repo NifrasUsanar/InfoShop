@@ -32,7 +32,7 @@ const QuotationView = ({ quotation, template }) => {
     return (
         <>
             <Head title="Quotation" />
-            <Grid container spacing={2} justifyContent="center" style={{ margin: '20px 0' }}>
+            <Grid container spacing={2} sx={{ justifyContent: "center", margin: '20px 0' }}>
                 <Grid size={12} style={{ textAlign: 'center' }}>
                     <div className="no-print print:hidden">
                         <Button
@@ -54,4 +54,3 @@ const QuotationView = ({ quotation, template }) => {
 };
 
 export default QuotationView;
-

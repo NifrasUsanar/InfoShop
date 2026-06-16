@@ -111,10 +111,10 @@ export default function BatchModal({
             cost: batch.cost,
             price: batch.price,
             batch_number: batch.batch_number,
-            expiry_date: batch.expiry_date === 'N/A' ? '' : batch.expiry_date,
+            expiry_date: (batch.expiry_date === 'N/A' || !batch.expiry_date) ? '' : batch.expiry_date,
             is_active: batch.is_active === 1 ? true : false,
             is_featured: batch.is_featured === 1 ? true : false,
-            contact_id: batch.contact_id,
+            contact_id: batch.contact_id || '',
             discount: batch.discount || 0, // Default to 0 if not present
             discount_percentage: batch.discount_percentage || 0, // Default to 0 if not present
         }));
@@ -163,7 +163,7 @@ export default function BatchModal({
         // `selectedOption` will contain the selected option object (e.g., { id: 1, name: 'Supplier 1' })
         setFormState({
             ...formState,
-            contact_id: selectedOption ? selectedOption.id : null, // Set contact_id to the selected option's id, or null if cleared
+            contact_id: selectedOption ? selectedOption.id : '', // Set contact_id to the selected option's id, or empty string if cleared
         });
     };
 

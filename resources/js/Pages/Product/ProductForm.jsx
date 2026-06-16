@@ -83,11 +83,11 @@ export default function Product({ product, collection, product_code, contacts, p
         name: "",
         description: "",
         sku: "",
-        barcode: product_code,
+        barcode: product_code || "",
         featured_image: productplaceholder,
         unit: "PC",
         quantity: "",
-        alert_quantity: product_alert,
+        alert_quantity: product_alert || 0,
         is_stock_managed: 1,
         is_active: 1,
         brand_id: "",
@@ -162,6 +162,7 @@ export default function Product({ product, collection, product_code, contacts, p
                 barcode: product.barcode || "",
                 featured_image: product.image_url ? product.image_url : productplaceholder,
                 unit: product.unit || "PC",
+                quantity: product.quantity || "",
                 alert_quantity: product.alert_quantity || 0,
                 is_stock_managed: product.is_stock_managed || false,
                 is_active: product.is_active || false,
@@ -169,6 +170,12 @@ export default function Product({ product, collection, product_code, contacts, p
                 category_id: product.category_id || "",
                 product_type: product.product_type || "simple",
                 fixed_commission: product.fixed_commission || 0,
+                batch_number: dayjs().format('DDMMYYYY'),
+                discount: 0,
+                discount_percentage: 0,
+                price: "",
+                delete_image: 0,
+                collection_ids: [],
             });
             setManageStock(product.is_stock_managed.toString());
 
@@ -709,7 +716,7 @@ export default function Product({ product, collection, product_code, contacts, p
                         sx={{ top: "auto", bottom: 0 }}
                     >
                         <Toolbar>
-                            <Grid container justifyContent="flex-end" size={12} width={"100%"} spacing={2}>
+                            <Grid container size={12} spacing={2} sx={{ justifyContent: "flex-end", width: "100%" }}>
                                 <Grid size={{ xs: 6, sm: 2 }}>
                                     <Button
                                         fullWidth

@@ -100,9 +100,7 @@ export default function EmployeeReport({
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%", mt: "1rem" }}
-                justifyContent={"center"}
+                sx={{ alignItems: "center", width: "100%", mt: "1rem", justifyContent: "center" }}
                 size={12}
             >
                 <Grid size={{ xs: 12, sm: 4, md: 2 }}>
@@ -178,9 +176,7 @@ export default function EmployeeReport({
 
             <Grid
                 container
-                justifyContent={"center"}
-                width={"100%"}
-                sx={{ mt: 2 }}
+                sx={{ justifyContent: "center", width: "100%", mt: 2 }}
                 spacing={2}
             >
                 <Box
@@ -203,9 +199,7 @@ export default function EmployeeReport({
 
             <Grid
                 container
-                width={"100%"}
-                justifyContent={"center"}
-                sx={{ mt: 2 }}
+                sx={{ width: "100%", justifyContent: "center", mt: 2 }}
             >
                 <Paper sx={{ width: { xs: '94vw', sm: '100%' }, overflow: 'hidden', maxWidth: '700px' }}>
                     <TableContainer

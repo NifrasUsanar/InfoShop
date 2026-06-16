@@ -17,7 +17,7 @@ import PrintReceiptModal from "@/Components/PrintReceiptModal";
 import PercentIcon from '@mui/icons-material/Percent';
 import PaymentsIcon from '@mui/icons-material/Payments';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
-import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
+import PauseCircleOutlinedIcon from '@mui/icons-material/PauseCircleOutlined';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCreditCard } from "@fortawesome/free-solid-svg-icons";
@@ -240,9 +240,11 @@ export default function PaymentsCheckoutDialog({
                 open={open}
                 onClose={handleClose}
                 aria-labelledby="alert-dialog-title"
-                PaperProps={{
-                    component: "form",
-                    onSubmit: handleSubmit,
+                slotProps={{
+                    paper: {
+                        component: "form",
+                        onSubmit: handleSubmit,
+                    }
                 }}
             >
                 <DialogTitle id="alert-dialog-title">ADD PAYMENTS</DialogTitle>
@@ -259,7 +261,7 @@ export default function PaymentsCheckoutDialog({
                     <X size={26} />
                 </IconButton>
                 <DialogContent>
-                    <Grid container spacing={2} alignItems={'center'}>
+                    <Grid container spacing={2} sx={{ alignItems: 'center' }}>
                         <Grid size={{ xs: 12, sm: 6 }}>
                             <TextField
                                 fullWidth
@@ -327,7 +329,7 @@ export default function PaymentsCheckoutDialog({
                             />
                         </Grid>
 
-                        <Grid container size={12} flexDirection={'column'} alignItems={'center'} justifyContent={'center'}>
+                        <Grid container size={12} sx={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                             <Grid size={12} sx={{ mt: '1rem' }}>
                                 <TextField
                                     autoFocus
@@ -357,7 +359,7 @@ export default function PaymentsCheckoutDialog({
                                 />
                             </Grid>
 
-                            <Grid size={12} spacing={1} container justifyContent={'center'}>
+                            <Grid size={12} spacing={1} container sx={{ justifyContent: 'center' }}>
                                 <Grid size={{xs:6,sm:4}}>
                                     <Button
                                     fullWidth
@@ -378,7 +380,7 @@ export default function PaymentsCheckoutDialog({
                                             component="label"
                                             role={undefined}
                                             variant="contained"
-                                            startIcon={<PauseCircleOutlineIcon />}
+                                            startIcon={<PauseCircleOutlinedIcon />}
                                             onClick={() => addPayment('Credit')}
                                             color="error"
                                         >
@@ -424,7 +426,7 @@ export default function PaymentsCheckoutDialog({
                                     <TableCell sx={{ padding: '5px 16px' }}>
                                         {payment.payment_method === 'Cash' && <PaymentsIcon />}
                                         {payment.payment_method === 'Cheque' && <CreditCardIcon />}
-                                        {payment.payment_method === 'Credit' && <PauseCircleOutlineIcon />}
+                                        {payment.payment_method === 'Credit' && <PauseCircleOutlinedIcon />}
                                         <span className="ml-2"><strong>{payment.payment_method}</strong></span>
                                     </TableCell>
 

@@ -252,12 +252,10 @@ export default function Sale({ sales, contacts }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                justifyContent={"end"}
-                sx={{ width: "100%" }}
+                sx={{ alignItems: "center", justifyContent: "end", width: "100%" }}
                 size={12}
             >
-                <Grid size={{ xs: 12, sm: 3 }} zIndex={999}>
+                <Grid size={{ xs: 12, sm: 3 }} sx={{ zIndex: 999 }}>
                     <Select2
                         className="w-full"
                         placeholder="Select a contact..."
@@ -368,7 +366,7 @@ export default function Sale({ sales, contacts }) {
             {isMobile && (
                 <SalesList sales={dataSales.data} handleRowClick={handleRowClick} />
             )}
-            <Grid size={12} container justifyContent={"end"} spacing={2} alignItems={"center"} mt={2}>
+            <Grid size={12} container spacing={2} sx={{ justifyContent: "end", alignItems: "center", mt: 2 }}>
                 <Chip size="large" label={'Total results : ' + dataSales.total} color="primary" />
                 <CustomPagination
                     refreshTable={refreshSales}

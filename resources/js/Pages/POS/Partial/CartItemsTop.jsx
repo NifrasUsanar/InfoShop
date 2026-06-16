@@ -74,18 +74,18 @@ export default function CartItemsTop({ customers }) {
 
   return (
     <Box sx={{ width: '100%' }}>
-      <Grid sx={{ width: '100%', marginY: { xs: '1rem', sm: '1.2rem' }, alignItems: 'center', justifyContent:'space-between' }} container spacing={2} flexDirection={{ xs: 'column-reverse', sm: 'row' }} alignItems={'center'}>
+      <Grid container spacing={2} sx={{ width: '100%', marginY: { xs: '1rem', sm: '1.2rem' }, alignItems: 'center', justifyContent: 'space-between', flexDirection: { xs: 'column-reverse', sm: 'row' } }}>
       <Tooltip
         title={!saleDate ? "Sale date is required" : ""}
         arrow
         placement="top"
         open={!saleDate}
         disableHoverListener
-        PopperProps={{
-          disablePortal: true,
+        slotProps={{
+          popper: { disablePortal: true },
         }}
       >
-        <Grid size={{ xs: 12, sm: 6 }} width={'100%'}>
+        <Grid size={{ xs: 12, sm: 6 }} sx={{ width: '100%' }}>
           <MUIDatePicker
             name="sale_date"
             label="Date"
@@ -102,11 +102,11 @@ export default function CartItemsTop({ customers }) {
         placement="top"
         open={!saleTime}
         disableHoverListener
-        PopperProps={{
-          disablePortal: true,
+        slotProps={{
+          popper: { disablePortal: true },
         }}
       >
-        <Grid size={{ xs: 12, sm: 6 }} width={'100%'}>
+        <Grid size={{ xs: 12, sm: 6 }} sx={{ width: '100%' }}>
           {isTimeEditMode ? (
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <MUITimePicker

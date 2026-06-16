@@ -63,9 +63,11 @@ export default function ReloadFormDialog({ open, setOpen, reloadData, refreshRel
         <Dialog
             open={open}
             onClose={() => setOpen(false)}
-            PaperProps={{
-                component: "form",
-                onSubmit: handleSubmit,
+            slotProps={{
+                paper: {
+                    component: "form",
+                    onSubmit: handleSubmit,
+                }
             }}
         >
             <DialogTitle>Edit Account Number</DialogTitle>

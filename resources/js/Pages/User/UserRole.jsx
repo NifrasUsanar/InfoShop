@@ -51,7 +51,7 @@ import UserRoleDialog from './UserRoleDialog';
         <AuthenticatedLayout>
           
             <Head title="User Roles" />
-                <Grid container spacing={2} alignItems='center' justifyContent={'end'}>
+                <Grid container spacing={2} sx={{ alignItems: 'center', justifyContent: 'end' }}>
                     <Grid size={{xs:12, sm:4, md:3}}>
                         <Button fullWidth variant="contained" startIcon={<AddIcon />} onClick={handleClickOpen}>Add Role</Button>
                     </Grid>

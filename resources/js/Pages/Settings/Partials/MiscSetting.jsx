@@ -41,8 +41,7 @@ const MiscSetting = ({ handleSubmit, settingFormData, handleChange, setSettingFo
                 <Grid
                     container
                     spacing={2}
-                    width={{ xs: "100%", sm: "60%" }}
-                    flexDirection={'column'}
+                    sx={{ width: { xs: "100%", sm: "60%" }, flexDirection: 'column' }}
                 >
                     <Paper sx={{ padding: 2, marginBottom: "1rem", width: '100%' }}>
                         <Grid size={12} container spacing={3}>
@@ -144,8 +143,7 @@ const MiscSetting = ({ handleSubmit, settingFormData, handleChange, setSettingFo
                     </Paper>
                     <Grid
                         size={12}
-                        justifyContent={"end"}
-                        sx={{ display: "flex" }}
+                        sx={{ display: "flex", justifyContent: "end" }}
                     >
                         <Button
                             type="submit"

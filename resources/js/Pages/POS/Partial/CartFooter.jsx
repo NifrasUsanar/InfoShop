@@ -252,7 +252,7 @@ export default function CartFooter() {
                 )}
             </Grid>
 
-            <Grid container mt={1}>
+            <Grid container sx={{ mt: 1 }}>
                 <CashCheckoutDialog
                     disabled={
                         cartState.length === 0 || selectedCustomer === null || !saleDate

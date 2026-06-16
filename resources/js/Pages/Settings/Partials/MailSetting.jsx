@@ -41,8 +41,7 @@ const MailSetting = ({ handleSubmit, settingFormData, handleChange, setSettingFo
                 <Grid
                     container
                     spacing={2}
-                    width={{ xs: "100%", sm: "60%" }}
-                    flexDirection={'column'}
+                    sx={{ width: { xs: "100%", sm: "60%" }, flexDirection: 'column' }}
                 >
                     <Grid container size={12} spacing={2}>
                         <Paper sx={{ padding: { xs: '0.5rem', sm: "1rem" }, marginBottom: "1rem", width: '100%' }}>
@@ -139,8 +138,7 @@ const MailSetting = ({ handleSubmit, settingFormData, handleChange, setSettingFo
 
                             <Grid
                         size={12}
-                        justifyContent={"end"}
-                        sx={{ display: "flex", mt:1 }}
+                        sx={{ display: "flex", justifyContent: "end", mt: 1 }}
                         spacing={1}
                         container
                     >

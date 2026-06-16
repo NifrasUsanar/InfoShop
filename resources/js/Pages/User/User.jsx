@@ -106,8 +106,8 @@ import { X } from 'lucide-react';
         <AuthenticatedLayout>
           
             <Head title="User" />
-                <Grid container spacing={2} alignItems='center' sx={{ width: "100%" }}>
-                    <Grid size={12} container justifyContent='end'>
+                <Grid container spacing={2} sx={{ alignItems: 'center', width: "100%" }}>
+                    <Grid size={12} container sx={{ justifyContent: 'end' }}>
                         <Button variant="contained" startIcon={<AddIcon />} onClick={handleClickOpen}>Add User</Button>
                     </Grid>
 

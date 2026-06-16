@@ -129,9 +129,7 @@ const InventoryLog = ({ inventory_log, stores }) => {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%" }}
-                justifyContent={"end"}
+                sx={{ alignItems: "center", width: "100%", justifyContent: "end" }}
                 size={12}
             >
 
@@ -172,7 +170,7 @@ const InventoryLog = ({ inventory_log, stores }) => {
                     hideFooter
                 />
             </Box>
-            <Grid size={12} container justifyContent={"end"}>
+            <Grid size={12} container sx={{ justifyContent: "end" }}>
                 {/* <Chip size="large" label={'Total:' + numeral(totalExpense).format('0,0')} color="primary" /> */}
                 <CustomPagination
                     dataLinks={dataInventoryLog?.links}
@@ -185,4 +183,3 @@ const InventoryLog = ({ inventory_log, stores }) => {
 };
 
 export default InventoryLog;
-

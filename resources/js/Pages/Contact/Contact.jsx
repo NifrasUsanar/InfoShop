@@ -237,8 +237,7 @@ export default function Contact({ contacts, type, stores }) {
             <Grid
                 container
                 spacing={2}
-                alignItems="center"
-                sx={{ width: "100%" }}
+                sx={{ alignItems: "center", width: "100%" }}
             >
                 <Grid size={{ xs: 12, sm: 2, md: 3 }}>
                     <div className="bg-red-200 p-4 rounded text-red-950 text-sm">
@@ -248,7 +247,7 @@ export default function Contact({ contacts, type, stores }) {
                     </div>
                 </Grid>
 
-                <Grid size={{ xs: 12, sm: 10, md: 9 }} spacing={2} container justifyContent="end" alignItems={'center'} flexDirection={{ xs: 'column', sm: 'row' }}>
+                <Grid size={{ xs: 12, sm: 10, md: 9 }} spacing={2} container sx={{ justifyContent: "end", alignItems: 'center', flexDirection: { xs: 'column', sm: 'row' } }}>
                     <Grid size={{ xs: 12, sm: 8 }}>
                         <TextField
                             name="search_query"
@@ -318,7 +317,7 @@ export default function Contact({ contacts, type, stores }) {
                     <MobileContactsList contacts={dataContacts.data} handleContactEdit={handleRowClick} handleDelete={handleDelete} />
                 )}
 
-                <Grid size={12} container justifyContent={"end"}>
+                <Grid size={12} container sx={{ justifyContent: "end" }}>
                     <CustomPagination
                         refreshTable={refreshContacts}
                         setSearchTerms={setSearchTerms}

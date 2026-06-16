@@ -126,9 +126,11 @@ export default function FormDialog({ open, handleClose, collection }) {
       <Dialog
         open={open}
         onClose={handleClose}
-        PaperProps={{
-          component: 'form',
-          onSubmit: handleSubmit,
+        slotProps={{
+          paper: {
+            component: 'form',
+            onSubmit: handleSubmit,
+          }
         }}
       >
         <DialogTitle>Collection Information</DialogTitle>
