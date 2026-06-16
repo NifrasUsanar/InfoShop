@@ -57,6 +57,19 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
+      - name: Create required directories with .gitkeep
+        run: |
+          mkdir -p storage/framework/cache
+          mkdir -p storage/framework/sessions
+          mkdir -p storage/framework/views
+          mkdir -p storage/app
+          mkdir -p storage/logs
+          touch storage/framework/cache/.gitkeep
+          touch storage/framework/sessions/.gitkeep
+          touch storage/framework/views/.gitkeep
+          touch storage/app/.gitkeep
+          touch storage/logs/.gitkeep
+
       - name: Create release package
         run: |
           VERSION=${{ steps.version.outputs.tag }}
@@ -67,9 +80,6 @@ jobs:
             --exclude "tests/*" \
             --exclude ".env" \
             --exclude "storage/logs/*.log" \
-            --exclude "storage/framework/cache/*" \
-            --exclude "storage/framework/sessions/*" \
-            --exclude "storage/framework/views/*" \
             --exclude "*.zip"
           echo "Package created: infoshop-${VERSION}.zip"
           ls -lh infoshop-${VERSION}.zip

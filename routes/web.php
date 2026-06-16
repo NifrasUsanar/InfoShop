@@ -41,7 +41,7 @@ require __DIR__ . '/installer.php';
 
 Route::get('/', function () {
     return redirect('login');
-})->middleware('check.installed');
+});
 
 Route::get('/editor', function () {
     return Inertia::render('BlockEditor/Editor');

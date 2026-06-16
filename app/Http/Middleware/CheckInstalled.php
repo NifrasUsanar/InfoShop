@@ -9,32 +9,34 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckInstalled
 {
+    /**
+     * This middleware should ONLY be applied to installer routes.
+     * It prevents users from accessing the installer after the app is already installed.
+     */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->routeIs('installer.*')) {
-            return $next($request);
-        }
-
         try {
+            // Check if we have a DB connection
             DB::connection()->getPdo();
 
+            // Check if installed flag exists
             $installed = DB::table('settings')->where('meta_key', 'installed_at')->exists();
 
             if ($installed) {
-                return $next($request);
+                // App is already installed, prevent access to installer
+                return redirect('/');
             }
 
-            return redirect()->route('installer.welcome');
+            // Not installed yet, allow access to installer
+            return $next($request);
+
         } catch (\PDOException $e) {
-            logger()->error('Database connection failed during installation check', [
-                'message' => $e->getMessage(),
-            ]);
-            return redirect()->route('installer.welcome');
+            // No DB connection yet (normal before installation)
+            // Allow access to installer routes
+            return $next($request);
         } catch (\Exception $e) {
-            logger()->error('Error checking installation status', [
-                'message' => $e->getMessage(),
-            ]);
-            return redirect()->route('installer.welcome');
+            // Any other error, allow access to installer routes to fix it
+            return $next($request);
         }
     }
 }
