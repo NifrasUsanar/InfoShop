@@ -17,10 +17,6 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        // Register middleware aliases
-        $middleware->alias([
-            'sync.api' => \App\Http\Middleware\ValidateSyncApiKey::class,
-        ]);
 
         // Exclude API routes from CSRF (offline-first sync)
         $middleware->validateCsrfTokens(except: [

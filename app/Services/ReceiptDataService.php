@@ -39,6 +39,7 @@ class ReceiptDataService
             'discount',
             'amount_received',
             'status',
+            'payment_status',
             'stores.address',
             'contacts.name',
             'contacts.whatsapp',
