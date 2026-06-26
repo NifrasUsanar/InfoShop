@@ -107,19 +107,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Sync API Key
-    |--------------------------------------------------------------------------
-    |
-    | This key is used to authenticate mobile app sync requests. The same key
-    | must be configured in the mobile application to access sync endpoints.
-    | Generate a secure random string for production use.
-    |
-    */
-
-    'sync_api_key' => env('SYNC_API_KEY'),
-
-    /*
-    |--------------------------------------------------------------------------
     | Maintenance Mode Driver
     |--------------------------------------------------------------------------
     |

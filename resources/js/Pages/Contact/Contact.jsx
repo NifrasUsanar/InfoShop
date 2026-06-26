@@ -222,13 +222,6 @@ export default function Contact({ contacts, type, stores }) {
         }
     }, [dataContacts]);
 
-    // useEffect(() => {
-    //     (async () => {
-    //         // sync fresh from API
-    //         const fresh = await syncPosProducts();
-    //     })();
-    // }, [])
-
     return (
         <AuthenticatedLayout>
             {/* Capitalize first letter of type and add s at the end */}

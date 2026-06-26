@@ -1,6 +1,6 @@
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, Tabs, Badge } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { getLocalPosProducts } from '@/localdb/pos_products';
+import axios from 'axios';
 import Tab from '@mui/material/Tab';
 import { useSales as useCart } from '@/Context/SalesContext';
 import { Banknote, CheckCircle2, ShoppingCart } from 'lucide-react';
@@ -22,8 +22,13 @@ const Catalog = ({ open, id, onClose }) => {
 
     useEffect(() => {
         (async () => {
-            const local = await getLocalPosProducts();
-            setProducts(local);
+            try {
+                const { data } = await axios.post('/pos/filter', { all_products: true });
+                setProducts(data);
+            } catch (error) {
+                console.error('Failed to load POS products', error);
+                setProducts([]);
+            }
         })();
     }, []);
 

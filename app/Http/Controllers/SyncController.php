@@ -16,10 +16,12 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 /**
- * SyncController - Optimized for RN Expo (infoshop-rnexpo)
+ * SyncController - Mobile sync contract
  *
- * This controller provides normalized data endpoints for the React Native Expo mobile app.
- * Only includes endpoints actively used by the mobile app for optimal performance.
+ * This controller provides normalized pull and push endpoints consumed by the
+ * infoshop mobile POS apps (originally infoshop-rnexpo; now also infoshop_flutter).
+ * All endpoints are gated by Sanctum (auth:sanctum) — no static API key.
+ * Only includes endpoints actively used by the mobile apps for optimal performance.
  *
  * Endpoints:
  * - GET /api/sync/health - Health check

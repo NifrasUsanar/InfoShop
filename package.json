@@ -47,8 +47,6 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "dayjs": "^1.11.21",
-        "dexie": "^4.4.3",
-        "dexie-react-hooks": "^4.4.0",
         "ejs": "^6.0.1",
         "html-to-text": "^10.0.0",
         "jsbarcode": "^3.12.3",
