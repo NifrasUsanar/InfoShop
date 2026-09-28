@@ -33,6 +33,7 @@ export default function UserRoleDialog({ open, handleClose, user_role }) {
     "payroll",
     "media",
     "settings",
+    "activity-log",
   ];
 
   useEffect(() => {
