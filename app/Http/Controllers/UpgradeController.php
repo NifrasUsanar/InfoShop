@@ -344,27 +344,6 @@ class UpgradeController extends Controller
                 File::copyDirectory($newBuildPath, $existingBuildPath);
             }
 
-            // ** Handling the SQL file within the ZIP**
-        $sqlFilePath = $extractPath . '/database.sql'; // Path to the SQL file in the extracted folder
-        
-        if (File::exists($sqlFilePath)) {
-            try {
-                // Read the SQL file contents
-                $sql = File::get($sqlFilePath);
-                
-                // Execute SQL commands
-                DB::unprepared($sql);  // Executes raw SQL directly
-                
-                // Optionally, log success or handle errors
-                Log::info('SQL file executed successfully.');
-            } catch (\Exception $e) {
-                // Handle any exceptions
-                Log::error('Failed to execute the SQL file: ' . $e->getMessage());
-                File::deleteDirectory($temporaryPath);
-                return response()->json(['error' => 'Failed to execute the SQL file. Check the logs for more information.'], 500);
-            }
-        }
-
             // Clean up temporary files
             File::deleteDirectory($temporaryPath);
 
@@ -384,16 +363,6 @@ class UpgradeController extends Controller
     public function checkVersion()
     {
         return response()->json(['version' => config('version.version')]);
-    }
-
-    public function applicationUpdate(Request $request)
-    {
-        $updateToken = env('UPDATE_TOKEN');
-        if ($updateToken !== request('update_token')) {
-            return response()->json(['error' => 'Invalid update token'], 401);
-        }
-
-        return $this->handleUpload($request);
     }
 
     // ==================== V2 UPDATE METHODS ====================
@@ -774,17 +743,5 @@ class UpgradeController extends Controller
             Log::warning('Failed to disable maintenance mode: ' . $e->getMessage());
         }
     }
-
-    /**
-     * V2 Application Update (with token authentication)
-     */
-    public function applicationUpdateV2(Request $request)
-    {
-        $updateToken = env('UPDATE_TOKEN');
-        if ($updateToken !== request('update_token')) {
-            return response()->json(['error' => 'Invalid update token'], 401);
-        }
-
-        return $this->handleUploadV2($request);
-    }
 }
+

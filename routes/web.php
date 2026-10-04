@@ -53,10 +53,6 @@ Route::get('/api/receipt-text-raw/{id}', [SaleController::class, 'apiReceipt']);
 Route::get('/pending-sales-receipt/{contact_id}', [SaleController::class, 'pendingSalesReceipt']);
 
 Route::get('/version', [UpgradeController::class, 'checkVersion']);
-Route::post('/api/application-update', [UpgradeController::class, 'applicationUpdate']);
-
-// V2 Update routes (migration-based)
-Route::post('/api/application-update-v2', [UpgradeController::class, 'applicationUpdateV2']);
 
 // Automated Backup Endpoint for external schedulers
 // http://localhost:8000/automation/backup/run?token=[xxxxxxxxxxxxxxxxxxxx] | token is defined in .env as INFOSHOP_TOKEN
