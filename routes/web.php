@@ -48,9 +48,11 @@ Route::get('/editor', function () {
     return Inertia::render('BlockEditor/Editor');
 });
 
-Route::get('/receipt/{id}', [SaleController::class, 'receipt'])->name('sales.receipt');
-Route::get('/api/receipt-text-raw/{id}', [SaleController::class, 'apiReceipt']);
-Route::get('/pending-sales-receipt/{contact_id}', [SaleController::class, 'pendingSalesReceipt']);
+Route::middleware(['auth'])->group(function () {
+    Route::get('/receipt/{id}', [SaleController::class, 'receipt'])->name('sales.receipt');
+    Route::get('/api/receipt-text-raw/{id}', [SaleController::class, 'apiReceipt']);
+    Route::get('/pending-sales-receipt/{contact_id}', [SaleController::class, 'pendingSalesReceipt']);
+});
 
 Route::get('/version', [UpgradeController::class, 'checkVersion']);
 
